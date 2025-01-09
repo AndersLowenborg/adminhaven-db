@@ -18,6 +18,7 @@ type SessionStatus = 'created' | 'published' | 'ongoing' | 'completed';
 
 const SessionPage = () => {
   const { id } = useParams();
+  const sessionId = id ? parseInt(id, 10) : undefined;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -26,43 +27,48 @@ const SessionPage = () => {
 
   // Fetch session details
   const { data: session, isLoading: isLoadingSession } = useQuery({
-    queryKey: ['session', id],
+    queryKey: ['session', sessionId],
     queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
       const { data, error } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('id', id)
+        .eq('id', sessionId)
         .single();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!sessionId,
   });
 
   // Fetch statements for this session
   const { data: statements, isLoading: isLoadingStatements } = useQuery({
-    queryKey: ['statements', id],
+    queryKey: ['statements', sessionId],
     queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
       const { data, error } = await supabase
         .from('Statements')
         .select('*')
-        .eq('session_id', id)
+        .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       return data;
     },
+    enabled: !!sessionId,
   });
 
   // Add new statement
   const addStatementMutation = useMutation({
     mutationFn: async (content: string) => {
+      if (!sessionId) throw new Error('Session ID is required');
       const { data, error } = await supabase
         .from('Statements')
         .insert([
           {
             content,
-            session_id: id,
+            session_id: sessionId,
             status: 'pending'
           }
         ])
@@ -73,7 +79,7 @@ const SessionPage = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statements', id] });
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       setNewStatement('');
       setIsAddingStatement(false);
       toast({
@@ -102,7 +108,7 @@ const SessionPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statements', id] });
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",
         description: "Statement deleted successfully",
@@ -121,15 +127,16 @@ const SessionPage = () => {
   // Update session status
   const updateStatusMutation = useMutation({
     mutationFn: async (status: SessionStatus) => {
+      if (!sessionId) throw new Error('Session ID is required');
       const { error } = await supabase
         .from('Sessions')
         .update({ status })
-        .eq('id', id);
+        .eq('id', sessionId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session', id] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
       toast({
         title: "Success",
         description: "Session status updated successfully",
@@ -144,6 +151,10 @@ const SessionPage = () => {
       });
     },
   });
+
+  if (!sessionId) {
+    return <div className="container mx-auto p-8">Invalid session ID</div>;
+  }
 
   if (isLoadingSession) {
     return <div className="container mx-auto p-8">Loading session...</div>;
@@ -288,6 +299,7 @@ const SessionPage = () => {
       </div>
     </div>
   );
+
 };
 
 export default SessionPage;
