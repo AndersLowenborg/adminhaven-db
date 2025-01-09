@@ -33,6 +33,38 @@ export type Database = {
         }
         Relationships: []
       }
+      Statements: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: number
+          session_id: number | null
+          status: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: number
+          session_id?: number | null
+          status?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: number
+          session_id?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Statements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
