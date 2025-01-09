@@ -95,9 +95,7 @@ export const StatementsSection = ({
         <TableHeader>
           <TableRow>
             <TableHead>Statement</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-[200px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -121,10 +119,6 @@ export const StatementsSection = ({
                 ) : (
                   statement.content
                 )}
-              </TableCell>
-              <TableCell>{statement.status}</TableCell>
-              <TableCell>
-                {new Date(statement.created_at || '').toLocaleDateString()}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -151,7 +145,7 @@ export const StatementsSection = ({
           ))}
           {!statements?.length && (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground">
+              <TableCell colSpan={2} className="text-center text-muted-foreground">
                 No statements found. Add one to get started.
               </TableCell>
             </TableRow>
