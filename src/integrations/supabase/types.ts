@@ -65,6 +65,35 @@ export type Database = {
         }
         Relationships: []
       }
+      SessionUsers: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          session_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          session_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          session_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "SessionUsers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Statements: {
         Row: {
           content: string

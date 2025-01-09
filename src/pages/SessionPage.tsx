@@ -199,13 +199,20 @@ const SessionPage = () => {
     addStatementMutation.mutate(newStatement);
   };
 
+  const handleStatusChange = () => {
+    queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+  };
+
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8">
         <SessionHeader 
           name={session.name} 
           status={session.status} 
+          sessionId={session.id}
+          hasStatements={statements?.length > 0}
           onUpdateName={(newName) => updateSessionMutation.mutate(newName)}
+          onStatusChange={handleStatusChange}
         />
       </div>
 
