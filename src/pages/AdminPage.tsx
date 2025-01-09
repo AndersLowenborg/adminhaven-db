@@ -1,33 +1,39 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser, useSessionContext } from '@supabase/auth-helpers-react';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminSessionsList } from '@/components/admin/AdminSessionsList';
 import { useCreateSession } from '@/hooks/use-create-session';
 
 const AdminPage = () => {
-  const { isLoading: isSessionLoading, session } = useSessionContext();
-  const user = useUser();
+  const { isLoading: isSessionLoading, session, error } = useSessionContext();
   const navigate = useNavigate();
   const createSession = useCreateSession();
 
   React.useEffect(() => {
     console.log('Session loading:', isSessionLoading);
     console.log('Session:', session);
-    console.log('User:', user);
     
+    // Only redirect if we're done loading and there's no session
     if (!isSessionLoading && !session) {
-      console.log('No active session found, redirecting to login');
+      console.log('No active session, redirecting to login');
       navigate('/login');
+      return;
+    }
+
+    if (session) {
+      console.log('Active session found:', session.user.id);
     }
   }, [isSessionLoading, session, navigate]);
 
+  // Show loading state only while session is loading
   if (isSessionLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8">Loading authentication...</div>;
   }
 
-  if (!session || !user) {
+  // If there's no session after loading, return null (redirect will handle it)
+  if (!session) {
     return null;
   }
 

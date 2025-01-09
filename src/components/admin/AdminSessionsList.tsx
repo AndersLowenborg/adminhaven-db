@@ -12,7 +12,7 @@ export const AdminSessionsList = () => {
     queryKey: ['admin-sessions', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) {
-        console.log('No user found, cannot fetch sessions');
+        console.log('No user found in session, cannot fetch sessions');
         return [];
       }
 
@@ -25,13 +25,14 @@ export const AdminSessionsList = () => {
         .order('created_at', { ascending: false });
 
       if (sessionsError) {
-        console.error('Error fetching user sessions:', sessionsError);
+        console.error('Error fetching sessions:', sessionsError);
         throw sessionsError;
       }
-      console.log('Retrieved sessions for user:', sessions);
+
+      console.log('Retrieved sessions:', sessions);
 
       if (!sessions) {
-        console.log('No sessions found for user');
+        console.log('No sessions found');
         return [];
       }
 
@@ -48,6 +49,7 @@ export const AdminSessionsList = () => {
             console.error('Error fetching users for session:', session.id, usersError);
             throw usersError;
           }
+
           console.log('Retrieved users for session', session.id, ':', users);
 
           return {
@@ -61,7 +63,6 @@ export const AdminSessionsList = () => {
       return sessionsWithUsers;
     },
     enabled: !!session?.user?.id,
-    retry: 1,
   });
 
   if (error) {
