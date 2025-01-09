@@ -3,11 +3,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const AdminPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [sessionName, setSessionName] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+
+  // Fetch sessions for the current user
+  const { data: sessions, refetch: refetchSessions } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
+      const { data, error } = await supabase
+        .from('Sessions')
+        .select('*')
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleCreateSession = async () => {
     if (!sessionName.trim()) {
@@ -22,7 +51,6 @@ const AdminPage = () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) throw new Error("No authenticated user");
 
       const { data, error } = await supabase
@@ -46,6 +74,7 @@ const AdminPage = () => {
       
       console.log('Created session:', data);
       setSessionName('');
+      refetchSessions();
     } catch (error) {
       console.error('Error creating session:', error);
       toast({
@@ -56,6 +85,11 @@ const AdminPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenSession = (sessionId: number) => {
+    // Navigate to a session management page (you'll need to create this)
+    navigate(`/admin/session/${sessionId}`);
   };
 
   const handleLogout = async () => {
@@ -78,26 +112,67 @@ const AdminPage = () => {
         </Button>
       </div>
       
-      <div className="max-w-md space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="sessionName" className="text-sm font-medium">
-            Session Name
-          </label>
-          <Input
-            id="sessionName"
-            value={sessionName}
-            onChange={(e) => setSessionName(e.target.value)}
-            placeholder="Enter session name"
-            disabled={isLoading}
-          />
+      <div className="space-y-8">
+        {/* Create new session section */}
+        <div className="max-w-md space-y-4">
+          <h2 className="text-xl font-semibold">Create New Session</h2>
+          <div className="flex gap-4">
+            <Input
+              value={sessionName}
+              onChange={(e) => setSessionName(e.target.value)}
+              placeholder="Enter session name"
+              disabled={isLoading}
+            />
+            <Button 
+              onClick={handleCreateSession}
+              disabled={isLoading}
+            >
+              {isLoading ? "Creating..." : "Create"}
+            </Button>
+          </div>
         </div>
-        
-        <Button 
-          onClick={handleCreateSession}
-          disabled={isLoading}
-        >
-          {isLoading ? "Creating..." : "Create Session"}
-        </Button>
+
+        {/* Sessions list section */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Your Sessions</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sessions?.map((session) => (
+                <TableRow key={session.id}>
+                  <TableCell>{session.name}</TableCell>
+                  <TableCell>{session.status}</TableCell>
+                  <TableCell>
+                    {new Date(session.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => handleOpenSession(session.id)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Open
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!sessions?.length && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    No sessions found. Create one to get started.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
