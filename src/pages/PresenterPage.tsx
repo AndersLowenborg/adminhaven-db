@@ -46,10 +46,11 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch session users
-  const { data: sessionUsers } = useQuery({
+  // Fetch session users with real-time updates
+  const { data: sessionUsers, refetch: refetchUsers } = useQuery({
     queryKey: ['session-users', sessionId],
     queryFn: async () => {
+      console.log('Fetching session users...');
       const { data, error } = await supabase
         .from('SessionUsers')
         .select('*')
@@ -57,6 +58,7 @@ const PresenterPage = () => {
         .order('created_at', { ascending: true });
       
       if (error) throw error;
+      console.log('Fetched session users:', data);
       return data;
     },
     enabled: !!sessionId,
@@ -67,6 +69,34 @@ const PresenterPage = () => {
       setAnswers(initialAnswers);
     }
   }, [initialAnswers]);
+
+  // Set up real-time subscription for session users
+  useEffect(() => {
+    if (!sessionId) return;
+
+    console.log('Setting up real-time subscription for session users...');
+    const channel = supabase
+      .channel('session-users-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'SessionUsers',
+          filter: `session_id=eq.${sessionId}`
+        },
+        async (payload) => {
+          console.log('New session user detected:', payload);
+          refetchUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up session users subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, refetchUsers]);
 
   // Set up real-time subscription for new answers
   useEffect(() => {
@@ -104,7 +134,7 @@ const PresenterPage = () => {
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
+      console.log('Cleaning up answers subscription');
       supabase.removeChannel(channel);
     };
   }, []);
