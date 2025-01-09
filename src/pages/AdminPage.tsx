@@ -21,6 +21,32 @@ const AdminPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check authentication and redirect if not logged in
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No active session found, redirecting to login');
+        navigate('/login');
+      }
+    };
+    
+    checkAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log('User signed out or session expired, redirecting to login');
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   // Fetch sessions with their users
   const { data: sessionsWithUsers, isLoading } = useQuery({
     queryKey: ['admin-sessions'],
@@ -29,7 +55,6 @@ const AdminPage = () => {
 
       console.log('Fetching sessions for user:', user.id);
       
-      // First get all sessions
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
@@ -42,7 +67,6 @@ const AdminPage = () => {
       }
       console.log('Retrieved sessions:', sessions);
 
-      // Then get all users for these sessions
       const sessionsWithUsers = await Promise.all(
         sessions.map(async (session) => {
           console.log('Fetching users for session:', session.id);
@@ -87,7 +111,6 @@ const AdminPage = () => {
         },
         (payload) => {
           console.log('SessionUsers change received:', payload);
-          // Refetch sessions to update the UI
           queryClient.invalidateQueries({ queryKey: ['admin-sessions'] });
         }
       )
@@ -100,14 +123,6 @@ const AdminPage = () => {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
-
-  if (!user) {
-    return (
-      <div className="container mx-auto p-8">
-        Please log in to access the admin page.
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -124,8 +139,8 @@ const AdminPage = () => {
         .insert([
           {
             name: 'New Session',
-            status: 'draft',
-            created_by: user.id,
+            status: 'unpublished',
+            created_by: user?.id,
           },
         ])
         .select()
@@ -176,7 +191,7 @@ const AdminPage = () => {
               >
                 <TableCell className="font-medium">{session.name}</TableCell>
                 <TableCell>
-                  <Badge variant={session.status === 'draft' ? 'secondary' : 'default'}>
+                  <Badge variant={session.status === 'unpublished' ? 'secondary' : 'default'}>
                     {session.status}
                   </Badge>
                 </TableCell>
