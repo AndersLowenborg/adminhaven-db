@@ -70,7 +70,7 @@ export const SessionHeader = ({
         </div>
         <div className="flex items-center gap-2">
           <p className="text-muted-foreground">
-            Status: <span className="font-medium">{status}</span>
+            Status: <span className="font-medium capitalize">{status}</span>
           </p>
           <PublishSession
             sessionId={sessionId}
@@ -81,7 +81,7 @@ export const SessionHeader = ({
         </div>
       </div>
       
-      {status === 'active' && (
+      {status === 'published' && (
         <div className="flex items-center gap-2 mt-2">
           <Input 
             value={presenterLink}

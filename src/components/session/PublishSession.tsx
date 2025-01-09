@@ -17,49 +17,59 @@ export const PublishSession = ({
   onPublish 
 }: PublishSessionProps) => {
   const { toast } = useToast();
-  const [isPublishing, setIsPublishing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const handlePublish = async () => {
+  const handleTogglePublish = async () => {
     try {
-      setIsPublishing(true);
-      console.log('Publishing session:', sessionId);
+      setIsLoading(true);
+      console.log('Toggling session publish state:', sessionId);
       
+      const newStatus = status === 'published' ? 'unpublished' : 'published';
+      console.log('Setting new status to:', newStatus);
+
       const { error } = await supabase
         .from('Sessions')
-        .update({ status: 'active' })
+        .update({ status: newStatus })
         .eq('id', sessionId);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Session published successfully",
+        description: `Session ${newStatus} successfully`,
       });
       
       onPublish();
     } catch (error) {
-      console.error('Error publishing session:', error);
+      console.error('Error updating session status:', error);
       toast({
         title: "Error",
-        description: "Failed to publish session",
+        description: `Failed to ${status === 'published' ? 'unpublish' : 'publish'} session`,
         variant: "destructive",
       });
     } finally {
-      setIsPublishing(false);
+      setIsLoading(false);
     }
   };
 
-  if (status === 'completed' || !hasStatements) {
+  if (!hasStatements) {
     return null;
   }
 
   return (
     <Button 
-      onClick={handlePublish}
-      disabled={isPublishing}
+      onClick={handleTogglePublish}
+      disabled={isLoading}
       className="ml-4"
     >
-      {isPublishing ? "Publishing..." : "Publish Session"}
+      {isLoading 
+        ? status === 'published' 
+          ? "Unpublishing..." 
+          : "Publishing..." 
+        : status === 'published'
+          ? "Unpublish Session"
+          : "Publish Session"
+      }
     </Button>
   );
 };
