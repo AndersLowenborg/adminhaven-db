@@ -4,16 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { AdminHeader } from '@/components/admin/AdminHeader';
+import { SessionsTable } from '@/components/admin/SessionsTable';
 
 const AdminPage = () => {
   const user = useUser();
@@ -167,58 +160,11 @@ const AdminPage = () => {
 
   return (
     <div className="container mx-auto p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+      <AdminHeader />
+      <div className="flex justify-end mb-8">
         <Button onClick={handleCreateSession}>Create New Session</Button>
       </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Session Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="min-w-[200px]">Participants</TableHead>
-              <TableHead>Created At</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sessionsWithUsers?.map((session) => (
-              <TableRow
-                key={session.id}
-                className="cursor-pointer"
-                onClick={() => navigate(`/admin/session/${session.id}`)}
-              >
-                <TableCell className="font-medium">{session.name}</TableCell>
-                <TableCell>
-                  <Badge variant={session.status === 'unpublished' ? 'secondary' : 'default'}>
-                    {session.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {session.users && session.users.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {session.users.map((user) => (
-                        <Badge 
-                          key={user.id} 
-                          variant="secondary"
-                        >
-                          {user.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">No participants yet</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {new Date(session.created_at).toLocaleDateString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <SessionsTable sessions={sessionsWithUsers || []} />
     </div>
   );
 };
