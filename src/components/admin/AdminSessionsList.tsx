@@ -13,7 +13,7 @@ export const AdminSessionsList = () => {
     queryFn: async () => {
       if (!user) {
         console.log('No user found, cannot fetch sessions');
-        throw new Error('No user');
+        return [];
       }
 
       console.log('Starting to fetch sessions for user:', user.id);

@@ -43,6 +43,10 @@ const AdminPage = () => {
     };
   }, [navigate]);
 
+  if (!user) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
   return (
     <div className="container mx-auto p-8">
       <AdminHeader />
