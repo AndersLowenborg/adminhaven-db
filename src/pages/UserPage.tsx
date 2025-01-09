@@ -11,7 +11,6 @@ const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
   const [answer, setAnswer] = useState('');
-  const [selectedStatementId, setSelectedStatementId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -32,40 +31,9 @@ const UserPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch available statements
-  const { data: statements, isLoading: isLoadingStatements } = useQuery({
-    queryKey: ['statements', sessionId],
-    queryFn: async () => {
-      console.log('Fetching statements...');
-      const { data, error } = await supabase
-        .from('Statements')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching statements:', error);
-        throw error;
-      }
-      
-      console.log('Fetched statements:', data);
-      return data;
-    },
-    enabled: !!sessionId,
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedStatementId) {
-      toast({
-        title: "Error",
-        description: "Please select a statement to answer",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!answer.trim()) {
       toast({
         title: "Error",
@@ -76,13 +44,12 @@ const UserPage = () => {
     }
 
     setIsSubmitting(true);
-    console.log('Submitting answer:', { statementId: selectedStatementId, answer });
+    console.log('Submitting answer:', { answer });
 
     try {
       const { data, error } = await supabase
         .from('Answers')
         .insert([{ 
-          statement_id: selectedStatementId,
           content: answer 
         }])
         .select()
@@ -98,7 +65,6 @@ const UserPage = () => {
       });
       
       setAnswer('');
-      setSelectedStatementId(null);
     } catch (error) {
       console.error('Error submitting answer:', error);
       toast({
@@ -140,52 +106,28 @@ const UserPage = () => {
     <div className="container mx-auto p-8">
       <JoinSessionForm />
       
-      {isLoadingStatements ? (
-        <p className="text-center mt-8">Loading statements...</p>
-      ) : statements && statements.length > 0 ? (
-        <form onSubmit={handleSubmit} className="space-y-6 mt-8">
-          <div className="space-y-4">
-            {statements.map((statement) => (
-              <div 
-                key={statement.id}
-                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                  selectedStatementId === statement.id 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-gray-200 hover:border-primary/50'
-                }`}
-                onClick={() => setSelectedStatementId(statement.id)}
-              >
-                <p className="text-gray-800">{statement.content}</p>
-              </div>
-            ))}
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6 mt-8">
+        <div className="space-y-2">
+          <label htmlFor="answer" className="block text-sm font-medium">
+            Your Answer
+          </label>
+          <Textarea
+            id="answer"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Enter your answer here..."
+            className="min-h-[150px]"
+          />
+        </div>
 
-          {selectedStatementId && (
-            <div className="space-y-2">
-              <label htmlFor="answer" className="block text-sm font-medium">
-                Your Answer
-              </label>
-              <Textarea
-                id="answer"
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Enter your answer here..."
-                className="min-h-[150px]"
-              />
-            </div>
-          )}
-
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || !selectedStatementId}
-            className="w-full"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Answer"}
-          </Button>
-        </form>
-      ) : (
-        <p className="text-center mt-8">No statements available.</p>
-      )}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="w-full"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Answer"}
+        </Button>
+      </form>
     </div>
   );
 };
