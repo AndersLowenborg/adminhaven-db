@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
+import { ParticipantsList } from '@/components/session/ParticipantsList';
 
 const SessionPage = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ const SessionPage = () => {
     queryKey: ['session', sessionId],
     queryFn: async () => {
       if (!sessionId) throw new Error('Session ID is required');
+      console.log('Fetching session details for ID:', sessionId);
       const { data, error } = await supabase
         .from('Sessions')
         .select('*')
@@ -26,10 +28,60 @@ const SessionPage = () => {
         .single();
 
       if (error) throw error;
+      console.log('Session details:', data);
       return data;
     },
     enabled: !!sessionId,
   });
+
+  // Fetch participants for this session
+  const { data: participants, isLoading: isLoadingParticipants } = useQuery({
+    queryKey: ['participants', sessionId],
+    queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
+      console.log('Fetching participants for session:', sessionId);
+      const { data, error } = await supabase
+        .from('SessionUsers')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      console.log('Participants data:', data);
+      return data || [];
+    },
+    enabled: !!sessionId,
+  });
+
+  // Set up real-time subscription for participants
+  React.useEffect(() => {
+    if (!sessionId) return;
+
+    console.log('Setting up participants subscription for session:', sessionId);
+    const channel = supabase
+      .channel('session-participants')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'SessionUsers',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Participants change received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['participants', sessionId] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Participants subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up participants subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryClient]);
 
   // Fetch statements for this session
   const { data: statements, isLoading: isLoadingStatements } = useQuery({
@@ -178,7 +230,7 @@ const SessionPage = () => {
     return <div className="container mx-auto p-8">Invalid session ID</div>;
   }
 
-  if (isLoadingSession) {
+  if (isLoadingSession || isLoadingParticipants) {
     return <div className="container mx-auto p-8">Loading session...</div>;
   }
 
@@ -215,6 +267,8 @@ const SessionPage = () => {
           onStatusChange={handleStatusChange}
         />
       </div>
+
+      <ParticipantsList participants={participants || []} />
 
       {isLoadingStatements ? (
         <div>Loading statements...</div>
