@@ -17,10 +17,15 @@ const AdminPage = () => {
   // Check authentication and redirect if not logged in
   React.useEffect(() => {
     const checkAuth = async () => {
+      console.log('Checking authentication status...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      
       if (!session) {
         console.log('No active session found, redirecting to login');
         navigate('/login');
+      } else {
+        console.log('Active session found for user:', session.user.id);
       }
     };
     
@@ -28,7 +33,7 @@ const AdminPage = () => {
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event);
+      console.log('Auth state changed:', event, 'Session:', session?.user?.id);
       if (event === 'SIGNED_OUT' || !session) {
         console.log('User signed out or session expired, redirecting to login');
         navigate('/login');
@@ -41,10 +46,13 @@ const AdminPage = () => {
   }, [navigate]);
 
   // Fetch sessions with their users
-  const { data: sessionsWithUsers, isLoading } = useQuery({
+  const { data: sessionsWithUsers, isLoading, error } = useQuery({
     queryKey: ['admin-sessions'],
     queryFn: async () => {
-      if (!user) throw new Error('No user');
+      if (!user) {
+        console.log('No user found, cannot fetch sessions');
+        throw new Error('No user');
+      }
 
       console.log('Fetching sessions for user:', user.id);
       
@@ -59,6 +67,11 @@ const AdminPage = () => {
         throw sessionsError;
       }
       console.log('Retrieved sessions:', sessions);
+
+      if (!sessions) {
+        console.log('No sessions found for user');
+        return [];
+      }
 
       const sessionsWithUsers = await Promise.all(
         sessions.map(async (session) => {
@@ -85,6 +98,7 @@ const AdminPage = () => {
       return sessionsWithUsers;
     },
     enabled: !!user,
+    retry: 1,
   });
 
   // Set up real-time subscription for session users
@@ -117,6 +131,15 @@ const AdminPage = () => {
     };
   }, [user, queryClient]);
 
+  if (error) {
+    console.error('Error loading sessions:', error);
+    toast({
+      title: "Error",
+      description: "Failed to load sessions. Please try refreshing the page.",
+      variant: "destructive",
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-8">
@@ -127,19 +150,36 @@ const AdminPage = () => {
 
   const handleCreateSession = async () => {
     try {
+      if (!user) {
+        console.log('No user found, cannot create session');
+        toast({
+          title: "Error",
+          description: "Please log in to create a session",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Creating new session for user:', user.id);
+      
       const { data: session, error } = await supabase
         .from('Sessions')
         .insert([
           {
             name: 'New Session',
             status: 'unpublished',
-            created_by: user?.id,
+            created_by: user.id,
           },
         ])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating session:', error);
+        throw error;
+      }
+
+      console.log('Session created successfully:', session);
 
       if (session) {
         toast({
