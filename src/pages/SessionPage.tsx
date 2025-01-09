@@ -21,7 +21,7 @@ const SessionPage = () => {
     statements, 
     isLoadingStatements, 
     addStatement, 
-    updateStatement, 
+    updateStatement: updateStatementMutation, 
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
@@ -78,6 +78,10 @@ const SessionPage = () => {
     setIsAddingStatement(false);
   };
 
+  const handleUpdateStatement = (id: number, content: string) => {
+    updateStatementMutation({ id, content });
+  };
+
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
@@ -116,7 +120,7 @@ const SessionPage = () => {
           }}
           onSubmitStatement={handleAddStatement}
           onDeleteStatement={deleteStatement}
-          onUpdateStatement={updateStatement}
+          onUpdateStatement={handleUpdateStatement}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
         />
