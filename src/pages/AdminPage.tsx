@@ -21,13 +21,17 @@ const AdminPage = () => {
 
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("No authenticated user");
+
       const { data, error } = await supabase
-        .from('Sessions')  // Changed from 'sessions' to 'Sessions'
+        .from('Sessions')
         .insert([
           { 
             name: sessionName.trim(),
             status: 'created',
-            created_by: 'admin' // TODO: Replace with actual user ID when auth is implemented
+            created_by: user.id
           }
         ])
         .select()
@@ -54,9 +58,25 @@ const AdminPage = () => {
     }
   };
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <Button onClick={handleLogout} variant="outline">
+          Sign Out
+        </Button>
+      </div>
       
       <div className="max-w-md space-y-4">
         <div className="space-y-2">
