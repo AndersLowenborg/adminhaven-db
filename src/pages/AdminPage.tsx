@@ -56,11 +56,19 @@ const AdminPage = () => {
 
       console.log('Fetching sessions for user:', user.id);
       
+      // First, let's check if we can query the Sessions table at all
+      const { data: testQuery, error: testError } = await supabase
+        .from('Sessions')
+        .select('count')
+        .limit(1);
+      
+      console.log('Test query result:', testQuery, 'Error:', testError);
+
+      // Now let's try to get sessions for this specific user
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
+        .eq('created_by', user.id);
 
       if (sessionsError) {
         console.error('Error fetching sessions:', sessionsError);
