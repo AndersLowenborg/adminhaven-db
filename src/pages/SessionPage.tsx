@@ -6,8 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
 
-type SessionStatus = 'created' | 'published' | 'ongoing' | 'completed';
-
 const SessionPage = () => {
   const { id } = useParams();
   const sessionId = id ? parseInt(id, 10) : undefined;
@@ -50,6 +48,37 @@ const SessionPage = () => {
     enabled: !!sessionId,
   });
 
+  // Update session name
+  const updateSessionMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      if (!sessionId) throw new Error('Session ID is required');
+      const { data, error } = await supabase
+        .from('Sessions')
+        .update({ name: newName })
+        .eq('id', sessionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      toast({
+        title: "Success",
+        description: "Session name updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update session name",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Add new statement
   const addStatementMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -83,6 +112,36 @@ const SessionPage = () => {
       toast({
         title: "Error",
         description: "Failed to add statement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update statement
+  const updateStatementMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: number; content: string }) => {
+      const { data, error } = await supabase
+        .from('Statements')
+        .update({ content })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: "Statement updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating statement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update statement",
         variant: "destructive",
       });
     },
@@ -143,7 +202,11 @@ const SessionPage = () => {
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8">
-        <SessionHeader name={session.name} status={session.status} />
+        <SessionHeader 
+          name={session.name} 
+          status={session.status} 
+          onUpdateName={(newName) => updateSessionMutation.mutate(newName)}
+        />
       </div>
 
       {isLoadingStatements ? (
@@ -161,6 +224,7 @@ const SessionPage = () => {
           }}
           onSubmitStatement={handleAddStatement}
           onDeleteStatement={(id) => deleteStatementMutation.mutate(id)}
+          onUpdateStatement={(id, content) => updateStatementMutation.mutate({ id, content })}
           isAddingStatementPending={addStatementMutation.isPending}
           isDeletingStatementPending={deleteStatementMutation.isPending}
         />

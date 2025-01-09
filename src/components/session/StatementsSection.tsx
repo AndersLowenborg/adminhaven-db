@@ -26,6 +26,7 @@ interface StatementsSectionProps {
   onCancelAdd: () => void;
   onSubmitStatement: (e: React.FormEvent) => void;
   onDeleteStatement: (id: number) => void;
+  onUpdateStatement: (id: number, content: string) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
 }
@@ -39,9 +40,31 @@ export const StatementsSection = ({
   onCancelAdd,
   onSubmitStatement,
   onDeleteStatement,
+  onUpdateStatement,
   isAddingStatementPending,
   isDeletingStatementPending,
 }: StatementsSectionProps) => {
+  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [editedContent, setEditedContent] = React.useState("");
+
+  const handleEditClick = (statement: Statement) => {
+    setEditingId(statement.id);
+    setEditedContent(statement.content);
+  };
+
+  const handleSaveEdit = (id: number) => {
+    if (editedContent.trim()) {
+      onUpdateStatement(id, editedContent.trim());
+      setEditingId(null);
+      setEditedContent("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditedContent("");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -80,20 +103,49 @@ export const StatementsSection = ({
         <TableBody>
           {statements?.map((statement) => (
             <TableRow key={statement.id}>
-              <TableCell>{statement.content}</TableCell>
+              <TableCell>
+                {editingId === statement.id ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button size="sm" onClick={() => handleSaveEdit(statement.id)}>
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  statement.content
+                )}
+              </TableCell>
               <TableCell>{statement.status}</TableCell>
               <TableCell>
                 {new Date(statement.created_at || '').toLocaleDateString()}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDeleteStatement(statement.id)}
-                  disabled={isDeletingStatementPending}
-                >
-                  Delete
-                </Button>
+                <div className="flex gap-2">
+                  {editingId !== statement.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditClick(statement)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDeleteStatement(statement.id)}
+                    disabled={isDeletingStatementPending}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
