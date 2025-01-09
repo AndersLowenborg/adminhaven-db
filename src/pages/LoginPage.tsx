@@ -67,6 +67,22 @@ const LoginPage = () => {
           appearance={{ theme: ThemeSupa }}
           theme="light"
           providers={[]}
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: "Email",
+                password_label: "Password",
+                button_label: "Sign in",
+                loading_button_label: "Signing in...",
+                social_provider_text: "Sign in with {{provider}}",
+                link_text: "Already have an account? Sign in",
+              },
+            },
+          }}
+          showLinks={false}
+          view="sign_in"
+          redirectTo={window.location.origin + "/admin"}
+          persistSession={true}
         />
       </div>
     </div>
