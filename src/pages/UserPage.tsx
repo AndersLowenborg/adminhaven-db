@@ -7,11 +7,12 @@ const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
 
-  // Fetch session details to verify it's active
+  // Fetch session details to verify it's published
   const { data: session, isLoading: isLoadingSession } = useQuery({
     queryKey: ['session', sessionId],
     queryFn: async () => {
       if (!sessionId) throw new Error('Session ID is required');
+      console.log('Fetching session details for user page:', sessionId);
       const { data, error } = await supabase
         .from('Sessions')
         .select('*')
@@ -19,6 +20,7 @@ const UserPage = () => {
         .single();
       
       if (error) throw error;
+      console.log('Session details retrieved:', data);
       return data;
     },
     enabled: !!sessionId,
@@ -40,7 +42,7 @@ const UserPage = () => {
     );
   }
 
-  if (session.status !== 'active') {
+  if (session.status !== 'published') {
     return (
       <div className="container mx-auto p-8">
         <p className="text-center text-yellow-500">This session is not currently active</p>
