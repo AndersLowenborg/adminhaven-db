@@ -63,6 +63,31 @@ const AdminPage = () => {
     },
   });
 
+  // Set up real-time subscription for session users
+  React.useEffect(() => {
+    console.log('Setting up real-time subscription for session users...');
+    const channel = supabase
+      .channel('admin-session-users-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'SessionUsers'
+        },
+        (payload) => {
+          console.log('Session users change detected:', payload);
+          refetchSessions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up admin session users subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [refetchSessions]);
+
   const handleCreateSession = async () => {
     if (!sessionName.trim()) {
       toast({
@@ -165,7 +190,7 @@ const AdminPage = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created At</TableHead>
-                <TableHead>Participants</TableHead>
+                <TableHead className="min-w-[200px]">Participants</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -179,14 +204,18 @@ const AdminPage = () => {
                   </TableCell>
                   <TableCell>
                     {session.users && session.users.length > 0 ? (
-                      session.users.map((user, index) => (
-                        <span key={user.id} className="text-sm">
-                          {user.name}
-                          {index < session.users.length - 1 ? ', ' : ''}
-                        </span>
-                      ))
+                      <div className="flex flex-wrap gap-1">
+                        {session.users.map((user, index) => (
+                          <span 
+                            key={user.id} 
+                            className="bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-sm"
+                          >
+                            {user.name}
+                          </span>
+                        ))}
+                      </div>
                     ) : (
-                      <span className="text-gray-500 text-sm">No participants yet</span>
+                      <span className="text-muted-foreground text-sm">No participants yet</span>
                     )}
                   </TableCell>
                   <TableCell>
