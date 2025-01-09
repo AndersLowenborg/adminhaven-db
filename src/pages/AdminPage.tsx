@@ -54,15 +54,15 @@ const AdminPage = () => {
         throw new Error('No user');
       }
 
-      console.log('Fetching sessions for user:', user.id);
+      console.log('Starting to fetch sessions for user:', user.id);
       
-      // First, let's check if we can query the Sessions table at all
-      const { data: testQuery, error: testError } = await supabase
+      // First, let's do a raw query to see ALL sessions (debugging only)
+      const { data: allSessions, error: allSessionsError } = await supabase
         .from('Sessions')
-        .select('count')
-        .limit(1);
+        .select('*');
       
-      console.log('Test query result:', testQuery, 'Error:', testError);
+      console.log('All sessions in database:', allSessions);
+      console.log('Error fetching all sessions:', allSessionsError);
 
       // Now let's try to get sessions for this specific user
       const { data: sessions, error: sessionsError } = await supabase
@@ -71,10 +71,10 @@ const AdminPage = () => {
         .eq('created_by', user.id);
 
       if (sessionsError) {
-        console.error('Error fetching sessions:', sessionsError);
+        console.error('Error fetching user sessions:', sessionsError);
         throw sessionsError;
       }
-      console.log('Retrieved sessions:', sessions);
+      console.log('Retrieved sessions for user:', sessions);
 
       if (!sessions) {
         console.log('No sessions found for user');
@@ -103,6 +103,7 @@ const AdminPage = () => {
         })
       );
 
+      console.log('Final sessions with users:', sessionsWithUsers);
       return sessionsWithUsers;
     },
     enabled: !!user,
