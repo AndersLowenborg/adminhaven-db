@@ -80,12 +80,11 @@ export const AdminSessionsView = () => {
       description: "Failed to load sessions. Please try refreshing the page.",
       variant: "destructive",
     });
+    return <div>Error loading sessions. Please try refreshing the page.</div>;
   }
 
   if (isLoading) {
-    return (
-      <div>Loading sessions...</div>
-    );
+    return <div>Loading sessions...</div>;
   }
 
   return (

@@ -40,10 +40,13 @@ const AdminPage = () => {
     };
   }, [navigate]);
 
+  // Only render content if user is authenticated
   if (!user) {
+    console.log('No user found, rendering null');
     return null;
   }
 
+  console.log('Rendering AdminPage for user:', user.id);
   return (
     <div className="container mx-auto p-8">
       <AdminHeader />
