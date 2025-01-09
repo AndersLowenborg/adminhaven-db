@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PublishSession } from './PublishSession';
+import { useToast } from "@/hooks/use-toast";
 
 interface SessionHeaderProps {
   name: string;
@@ -22,6 +23,7 @@ export const SessionHeader = ({
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +31,16 @@ export const SessionHeader = ({
       onUpdateName(editedName.trim());
       setIsEditing(false);
     }
+  };
+
+  const presenterLink = `${window.location.origin}/presenter/${sessionId}`;
+
+  const copyPresenterLink = () => {
+    navigator.clipboard.writeText(presenterLink);
+    toast({
+      title: "Link copied",
+      description: "Presenter link copied to clipboard",
+    });
   };
 
   return (
@@ -68,6 +80,19 @@ export const SessionHeader = ({
           />
         </div>
       </div>
+      
+      {status === 'active' && (
+        <div className="flex items-center gap-2 mt-2">
+          <Input 
+            value={presenterLink}
+            readOnly
+            className="bg-muted"
+          />
+          <Button onClick={copyPresenterLink} variant="secondary">
+            Copy Link
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
