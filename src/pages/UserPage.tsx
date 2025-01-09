@@ -1,18 +1,11 @@
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { useParams } from 'react-router-dom';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 
 const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
-  const [answer, setAnswer] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   // Fetch session details to verify it's active
   const { data: session, isLoading: isLoadingSession } = useQuery({
@@ -30,52 +23,6 @@ const UserPage = () => {
     },
     enabled: !!sessionId,
   });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!answer.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your answer",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    console.log('Submitting answer:', { answer });
-
-    try {
-      const { data, error } = await supabase
-        .from('Answers')
-        .insert([{ 
-          content: answer 
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      console.log('Answer submitted successfully:', data);
-      
-      toast({
-        title: "Success",
-        description: "Your answer has been submitted",
-      });
-      
-      setAnswer('');
-    } catch (error) {
-      console.error('Error submitting answer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit your answer. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (isLoadingSession) {
     return (
@@ -101,33 +48,12 @@ const UserPage = () => {
     );
   }
 
-  // Show join form if session is active
   return (
     <div className="container mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        Join Session: {session.name}
+      </h1>
       <JoinSessionForm />
-      
-      <form onSubmit={handleSubmit} className="space-y-6 mt-8">
-        <div className="space-y-2">
-          <label htmlFor="answer" className="block text-sm font-medium">
-            Your Answer
-          </label>
-          <Textarea
-            id="answer"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Enter your answer here..."
-            className="min-h-[150px]"
-          />
-        </div>
-
-        <Button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Answer"}
-        </Button>
-      </form>
     </div>
   );
 };
