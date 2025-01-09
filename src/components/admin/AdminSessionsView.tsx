@@ -17,8 +17,6 @@ export const AdminSessionsView = () => {
         return [];
       }
 
-      console.log('Starting session fetch for user:', user.id);
-      
       try {
         const { data: sessions, error: sessionsError } = await supabase
           .from('Sessions')
@@ -28,20 +26,18 @@ export const AdminSessionsView = () => {
 
         if (sessionsError) {
           console.error('Error fetching sessions:', sessionsError);
+          if (sessionsError.code === '429') {
+            throw new Error('Too many requests. Please wait a moment and try again.');
+          }
           throw sessionsError;
         }
 
-        console.log('Sessions fetched successfully:', sessions);
-
         if (!sessions) {
-          console.log('No sessions found for user:', user.id);
           return [];
         }
 
-        // Fetch users for each session
         const sessionsWithUsers = await Promise.all(
           sessions.map(async (session) => {
-            console.log('Fetching users for session:', session.id);
             const { data: users, error: usersError } = await supabase
               .from('SessionUsers')
               .select('id, name')
@@ -55,7 +51,6 @@ export const AdminSessionsView = () => {
               };
             }
 
-            console.log('Users fetched for session:', session.id, users);
             return {
               ...session,
               users: users || [],
@@ -63,20 +58,25 @@ export const AdminSessionsView = () => {
           })
         );
 
-        console.log('All sessions processed with users:', sessionsWithUsers);
         return sessionsWithUsers;
       } catch (error) {
-        console.error('Unexpected error in session fetch:', error);
+        console.error('Error in session fetch:', error);
         throw error;
       }
     },
     enabled: !!user,
-    retry: 2,
+    retry: (failureCount, error) => {
+      // Don't retry on 429 errors
+      if (error?.message?.includes('Too many requests')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   if (!user) {
-    console.log('No user found, showing login message');
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-muted-foreground">Please log in to view your sessions.</p>
@@ -88,12 +88,16 @@ export const AdminSessionsView = () => {
     console.error('Error in AdminSessionsView:', error);
     toast({
       title: "Error Loading Sessions",
-      description: "There was a problem loading your sessions. Please try again.",
+      description: error?.message || "There was a problem loading your sessions. Please try again.",
       variant: "destructive",
     });
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-red-500">Error loading sessions. Please refresh the page.</p>
+        <p className="text-red-500">
+          {error?.message?.includes('Too many requests') 
+            ? "Too many requests. Please wait a moment and try again." 
+            : "Error loading sessions. Please refresh the page."}
+        </p>
       </div>
     );
   }
