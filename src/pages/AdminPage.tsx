@@ -7,29 +7,29 @@ import { AdminSessionsList } from '@/components/admin/AdminSessionsList';
 import { useCreateSession } from '@/hooks/use-create-session';
 
 const AdminPage = () => {
-  const { isLoading: isSessionLoading, session, error } = useSessionContext();
+  const { isLoading, session } = useSessionContext();
   const navigate = useNavigate();
   const createSession = useCreateSession();
 
+  console.log('Session loading:', isLoading);
+  console.log('Session:', session);
+
   React.useEffect(() => {
-    console.log('Session loading:', isSessionLoading);
-    console.log('Session:', session);
-    
-    // Only redirect if we're done loading and there's no session
-    if (!isSessionLoading && !session) {
+    if (!isLoading && !session) {
       console.log('No active session, redirecting to login');
       navigate('/login');
-      return;
     }
+  }, [isLoading, session, navigate]);
 
-    if (session) {
-      console.log('Active session found:', session.user.id);
-    }
-  }, [isSessionLoading, session, navigate]);
-
-  // Show loading state only while session is loading
-  if (isSessionLoading) {
-    return <div className="text-center py-8">Loading authentication...</div>;
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-lg">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // If there's no session after loading, return null (redirect will handle it)
