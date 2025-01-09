@@ -82,7 +82,6 @@ const LoginPage = () => {
           showLinks={false}
           view="sign_in"
           redirectTo={window.location.origin + "/admin"}
-          persistSession={true}
         />
       </div>
     </div>
