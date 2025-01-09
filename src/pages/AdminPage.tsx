@@ -36,7 +36,10 @@ const AdminPage = () => {
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
-      if (sessionsError) throw sessionsError;
+      if (sessionsError) {
+        console.error('Error fetching sessions:', sessionsError);
+        throw sessionsError;
+      }
       console.log('Retrieved sessions:', sessions);
 
       // Then get all users for these sessions
@@ -48,7 +51,10 @@ const AdminPage = () => {
             .select('*')
             .eq('session_id', session.id);
 
-          if (usersError) throw usersError;
+          if (usersError) {
+            console.error('Error fetching users for session:', session.id, usersError);
+            throw usersError;
+          }
           console.log('Retrieved users for session', session.id, ':', users);
 
           return {
@@ -80,7 +86,9 @@ const AdminPage = () => {
           refetchSessions();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
       console.log('Cleaning up admin session users subscription');
@@ -205,7 +213,7 @@ const AdminPage = () => {
                   <TableCell>
                     {session.users && session.users.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {session.users.map((user, index) => (
+                        {session.users.map((user) => (
                           <span 
                             key={user.id} 
                             className="bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-sm"
