@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useUser, useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AdminHeader } from '@/components/admin/AdminHeader';
@@ -8,6 +8,7 @@ import { AdminSessionsList } from '@/components/admin/AdminSessionsList';
 import { useCreateSession } from '@/hooks/use-create-session';
 
 const AdminPage = () => {
+  const { isLoading: isSessionLoading } = useSessionContext();
   const user = useUser();
   const navigate = useNavigate();
   const createSession = useCreateSession();
@@ -43,8 +44,14 @@ const AdminPage = () => {
     };
   }, [navigate]);
 
-  if (!user) {
+  if (isSessionLoading) {
     return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (!user) {
+    console.log('No user found after session load, redirecting to login');
+    navigate('/login');
+    return null;
   }
 
   return (
