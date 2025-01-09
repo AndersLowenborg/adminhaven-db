@@ -1,61 +1,95 @@
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { useQuery } from "@tanstack/react-query";
 
-type Statement = Database['public']['Tables']['Statements']['Row'];
+type Answer = {
+  id: number;
+  content: string;
+  created_at: string;
+  statement_id: number;
+  statement: {
+    content: string;
+  };
+};
 
 const PresenterPage = () => {
-  const [statements, setStatements] = useState<Statement[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+
+  // Fetch answers with their corresponding statements
+  const { data: initialAnswers, isLoading } = useQuery({
+    queryKey: ['answers'],
+    queryFn: async () => {
+      console.log('Fetching answers...');
+      const { data, error } = await supabase
+        .from('Answers')
+        .select(`
+          *,
+          statement:Statements(content)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching answers:', error);
+        throw error;
+      }
+      
+      console.log('Fetched answers:', data);
+      return data as Answer[];
+    },
+  });
 
   useEffect(() => {
-    const fetchStatements = async () => {
-      console.log('Fetching statements...');
-      try {
-        const { data, error } = await supabase
-          .from('Statements')
-          .select('*')
-          .order('created_at', { ascending: false });
+    if (initialAnswers) {
+      setAnswers(initialAnswers);
+    }
+  }, [initialAnswers]);
 
-        if (error) throw error;
-        
-        console.log('Fetched statements:', data);
-        setStatements(data || []);
-      } catch (error) {
-        console.error('Error fetching statements:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStatements();
-
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('statements-changes')
-      .on('postgres_changes', 
+  // Set up real-time subscription for new answers
+  useEffect(() => {
+    console.log('Setting up real-time subscription for answers...');
+    const channel = supabase
+      .channel('answers-changes')
+      .on(
+        'postgres_changes',
         { 
-          event: '*', 
+          event: 'INSERT', 
           schema: 'public', 
-          table: 'Statements' 
-        }, 
-        (payload) => {
-          console.log('Real-time update received:', payload);
-          fetchStatements();
+          table: 'Answers' 
+        },
+        async (payload) => {
+          console.log('New answer received:', payload);
+          // Fetch the complete answer data including the statement
+          const { data, error } = await supabase
+            .from('Answers')
+            .select(`
+              *,
+              statement:Statements(content)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (error) {
+            console.error('Error fetching new answer details:', error);
+            return;
+          }
+
+          console.log('Fetched new answer details:', data);
+          setAnswers(prev => [data as Answer, ...prev]);
         }
       )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
     };
   }, []);
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-8 text-center">
-        <p className="text-gray-600">Loading statements...</p>
+        <p className="text-gray-600">Loading answers...</p>
       </div>
     );
   }
@@ -65,14 +99,18 @@ const PresenterPage = () => {
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
       
       <div className="grid gap-4">
-        {statements.length === 0 ? (
-          <p className="text-gray-600 text-center">No statements submitted yet.</p>
+        {answers.length === 0 ? (
+          <p className="text-gray-600 text-center">No answers submitted yet.</p>
         ) : (
-          statements.map((statement) => (
-            <Card key={statement.id} className="p-4">
-              <p className="text-gray-800">{statement.content}</p>
+          answers.map((answer) => (
+            <Card key={answer.id} className="p-4 space-y-2">
+              <p className="text-sm font-medium text-gray-500">Statement:</p>
+              <p className="text-gray-800">{answer.statement?.content}</p>
+              <div className="h-px bg-gray-200 my-3" />
+              <p className="text-sm font-medium text-gray-500">Answer:</p>
+              <p className="text-gray-800">{answer.content}</p>
               <p className="text-sm text-gray-500 mt-2">
-                {new Date(statement.created_at || '').toLocaleString()}
+                {new Date(answer.created_at).toLocaleString()}
               </p>
             </Card>
           ))
