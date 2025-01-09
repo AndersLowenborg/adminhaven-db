@@ -9,6 +9,7 @@ export const JoinSessionForm = () => {
   const { id } = useParams();
   const [name, setName] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [hasJoined, setHasJoined] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,8 +35,7 @@ export const JoinSessionForm = () => {
         description: "You've joined the session successfully",
       });
       
-      // Clear the form
-      setName('');
+      setHasJoined(true);
     } catch (error) {
       console.error('Error joining session:', error);
       toast({
@@ -47,6 +47,15 @@ export const JoinSessionForm = () => {
       setIsJoining(false);
     }
   };
+
+  if (hasJoined) {
+    return (
+      <div className="text-center space-y-4 max-w-md mx-auto mt-8">
+        <h2 className="text-2xl font-bold">Welcome {name}!</h2>
+        <p className="text-gray-600">Waiting for admin to start the session...</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto mt-8">
