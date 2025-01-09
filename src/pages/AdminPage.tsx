@@ -27,6 +27,8 @@ const AdminPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      console.log('Fetching sessions for user:', user.id);
+
       // First get all sessions
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
@@ -35,16 +37,19 @@ const AdminPage = () => {
         .order('created_at', { ascending: false });
 
       if (sessionsError) throw sessionsError;
+      console.log('Retrieved sessions:', sessions);
 
       // Then get all users for these sessions
       const sessionsWithUsers = await Promise.all(
         sessions.map(async (session) => {
+          console.log('Fetching users for session:', session.id);
           const { data: users, error: usersError } = await supabase
             .from('SessionUsers')
             .select('*')
             .eq('session_id', session.id);
 
           if (usersError) throw usersError;
+          console.log('Retrieved users for session', session.id, ':', users);
 
           return {
             ...session,
@@ -53,6 +58,7 @@ const AdminPage = () => {
         })
       );
 
+      console.log('Final sessions with users:', sessionsWithUsers);
       return sessionsWithUsers;
     },
   });
@@ -159,7 +165,7 @@ const AdminPage = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created At</TableHead>
-                <TableHead>Joined Users</TableHead>
+                <TableHead>Participants</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -172,20 +178,16 @@ const AdminPage = () => {
                     {new Date(session.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <div className="max-w-xs overflow-hidden">
-                      {session.users && session.users.length > 0 ? (
-                        <div className="space-y-1">
-                          {session.users.map((user, index) => (
-                            <div key={user.id} className="text-sm">
-                              {user.name}
-                              {index < session.users.length - 1 && ', '}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 text-sm">No users joined yet</span>
-                      )}
-                    </div>
+                    {session.users && session.users.length > 0 ? (
+                      session.users.map((user, index) => (
+                        <span key={user.id} className="text-sm">
+                          {user.name}
+                          {index < session.users.length - 1 ? ', ' : ''}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 text-sm">No participants yet</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Button
