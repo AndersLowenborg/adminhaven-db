@@ -1,56 +1,33 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser, useSessionContext } from '@supabase/auth-helpers-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminSessionsList } from '@/components/admin/AdminSessionsList';
 import { useCreateSession } from '@/hooks/use-create-session';
 
 const AdminPage = () => {
-  const { isLoading: isSessionLoading } = useSessionContext();
+  const { isLoading: isSessionLoading, session } = useSessionContext();
   const user = useUser();
   const navigate = useNavigate();
   const createSession = useCreateSession();
 
-  // Check authentication and redirect if not logged in
   React.useEffect(() => {
-    const checkAuth = async () => {
-      console.log('Checking authentication status...');
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      
-      if (!session) {
-        console.log('No active session found, redirecting to login');
-        navigate('/login');
-        return;
-      }
-      console.log('Active session found for user:', session.user.id);
-    };
+    console.log('Session loading:', isSessionLoading);
+    console.log('Session:', session);
+    console.log('User:', user);
     
-    checkAuth();
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, 'Session:', session?.user?.id);
-      if (event === 'SIGNED_OUT' || !session) {
-        console.log('User signed out or session expired, redirecting to login');
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+    if (!isSessionLoading && !session) {
+      console.log('No active session found, redirecting to login');
+      navigate('/login');
+    }
+  }, [isSessionLoading, session, navigate]);
 
   if (isSessionLoading) {
     return <div className="text-center py-8">Loading...</div>;
   }
 
-  if (!user) {
-    console.log('No user found after session load, redirecting to login');
-    navigate('/login');
+  if (!session || !user) {
     return null;
   }
 

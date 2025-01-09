@@ -1,27 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionsTable } from '@/components/admin/SessionsTable';
 import { useToast } from '@/hooks/use-toast';
 
 export const AdminSessionsList = () => {
-  const user = useUser();
+  const { session } = useSessionContext();
   const { toast } = useToast();
 
   const { data: sessionsWithUsers, isLoading, error } = useQuery({
-    queryKey: ['admin-sessions', user?.id],
+    queryKey: ['admin-sessions', session?.user?.id],
     queryFn: async () => {
-      if (!user) {
+      if (!session?.user?.id) {
         console.log('No user found, cannot fetch sessions');
         return [];
       }
 
-      console.log('Starting to fetch sessions for user:', user.id);
+      console.log('Starting to fetch sessions for user:', session.user.id);
       
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('created_by', user.id)
+        .eq('created_by', session.user.id)
         .order('created_at', { ascending: false });
 
       if (sessionsError) {
@@ -60,7 +60,7 @@ export const AdminSessionsList = () => {
       console.log('Final sessions with users:', sessionsWithUsers);
       return sessionsWithUsers;
     },
-    enabled: !!user,
+    enabled: !!session?.user?.id,
     retry: 1,
   });
 

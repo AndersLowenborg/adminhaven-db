@@ -1,20 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const useCreateSession = () => {
-  const user = useUser();
+  const { session } = useSessionContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createSession = async () => {
     try {
-      // Check if user exists and get their ID
-      const currentUser = user;
-      if (!currentUser?.id) {
+      if (!session?.user?.id) {
         console.log('No authenticated user found');
         toast({
           title: "Authentication Error",
@@ -24,7 +22,7 @@ export const useCreateSession = () => {
         return;
       }
 
-      console.log('Creating new session for user:', currentUser.id);
+      console.log('Creating new session for user:', session.user.id);
       
       const { data: newSession, error: createError } = await supabase
         .from('Sessions')
@@ -32,7 +30,7 @@ export const useCreateSession = () => {
           {
             name: 'New Session',
             status: 'unpublished',
-            created_by: currentUser.id,
+            created_by: session.user.id,
           },
         ])
         .select()
@@ -51,8 +49,7 @@ export const useCreateSession = () => {
       console.log('Session created successfully:', newSession);
 
       if (newSession) {
-        // Invalidate the sessions query to refresh the list
-        await queryClient.invalidateQueries({ queryKey: ['admin-sessions', currentUser.id] });
+        await queryClient.invalidateQueries({ queryKey: ['admin-sessions', session.user.id] });
         toast({
           title: "Success",
           description: "Session created successfully",
