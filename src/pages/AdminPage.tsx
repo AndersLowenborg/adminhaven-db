@@ -20,21 +20,40 @@ const AdminPage = () => {
   const [sessionName, setSessionName] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Fetch sessions for the current user
-  const { data: sessions, refetch: refetchSessions } = useQuery({
-    queryKey: ['sessions'],
+  // Fetch sessions and their users for the current user
+  const { data: sessionsWithUsers, refetch: refetchSessions } = useQuery({
+    queryKey: ['sessions-with-users'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const { data, error } = await supabase
+      // First get all sessions
+      const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (sessionsError) throw sessionsError;
+
+      // Then get all users for these sessions
+      const sessionsWithUsers = await Promise.all(
+        sessions.map(async (session) => {
+          const { data: users, error: usersError } = await supabase
+            .from('SessionUsers')
+            .select('*')
+            .eq('session_id', session.id);
+
+          if (usersError) throw usersError;
+
+          return {
+            ...session,
+            users: users || []
+          };
+        })
+      );
+
+      return sessionsWithUsers;
     },
   });
 
@@ -88,7 +107,6 @@ const AdminPage = () => {
   };
 
   const handleOpenSession = (sessionId: number) => {
-    // Navigate to a session management page (you'll need to create this)
     navigate(`/admin/session/${sessionId}`);
   };
 
@@ -141,16 +159,33 @@ const AdminPage = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created At</TableHead>
+                <TableHead>Joined Users</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessions?.map((session) => (
+              {sessionsWithUsers?.map((session) => (
                 <TableRow key={session.id}>
                   <TableCell>{session.name}</TableCell>
                   <TableCell>{session.status}</TableCell>
                   <TableCell>
                     {new Date(session.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs overflow-hidden">
+                      {session.users && session.users.length > 0 ? (
+                        <div className="space-y-1">
+                          {session.users.map((user, index) => (
+                            <div key={user.id} className="text-sm">
+                              {user.name}
+                              {index < session.users.length - 1 && ', '}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 text-sm">No users joined yet</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button
@@ -163,9 +198,9 @@ const AdminPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {!sessions?.length && (
+              {!sessionsWithUsers?.length && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No sessions found. Create one to get started.
                   </TableCell>
                 </TableRow>
