@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
+import { ParticipantsList } from '@/components/session/ParticipantsList';
 
 type Answer = {
   id: number;
@@ -128,7 +129,6 @@ const PresenterPage = () => {
     const channel = supabase
       .channel('answers-changes')
       .on(
-        'postgres_changes',
         { 
           event: 'INSERT', 
           schema: 'public', 

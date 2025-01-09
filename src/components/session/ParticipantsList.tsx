@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Participant = {
   id: number;
@@ -8,7 +10,43 @@ type Participant = {
   created_at: string | null;
 };
 
-export const ParticipantsList = ({ participants }: { participants: Participant[] }) => {
+type ParticipantsListProps = {
+  participants: Participant[];
+  sessionId?: number | string;
+  queryKey?: string[];
+};
+
+export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!sessionId || !queryKey) return;
+
+    console.log('Setting up real-time subscription for participants in session:', sessionId);
+    const channel = supabase
+      .channel(`participants-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'SessionUsers',
+          filter: `session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          console.log('Participants change detected:', payload);
+          // Invalidate the query to refetch the updated data
+          queryClient.invalidateQueries({ queryKey });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up participants subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryKey, queryClient]);
+
   return (
     <Card className="mb-6">
       <CardHeader>

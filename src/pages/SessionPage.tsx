@@ -268,7 +268,11 @@ const SessionPage = () => {
         />
       </div>
 
-      <ParticipantsList participants={participants || []} />
+      <ParticipantsList 
+        participants={participants || []} 
+        sessionId={sessionId}
+        queryKey={['participants', sessionId]}
+      />
 
       {isLoadingStatements ? (
         <div>Loading statements...</div>

@@ -3,10 +3,12 @@ import { useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionsTable } from '@/components/admin/SessionsTable';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 export const AdminSessionsList = () => {
   const { session } = useSessionContext();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: sessionsWithUsers, isLoading, error } = useQuery({
     queryKey: ['admin-sessions', session?.user?.id],
@@ -64,6 +66,34 @@ export const AdminSessionsList = () => {
     },
     enabled: !!session?.user?.id,
   });
+
+  // Set up real-time subscription for session users
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    console.log('Setting up real-time subscription for session users...');
+    const channel = supabase
+      .channel('session-users-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'SessionUsers'
+        },
+        (payload) => {
+          console.log('Session users change detected:', payload);
+          // Invalidate the query to refetch the updated data
+          queryClient.invalidateQueries({ queryKey: ['admin-sessions', session.user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up session users subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, queryClient]);
 
   if (error) {
     console.error('Error loading sessions:', error);
