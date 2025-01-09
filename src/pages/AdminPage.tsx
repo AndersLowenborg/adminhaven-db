@@ -24,9 +24,9 @@ const AdminPage = () => {
       if (!session) {
         console.log('No active session found, redirecting to login');
         navigate('/login');
-      } else {
-        console.log('Active session found for user:', session.user.id);
+        return;
       }
+      console.log('Active session found for user:', session.user.id);
     };
     
     checkAuth();
@@ -47,7 +47,7 @@ const AdminPage = () => {
 
   // Fetch sessions with their users
   const { data: sessionsWithUsers, isLoading, error } = useQuery({
-    queryKey: ['admin-sessions'],
+    queryKey: ['admin-sessions', user?.id],
     queryFn: async () => {
       if (!user) {
         console.log('No user found, cannot fetch sessions');
@@ -56,19 +56,11 @@ const AdminPage = () => {
 
       console.log('Starting to fetch sessions for user:', user.id);
       
-      // First, let's do a raw query to see ALL sessions (debugging only)
-      const { data: allSessions, error: allSessionsError } = await supabase
-        .from('Sessions')
-        .select('*');
-      
-      console.log('All sessions in database:', allSessions);
-      console.log('Error fetching all sessions:', allSessionsError);
-
-      // Now let's try to get sessions for this specific user
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('created_by', user.id);
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
 
       if (sessionsError) {
         console.error('Error fetching user sessions:', sessionsError);
@@ -127,7 +119,7 @@ const AdminPage = () => {
         },
         (payload) => {
           console.log('SessionUsers change received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['admin-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-sessions', user.id] });
         }
       )
       .subscribe((status) => {
@@ -139,23 +131,6 @@ const AdminPage = () => {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
-
-  if (error) {
-    console.error('Error loading sessions:', error);
-    toast({
-      title: "Error",
-      description: "Failed to load sessions. Please try refreshing the page.",
-      variant: "destructive",
-    });
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-8">
-        Loading sessions...
-      </div>
-    );
-  }
 
   const handleCreateSession = async () => {
     try {
@@ -171,7 +146,7 @@ const AdminPage = () => {
 
       console.log('Creating new session for user:', user.id);
       
-      const { data: session, error } = await supabase
+      const { data: newSession, error: createError } = await supabase
         .from('Sessions')
         .insert([
           {
@@ -183,29 +158,45 @@ const AdminPage = () => {
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating session:', error);
-        throw error;
+      if (createError) {
+        console.error('Error creating session:', createError);
+        toast({
+          title: "Error",
+          description: "Failed to create session. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      console.log('Session created successfully:', session);
+      console.log('Session created successfully:', newSession);
 
-      if (session) {
+      if (newSession) {
         toast({
           title: "Success",
           description: "Session created successfully",
         });
-        navigate(`/admin/session/${session.id}`);
+        // Invalidate the sessions query to refresh the list
+        await queryClient.invalidateQueries({ queryKey: ['admin-sessions', user.id] });
+        navigate(`/admin/session/${newSession.id}`);
       }
     } catch (error) {
       console.error('Error creating session:', error);
       toast({
         title: "Error",
-        description: "Failed to create session",
+        description: "Failed to create session. Please try again.",
         variant: "destructive",
       });
     }
   };
+
+  if (error) {
+    console.error('Error loading sessions:', error);
+    toast({
+      title: "Error",
+      description: "Failed to load sessions. Please try refreshing the page.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <div className="container mx-auto p-8">
@@ -213,7 +204,11 @@ const AdminPage = () => {
       <div className="flex justify-end mb-8">
         <Button onClick={handleCreateSession}>Create New Session</Button>
       </div>
-      <SessionsTable sessions={sessionsWithUsers || []} />
+      {isLoading ? (
+        <div className="text-center py-8">Loading sessions...</div>
+      ) : (
+        <SessionsTable sessions={sessionsWithUsers || []} />
+      )}
     </div>
   );
 };
