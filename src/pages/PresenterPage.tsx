@@ -129,6 +129,7 @@ const PresenterPage = () => {
     const channel = supabase
       .channel('answers-changes')
       .on(
+        'postgres_changes',
         { 
           event: 'INSERT', 
           schema: 'public', 
