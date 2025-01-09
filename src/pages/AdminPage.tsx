@@ -22,7 +22,7 @@ const AdminPage = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('sessions')
+        .from('Sessions')  // Changed from 'sessions' to 'Sessions'
         .insert([
           { 
             name: sessionName.trim(),
