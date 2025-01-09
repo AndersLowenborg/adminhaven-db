@@ -52,23 +52,9 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/presenter"
-            element={
-              <ProtectedRoute>
-                <PresenterPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/user"
-            element={
-              <ProtectedRoute>
-                <UserPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/presenter" element={<PresenterPage />} />
+          <Route path="/user" element={<UserPage />} />
+          <Route path="/" element={<Navigate to="/user" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
