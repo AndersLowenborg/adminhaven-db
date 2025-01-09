@@ -16,7 +16,8 @@ type Answer = {
 };
 
 const PresenterPage = () => {
-  const { id: sessionId } = useParams();
+  const { id: sessionIdString } = useParams();
+  const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
   const [answers, setAnswers] = useState<Answer[]>([]);
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
 

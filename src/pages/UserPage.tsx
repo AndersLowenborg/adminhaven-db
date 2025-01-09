@@ -8,7 +8,8 @@ import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { useParams } from 'react-router-dom';
 
 const UserPage = () => {
-  const { id: sessionId } = useParams();
+  const { id: sessionIdString } = useParams();
+  const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
   const [answer, setAnswer] = useState('');
   const [selectedStatementId, setSelectedStatementId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
