@@ -1,25 +1,16 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { SessionHeader } from '@/components/session/SessionHeader';
+import { StatementsSection } from '@/components/session/StatementsSection';
 
 type SessionStatus = 'created' | 'published' | 'ongoing' | 'completed';
 
 const SessionPage = () => {
   const { id } = useParams();
   const sessionId = id ? parseInt(id, 10) : undefined;
-  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newStatement, setNewStatement] = React.useState('');
@@ -124,34 +115,6 @@ const SessionPage = () => {
     },
   });
 
-  // Update session status
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: SessionStatus) => {
-      if (!sessionId) throw new Error('Session ID is required');
-      const { error } = await supabase
-        .from('Sessions')
-        .update({ status })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-      toast({
-        title: "Success",
-        description: "Session status updated successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating session status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update session status",
-        variant: "destructive",
-      });
-    },
-  });
-
   if (!sessionId) {
     return <div className="container mx-auto p-8">Invalid session ID</div>;
   }
@@ -163,10 +126,6 @@ const SessionPage = () => {
   if (!session) {
     return <div className="container mx-auto p-8">Session not found</div>;
   }
-
-  const handleStatusChange = (status: SessionStatus) => {
-    updateStatusMutation.mutate(status);
-  };
 
   const handleAddStatement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,123 +142,31 @@ const SessionPage = () => {
 
   return (
     <div className="container mx-auto p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">{session.name}</h1>
-          <p className="text-muted-foreground mt-2">
-            Status: <span className="font-medium">{session.status}</span>
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => handleStatusChange('created')}
-            disabled={session.status === 'created'}
-          >
-            Created
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleStatusChange('published')}
-            disabled={session.status === 'published'}
-          >
-            Published
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleStatusChange('ongoing')}
-            disabled={session.status === 'ongoing'}
-          >
-            Ongoing
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleStatusChange('completed')}
-            disabled={session.status === 'completed'}
-          >
-            Completed
-          </Button>
-        </div>
+      <div className="mb-8">
+        <SessionHeader name={session.name} status={session.status} />
       </div>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold">Statements</h2>
-          <Button onClick={() => setIsAddingStatement(true)} disabled={isAddingStatement}>
-            Add Statement
-          </Button>
-        </div>
-
-        {isAddingStatement && (
-          <form onSubmit={handleAddStatement} className="flex gap-4">
-            <Input
-              value={newStatement}
-              onChange={(e) => setNewStatement(e.target.value)}
-              placeholder="Enter statement content"
-              className="flex-1"
-            />
-            <Button type="submit" disabled={addStatementMutation.isPending}>
-              {addStatementMutation.isPending ? "Adding..." : "Add"}
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                setIsAddingStatement(false);
-                setNewStatement('');
-              }}
-            >
-              Cancel
-            </Button>
-          </form>
-        )}
-
-        {isLoadingStatements ? (
-          <div>Loading statements...</div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Statement</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statements?.map((statement) => (
-                <TableRow key={statement.id}>
-                  <TableCell>{statement.content}</TableCell>
-                  <TableCell>{statement.status}</TableCell>
-                  <TableCell>
-                    {new Date(statement.created_at || '').toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteStatementMutation.mutate(statement.id)}
-                      disabled={deleteStatementMutation.isPending}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!statements?.length && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    No statements found. Add one to get started.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      {isLoadingStatements ? (
+        <div>Loading statements...</div>
+      ) : (
+        <StatementsSection
+          statements={statements || []}
+          isAddingStatement={isAddingStatement}
+          newStatement={newStatement}
+          onNewStatementChange={setNewStatement}
+          onAddClick={() => setIsAddingStatement(true)}
+          onCancelAdd={() => {
+            setIsAddingStatement(false);
+            setNewStatement('');
+          }}
+          onSubmitStatement={handleAddStatement}
+          onDeleteStatement={(id) => deleteStatementMutation.mutate(id)}
+          isAddingStatementPending={addStatementMutation.isPending}
+          isDeletingStatementPending={deleteStatementMutation.isPending}
+        />
+      )}
     </div>
   );
-
 };
 
 export default SessionPage;
