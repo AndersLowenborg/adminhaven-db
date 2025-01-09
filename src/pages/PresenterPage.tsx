@@ -21,8 +21,30 @@ const PresenterPage = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
 
+  // First check if the session exists and is published
+  const { data: session, isLoading: isSessionLoading } = useQuery({
+    queryKey: ['presenter-session', sessionId],
+    queryFn: async () => {
+      console.log('Checking session status for ID:', sessionId);
+      const { data, error } = await supabase
+        .from('Sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching session:', error);
+        throw error;
+      }
+
+      console.log('Session data:', data);
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+
   // Fetch answers with their corresponding statements
-  const { data: initialAnswers, isLoading } = useQuery({
+  const { data: initialAnswers, isLoading: isAnswersLoading } = useQuery({
     queryKey: ['answers', sessionId],
     queryFn: async () => {
       console.log('Fetching answers...');
@@ -43,7 +65,7 @@ const PresenterPage = () => {
       console.log('Fetched answers:', data);
       return data as Answer[];
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && session?.status === 'published',
   });
 
   // Fetch session users with real-time updates
@@ -61,7 +83,7 @@ const PresenterPage = () => {
       console.log('Fetched session users:', data);
       return data;
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && session?.status === 'published',
   });
 
   useEffect(() => {
@@ -72,7 +94,7 @@ const PresenterPage = () => {
 
   // Set up real-time subscription for session users
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || session?.status !== 'published') return;
 
     console.log('Setting up real-time subscription for session users...');
     const channel = supabase
@@ -96,10 +118,12 @@ const PresenterPage = () => {
       console.log('Cleaning up session users subscription');
       supabase.removeChannel(channel);
     };
-  }, [sessionId, refetchUsers]);
+  }, [sessionId, refetchUsers, session?.status]);
 
   // Set up real-time subscription for new answers
   useEffect(() => {
+    if (!sessionId || session?.status !== 'published') return;
+
     console.log('Setting up real-time subscription for answers...');
     const channel = supabase
       .channel('answers-changes')
@@ -112,7 +136,6 @@ const PresenterPage = () => {
         },
         async (payload) => {
           console.log('New answer received:', payload);
-          // Fetch the complete answer data including the statement
           const { data, error } = await supabase
             .from('Answers')
             .select(`
@@ -137,12 +160,28 @@ const PresenterPage = () => {
       console.log('Cleaning up answers subscription');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [sessionId, session?.status]);
 
-  if (isLoading) {
+  if (isSessionLoading) {
     return (
       <div className="container mx-auto p-8 text-center">
-        <p className="text-gray-600">Loading answers...</p>
+        <p className="text-gray-600">Loading session...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="container mx-auto p-8 text-center">
+        <p className="text-red-600">Session not found</p>
+      </div>
+    );
+  }
+
+  if (session.status !== 'published') {
+    return (
+      <div className="container mx-auto p-8 text-center">
+        <p className="text-red-600">This session is currently not active</p>
       </div>
     );
   }
@@ -151,36 +190,34 @@ const PresenterPage = () => {
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
       
-      {sessionId && (
-        <Card className="p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Session Information</h2>
-          <div className="flex items-start gap-8">
-            <div className="flex-1">
-              <p className="mb-2">Share this link with participants:</p>
-              <input
-                type="text"
-                value={sessionUrl}
-                readOnly
-                className="w-full p-2 border rounded bg-gray-50"
-                onClick={(e) => e.currentTarget.select()}
-              />
-              {sessionUsers && (
-                <div className="mt-4">
-                  <p className="font-medium mb-2">Participants ({sessionUsers.length}):</p>
-                  <ul className="list-disc list-inside">
-                    {sessionUsers.map(user => (
-                      <li key={user.id} className="text-gray-700">{user.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <div className="flex-shrink-0">
-              <QRCodeSVG value={sessionUrl} size={200} />
-            </div>
+      <Card className="p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Session Information</h2>
+        <div className="flex items-start gap-8">
+          <div className="flex-1">
+            <p className="mb-2">Share this link with participants:</p>
+            <input
+              type="text"
+              value={sessionUrl}
+              readOnly
+              className="w-full p-2 border rounded bg-gray-50"
+              onClick={(e) => e.currentTarget.select()}
+            />
+            {sessionUsers && (
+              <div className="mt-4">
+                <p className="font-medium mb-2">Participants ({sessionUsers.length}):</p>
+                <ul className="list-disc list-inside">
+                  {sessionUsers.map(user => (
+                    <li key={user.id} className="text-gray-700">{user.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </Card>
-      )}
+          <div className="flex-shrink-0">
+            <QRCodeSVG value={sessionUrl} size={200} />
+          </div>
+        </div>
+      </Card>
       
       <div className="grid gap-4">
         {answers.length === 0 ? (
