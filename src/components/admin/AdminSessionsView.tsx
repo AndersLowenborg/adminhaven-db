@@ -17,55 +17,66 @@ export const AdminSessionsView = () => {
         return [];
       }
 
-      console.log('Fetching sessions for user:', user.id);
+      console.log('Starting session fetch for user:', user.id);
       
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('Sessions')
-        .select('*')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('Sessions')
+          .select('*')
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false });
 
-      if (sessionsError) {
-        console.error('Error fetching sessions:', sessionsError);
-        throw sessionsError;
-      }
+        if (sessionsError) {
+          console.error('Error fetching sessions:', sessionsError);
+          throw sessionsError;
+        }
 
-      console.log('Sessions fetched:', sessions);
+        console.log('Sessions fetched successfully:', sessions);
 
-      if (!sessions) {
-        return [];
-      }
+        if (!sessions) {
+          console.log('No sessions found for user:', user.id);
+          return [];
+        }
 
-      // Fetch users for each session
-      const sessionsWithUsers = await Promise.all(
-        sessions.map(async (session) => {
-          const { data: users, error: usersError } = await supabase
-            .from('SessionUsers')
-            .select('id, name')
-            .eq('session_id', session.id);
+        // Fetch users for each session
+        const sessionsWithUsers = await Promise.all(
+          sessions.map(async (session) => {
+            console.log('Fetching users for session:', session.id);
+            const { data: users, error: usersError } = await supabase
+              .from('SessionUsers')
+              .select('id, name')
+              .eq('session_id', session.id);
 
-          if (usersError) {
-            console.error('Error fetching users for session:', session.id, usersError);
+            if (usersError) {
+              console.error('Error fetching users for session:', session.id, usersError);
+              return {
+                ...session,
+                users: [],
+              };
+            }
+
+            console.log('Users fetched for session:', session.id, users);
             return {
               ...session,
-              users: [],
+              users: users || [],
             };
-          }
+          })
+        );
 
-          return {
-            ...session,
-            users: users || [],
-          };
-        })
-      );
-
-      console.log('Sessions with users:', sessionsWithUsers);
-      return sessionsWithUsers;
+        console.log('All sessions processed with users:', sessionsWithUsers);
+        return sessionsWithUsers;
+      } catch (error) {
+        console.error('Unexpected error in session fetch:', error);
+        throw error;
+      }
     },
     enabled: !!user,
+    retry: 2,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   if (!user) {
+    console.log('No user found, showing login message');
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-muted-foreground">Please log in to view your sessions.</p>
