@@ -4,21 +4,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { JoinSessionForm } from '@/components/session/JoinSessionForm';
+import { useParams } from 'react-router-dom';
 
 const UserPage = () => {
+  const { id: sessionId } = useParams();
   const [answer, setAnswer] = useState('');
   const [selectedStatementId, setSelectedStatementId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Fetch session details to verify it's active
+  const { data: session, isLoading: isLoadingSession } = useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
+      const { data, error } = await supabase
+        .from('Sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+
   // Fetch available statements
   const { data: statements, isLoading: isLoadingStatements } = useQuery({
-    queryKey: ['statements'],
+    queryKey: ['statements', sessionId],
     queryFn: async () => {
       console.log('Fetching statements...');
       const { data, error } = await supabase
         .from('Statements')
         .select('*')
+        .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -29,6 +50,7 @@ const UserPage = () => {
       console.log('Fetched statements:', data);
       return data;
     },
+    enabled: !!sessionId,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,20 +110,39 @@ const UserPage = () => {
     }
   };
 
-  if (isLoadingStatements) {
+  if (isLoadingSession) {
     return (
-      <div className="container mx-auto p-8 max-w-2xl">
-        <p className="text-center text-gray-500">Loading statements...</p>
+      <div className="container mx-auto p-8">
+        <p className="text-center">Loading session...</p>
       </div>
     );
   }
 
+  if (!session) {
+    return (
+      <div className="container mx-auto p-8">
+        <p className="text-center text-red-500">Session not found</p>
+      </div>
+    );
+  }
+
+  if (session.status !== 'active') {
+    return (
+      <div className="container mx-auto p-8">
+        <p className="text-center text-yellow-500">This session is not currently active</p>
+      </div>
+    );
+  }
+
+  // Show join form if session is active
   return (
-    <div className="container mx-auto p-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">Submit Your Answer</h1>
+    <div className="container mx-auto p-8">
+      <JoinSessionForm />
       
-      {statements && statements.length > 0 ? (
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {isLoadingStatements ? (
+        <p className="text-center mt-8">Loading statements...</p>
+      ) : statements && statements.length > 0 ? (
+        <form onSubmit={handleSubmit} className="space-y-6 mt-8">
           <div className="space-y-4">
             {statements.map((statement) => (
               <div 
@@ -142,7 +183,7 @@ const UserPage = () => {
           </Button>
         </form>
       ) : (
-        <p className="text-center text-gray-500">No statements available.</p>
+        <p className="text-center mt-8">No statements available.</p>
       )}
     </div>
   );

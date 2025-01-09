@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { QRCodeSVG } from 'qrcode.react';
+import { useParams } from 'react-router-dom';
 
 type Answer = {
   id: number;
@@ -14,11 +16,13 @@ type Answer = {
 };
 
 const PresenterPage = () => {
+  const { id: sessionId } = useParams();
   const [answers, setAnswers] = useState<Answer[]>([]);
+  const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
 
   // Fetch answers with their corresponding statements
   const { data: initialAnswers, isLoading } = useQuery({
-    queryKey: ['answers'],
+    queryKey: ['answers', sessionId],
     queryFn: async () => {
       console.log('Fetching answers...');
       const { data, error } = await supabase
@@ -27,6 +31,7 @@ const PresenterPage = () => {
           *,
           statement:Statements(content)
         `)
+        .eq('statement.session_id', sessionId)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -37,6 +42,23 @@ const PresenterPage = () => {
       console.log('Fetched answers:', data);
       return data as Answer[];
     },
+    enabled: !!sessionId,
+  });
+
+  // Fetch session users
+  const { data: sessionUsers } = useQuery({
+    queryKey: ['session-users', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('SessionUsers')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
   });
 
   useEffect(() => {
@@ -97,6 +119,37 @@ const PresenterPage = () => {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
+      
+      {sessionId && (
+        <Card className="p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Session Information</h2>
+          <div className="flex items-start gap-8">
+            <div className="flex-1">
+              <p className="mb-2">Share this link with participants:</p>
+              <input
+                type="text"
+                value={sessionUrl}
+                readOnly
+                className="w-full p-2 border rounded bg-gray-50"
+                onClick={(e) => e.currentTarget.select()}
+              />
+              {sessionUsers && (
+                <div className="mt-4">
+                  <p className="font-medium mb-2">Participants ({sessionUsers.length}):</p>
+                  <ul className="list-disc list-inside">
+                    {sessionUsers.map(user => (
+                      <li key={user.id} className="text-gray-700">{user.name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex-shrink-0">
+              <QRCodeSVG value={sessionUrl} size={200} />
+            </div>
+          </div>
+        </Card>
+      )}
       
       <div className="grid gap-4">
         {answers.length === 0 ? (
