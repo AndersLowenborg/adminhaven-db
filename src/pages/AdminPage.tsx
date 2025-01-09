@@ -2,10 +2,12 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/lib/supabase';
 
 const AdminPage = () => {
   const { toast } = useToast();
   const [sessionName, setSessionName] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleCreateSession = async () => {
     if (!sessionName.trim()) {
@@ -16,12 +18,40 @@ const AdminPage = () => {
       });
       return;
     }
-    
-    // TODO: Implement session creation with Supabase
-    toast({
-      title: "Success",
-      description: "Session created successfully",
-    });
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert([
+          { 
+            name: sessionName.trim(),
+            status: 'created',
+            created_by: 'admin' // TODO: Replace with actual user ID when auth is implemented
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session created successfully",
+      });
+      
+      console.log('Created session:', data);
+      setSessionName('');
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create session",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,11 +68,15 @@ const AdminPage = () => {
             value={sessionName}
             onChange={(e) => setSessionName(e.target.value)}
             placeholder="Enter session name"
+            disabled={isLoading}
           />
         </div>
         
-        <Button onClick={handleCreateSession}>
-          Create Session
+        <Button 
+          onClick={handleCreateSession}
+          disabled={isLoading}
+        >
+          {isLoading ? "Creating..." : "Create Session"}
         </Button>
       </div>
     </div>
