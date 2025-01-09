@@ -171,12 +171,12 @@ const AdminPage = () => {
       console.log('Session created successfully:', newSession);
 
       if (newSession) {
+        // Invalidate the sessions query to refresh the list
+        await queryClient.invalidateQueries({ queryKey: ['admin-sessions', user.id] });
         toast({
           title: "Success",
           description: "Session created successfully",
         });
-        // Invalidate the sessions query to refresh the list
-        await queryClient.invalidateQueries({ queryKey: ['admin-sessions', user.id] });
         navigate(`/admin/session/${newSession.id}`);
       }
     } catch (error) {
