@@ -10,29 +10,29 @@ export const AdminSessionsView = () => {
   const { toast } = useToast();
 
   const { data: sessionsWithUsers, isLoading, error } = useQuery({
-    queryKey: ['admin-sessions'],
+    queryKey: ['admin-sessions', user?.id],
     queryFn: async () => {
       if (!user) {
         console.error('No user found in AdminSessionsView');
         return [];
       }
 
-      console.log('AdminSessionsView: Fetching sessions for user:', user.id);
+      console.log('Fetching sessions for user:', user.id);
       
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('created_by', user.id);
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
 
       if (sessionsError) {
         console.error('Error fetching sessions:', sessionsError);
         throw sessionsError;
       }
 
-      console.log('User sessions:', sessions);
+      console.log('Sessions fetched:', sessions);
 
       if (!sessions) {
-        console.log('No sessions found for user');
         return [];
       }
 
@@ -41,7 +41,7 @@ export const AdminSessionsView = () => {
         sessions.map(async (session) => {
           const { data: users, error: usersError } = await supabase
             .from('SessionUsers')
-            .select('*')
+            .select('id, name')
             .eq('session_id', session.id);
 
           if (usersError) {
@@ -59,11 +59,19 @@ export const AdminSessionsView = () => {
         })
       );
 
-      console.log('Final sessions with users:', sessionsWithUsers);
+      console.log('Sessions with users:', sessionsWithUsers);
       return sessionsWithUsers;
     },
     enabled: !!user,
   });
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Please log in to view your sessions.</p>
+      </div>
+    );
+  }
 
   if (error) {
     console.error('Error in AdminSessionsView:', error);
@@ -73,24 +81,8 @@ export const AdminSessionsView = () => {
       variant: "destructive",
     });
     return (
-      <div className="p-4 text-red-500">
-        Error loading sessions. Please refresh the page.
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="p-4 text-gray-500">
-        Loading your sessions...
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="p-4 text-amber-500">
-        Please log in to view your sessions.
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-red-500">Error loading sessions. Please refresh the page.</p>
       </div>
     );
   }
@@ -101,11 +93,16 @@ export const AdminSessionsView = () => {
         <h2 className="text-2xl font-bold">Your Sessions</h2>
         <CreateSessionButton />
       </div>
-      {sessionsWithUsers && sessionsWithUsers.length > 0 ? (
+      
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <p className="text-muted-foreground">Loading sessions...</p>
+        </div>
+      ) : sessionsWithUsers && sessionsWithUsers.length > 0 ? (
         <SessionsTable sessions={sessionsWithUsers} />
       ) : (
-        <div className="text-center p-8 text-gray-500">
-          No sessions found. Create one to get started!
+        <div className="flex items-center justify-center min-h-[200px] border rounded-lg">
+          <p className="text-muted-foreground">No sessions found. Create one to get started!</p>
         </div>
       )}
     </div>
