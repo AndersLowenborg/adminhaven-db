@@ -104,10 +104,11 @@ const PresenterPage = () => {
   };
 
   const prepareChartData = (statementAnswers: Answer[]) => {
-    return statementAnswers.map(answer => ({
+    // Distribute answers vertically based on their index
+    return statementAnswers.map((answer, index) => ({
       x: answer.agreement_level,
-      y: 1, // Fixed y-value for alignment
-      z: answer.confidence_level, // Bubble size
+      y: index + 1, // Spread vertically based on index
+      z: answer.confidence_level,
       agreement: answer.agreement_level,
       confidence: answer.confidence_level
     }));
@@ -164,7 +165,7 @@ const PresenterPage = () => {
                         type="number" 
                         dataKey="y" 
                         name="Position"
-                        domain={[0, 2]}
+                        domain={[0, 'auto']}
                         hide
                       />
                       <ZAxis 
@@ -230,7 +231,7 @@ const PresenterPage = () => {
       {sessionUsers && (
         <ParticipantsList 
           participants={sessionUsers} 
-          sessionId={sessionId} 
+          sessionId={sessionId!} 
           queryKey={['session-users', sessionId]}
         />
       )}
