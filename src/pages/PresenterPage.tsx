@@ -6,6 +6,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { Badge } from '@/components/ui/badge';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 type Answer = {
   id: number;
@@ -13,6 +15,8 @@ type Answer = {
   created_at: string;
   statement_id: number;
   user_id: number;
+  agreement_level: number;
+  confidence_level: number;
   statement: {
     content: string;
   };
@@ -28,26 +32,19 @@ type Statement = {
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
-  const [answers, setAnswers] = useState<Answer[]>([]);
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
 
   // Fetch session data
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
     queryFn: async () => {
-      console.log('Checking session status for ID:', sessionId);
       const { data, error } = await supabase
         .from('Sessions')
         .select('*')
         .eq('id', sessionId)
         .single();
 
-      if (error) {
-        console.error('Error fetching session:', error);
-        throw error;
-      }
-
-      console.log('Session data:', data);
+      if (error) throw error;
       return data;
     },
     enabled: !!sessionId,
@@ -69,8 +66,8 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch current answers
-  const { data: currentAnswers, refetch: refetchAnswers } = useQuery({
+  // Fetch answers for locked statements
+  const { data: answers } = useQuery({
     queryKey: ['presenter-answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -82,13 +79,13 @@ const PresenterPage = () => {
         .eq('statement.session_id', sessionId);
 
       if (error) throw error;
-      return data;
+      return data as Answer[];
     },
     enabled: !!sessionId,
   });
 
   // Fetch session users
-  const { data: sessionUsers, refetch: refetchUsers } = useQuery({
+  const { data: sessionUsers } = useQuery({
     queryKey: ['session-users', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -103,54 +100,15 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Set up real-time subscriptions
-  useEffect(() => {
-    if (!sessionId || session?.status !== 'started') return;
-
-    console.log('Setting up real-time subscription for answers...');
-    const answersChannel = supabase
-      .channel('answers-changes')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'Answers',
-          filter: `statement_id=eq.${getCurrentStatementId()}`
-        },
-        () => {
-          console.log('Answer change detected, refetching...');
-          refetchAnswers();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up subscriptions');
-      supabase.removeChannel(answersChannel);
-    };
-  }, [sessionId, session?.status, refetchAnswers]);
-
-  const getCurrentStatementId = () => {
-    if (!statements?.length) return null;
-    return statements[0]?.id; // For now, just show the first statement
+  const getAnswersForStatement = (statementId: number) => {
+    return answers?.filter(answer => answer.statement_id === statementId) || [];
   };
 
-  const getCurrentStatement = () => {
-    if (!statements?.length) return null;
-    return statements[0]; // For now, just show the first statement
-  };
-
-  const getRespondedUsers = () => {
-    if (!currentAnswers || !sessionUsers) return [];
-    const currentStatementId = getCurrentStatementId();
-    if (!currentStatementId) return [];
-
-    return sessionUsers.map(user => ({
-      ...user,
-      hasResponded: currentAnswers.some(
-        answer => answer.statement_id === currentStatementId
-      )
+  const prepareChartData = (statementAnswers: Answer[]) => {
+    const agreementLevels = Array.from({ length: 5 }, (_, i) => i + 1);
+    return agreementLevels.map(level => ({
+      level: level.toString(),
+      count: statementAnswers.filter(answer => answer.agreement_level === level).length
     }));
   };
 
@@ -170,33 +128,45 @@ const PresenterPage = () => {
     );
   }
 
-  const currentStatement = getCurrentStatement();
-  const respondedUsers = getRespondedUsers();
+  const lockedStatements = statements?.filter(statement => statement.status === 'locked') || [];
 
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
       
-      {session.status === 'started' && currentStatement && (
-        <Card className="p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Current Statement</h2>
-          <p className="text-lg mb-4">{currentStatement.content}</p>
-          
-          <div className="mt-4">
-            <h3 className="font-medium mb-2">Responses:</h3>
-            <div className="flex flex-wrap gap-2">
-              {respondedUsers.map(user => (
-                <Badge 
-                  key={user.id}
-                  variant={user.hasResponded ? "default" : "secondary"}
-                  className="text-sm py-1 px-3"
-                >
-                  {user.name} {user.hasResponded ? '✓' : ''}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </Card>
+      {lockedStatements.length > 0 && (
+        <div className="space-y-6 mb-8">
+          <h2 className="text-2xl font-semibold">Results</h2>
+          {lockedStatements.map(statement => {
+            const statementAnswers = getAnswersForStatement(statement.id);
+            const chartData = prepareChartData(statementAnswers);
+            
+            return (
+              <Card key={statement.id} className="p-6">
+                <h3 className="text-xl font-medium mb-4">{statement.content}</h3>
+                <div className="h-64">
+                  <ChartContainer
+                    config={{
+                      line1: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } },
+                    }}
+                  >
+                    <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <XAxis dataKey="level" />
+                      <YAxis />
+                      <Bar dataKey="count" fill="var(--color-line1)" />
+                      <ChartTooltip>
+                        <ChartTooltipContent />
+                      </ChartTooltip>
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Total responses: {statementAnswers.length}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
       
       <Card className="p-6 mb-8">
