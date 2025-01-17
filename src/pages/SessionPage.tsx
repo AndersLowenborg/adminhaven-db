@@ -8,6 +8,7 @@ import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const SessionPage = () => {
   const { id } = useParams();
@@ -15,6 +16,7 @@ const SessionPage = () => {
   const [newStatement, setNewStatement] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { session, isLoadingSession, updateSession } = useSession(sessionId!);
   const { 
@@ -86,6 +88,31 @@ const SessionPage = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
 
+  const handleStartSession = async () => {
+    try {
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ status: 'started' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session started successfully",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error starting session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start session",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8">
@@ -94,8 +121,10 @@ const SessionPage = () => {
           status={session.status} 
           sessionId={session.id}
           hasStatements={statements?.length > 0}
+          participantCount={participants?.length || 0}
           onUpdateName={updateSession}
           onStatusChange={handleStatusChange}
+          onStartSession={handleStartSession}
         />
       </div>
 

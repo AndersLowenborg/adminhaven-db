@@ -9,8 +9,10 @@ interface SessionHeaderProps {
   status: string;
   sessionId: number;
   hasStatements: boolean;
+  participantCount: number;
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
+  onStartSession: () => void;
 }
 
 export const SessionHeader = ({ 
@@ -18,8 +20,10 @@ export const SessionHeader = ({
   status, 
   sessionId,
   hasStatements,
+  participantCount,
   onUpdateName,
-  onStatusChange
+  onStatusChange,
+  onStartSession
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
@@ -42,6 +46,8 @@ export const SessionHeader = ({
       description: "Presenter link copied to clipboard",
     });
   };
+
+  const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
 
   return (
     <div className="flex flex-col gap-2">
@@ -72,12 +78,28 @@ export const SessionHeader = ({
           <p className="text-muted-foreground">
             Status: <span className="font-medium capitalize">{status}</span>
           </p>
-          <PublishSession
-            sessionId={sessionId}
-            status={status}
-            hasStatements={hasStatements}
-            onPublish={onStatusChange}
-          />
+          {status === 'published' && !canStartSession && (
+            <p className="text-sm text-muted-foreground">
+              (Need at least 2 participants to start)
+            </p>
+          )}
+          {status !== 'started' && (
+            <PublishSession
+              sessionId={sessionId}
+              status={status}
+              hasStatements={hasStatements}
+              onPublish={onStatusChange}
+            />
+          )}
+          {canStartSession && (
+            <Button 
+              onClick={onStartSession}
+              variant="default"
+              className="ml-2"
+            >
+              Start Session
+            </Button>
+          )}
         </div>
       </div>
       

@@ -11,6 +11,8 @@ export type Database = {
     Tables: {
       Answers: {
         Row: {
+          agreement_level: number | null
+          confidence_level: number | null
           content: string
           created_at: string | null
           id: number
@@ -18,6 +20,8 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          agreement_level?: number | null
+          confidence_level?: number | null
           content: string
           created_at?: string | null
           id?: number
@@ -25,6 +29,8 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          agreement_level?: number | null
+          confidence_level?: number | null
           content?: string
           created_at?: string | null
           id?: number
