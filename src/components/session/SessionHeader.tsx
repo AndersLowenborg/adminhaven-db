@@ -13,6 +13,7 @@ interface SessionHeaderProps {
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
   onStartSession: () => void;
+  onEndSession: () => void;
 }
 
 export const SessionHeader = ({ 
@@ -23,7 +24,8 @@ export const SessionHeader = ({
   participantCount,
   onUpdateName,
   onStatusChange,
-  onStartSession
+  onStartSession,
+  onEndSession
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
@@ -83,7 +85,7 @@ export const SessionHeader = ({
               (Need at least 2 participants to start)
             </p>
           )}
-          {status !== 'started' && (
+          {status !== 'started' && status !== 'ended' && (
             <PublishSession
               sessionId={sessionId}
               status={status}
@@ -98,6 +100,15 @@ export const SessionHeader = ({
               className="ml-2"
             >
               Start Session
+            </Button>
+          )}
+          {status === 'started' && (
+            <Button 
+              onClick={onEndSession}
+              variant="destructive"
+              className="ml-2"
+            >
+              End Session
             </Button>
           )}
         </div>

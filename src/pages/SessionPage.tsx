@@ -96,6 +96,7 @@ const SessionPage = () => {
 
   const handleStartSession = async () => {
     try {
+      console.log('Starting session:', sessionId);
       const { error } = await supabase
         .from('Sessions')
         .update({ status: 'started' })
@@ -119,18 +120,45 @@ const SessionPage = () => {
     }
   };
 
+  const handleEndSession = async () => {
+    try {
+      console.log('Ending session:', sessionId);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ status: 'ended' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session ended successfully",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error ending session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to end session",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8">
         <SessionHeader 
           name={session.name} 
           status={session.status} 
-          sessionId={sessionId.toString()}
+          sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           onUpdateName={updateSession}
           onStatusChange={handleStatusChange}
           onStartSession={handleStartSession}
+          onEndSession={handleEndSession}
         />
       </div>
 
