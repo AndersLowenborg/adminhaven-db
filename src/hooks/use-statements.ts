@@ -114,6 +114,60 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
+  const moveToNextMutation = useMutation({
+    mutationFn: async (currentId: number) => {
+      // First, unlock the current statement
+      const { error: unlockError } = await supabase
+        .from('Statements')
+        .update({ status: 'completed' })
+        .eq('id', currentId);
+
+      if (unlockError) throw unlockError;
+
+      // Get all statements to find the next one
+      const { data: allStatements, error: fetchError } = await supabase
+        .from('Statements')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      // Find the index of the current statement and get the next one
+      const currentIndex = allStatements.findIndex(s => s.id === currentId);
+      const nextStatement = allStatements[currentIndex + 1];
+
+      if (nextStatement) {
+        // Lock the next statement
+        const { error: lockError } = await supabase
+          .from('Statements')
+          .update({ status: 'locked' })
+          .eq('id', nextStatement.id);
+
+        if (lockError) throw lockError;
+      }
+
+      return nextStatement;
+    },
+    onSuccess: (nextStatement) => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: nextStatement 
+          ? "Moved to next statement successfully" 
+          : "No more statements available",
+      });
+    },
+    onError: (error) => {
+      console.error('Error moving to next statement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to move to next statement",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
@@ -146,6 +200,7 @@ export const useStatements = (sessionId: number) => {
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
     toggleLock: toggleLockMutation.mutate,
+    moveToNext: moveToNextMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,

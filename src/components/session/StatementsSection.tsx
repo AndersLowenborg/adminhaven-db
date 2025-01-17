@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, ArrowRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ interface StatementsSectionProps {
   onDeleteStatement: (id: number) => void;
   onUpdateStatement: (id: number, content: string) => void;
   onToggleLock: (id: number, currentStatus: string) => void;
+  onMoveToNext: (currentId: number) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
 }
@@ -44,6 +45,7 @@ export const StatementsSection = ({
   onDeleteStatement,
   onUpdateStatement,
   onToggleLock,
+  onMoveToNext,
   isAddingStatementPending,
   isDeletingStatementPending,
 }: StatementsSectionProps) => {
@@ -98,7 +100,7 @@ export const StatementsSection = ({
         <TableHeader>
           <TableRow>
             <TableHead>Statement</TableHead>
-            <TableHead className="w-[250px]">Actions</TableHead>
+            <TableHead className="w-[300px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -145,6 +147,15 @@ export const StatementsSection = ({
                       <Lock className="h-4 w-4" />
                     )}
                   </Button>
+                  {statement.status === 'locked' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onMoveToNext(statement.id)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="destructive"
                     size="sm"

@@ -25,6 +25,7 @@ const SessionPage = () => {
     addStatement, 
     updateStatement: updateStatementMutation,
     toggleLock,
+    moveToNext,
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
@@ -90,6 +91,11 @@ const SessionPage = () => {
     toggleLock({ id, currentStatus });
   };
 
+  const handleMoveToNext = (currentId: number) => {
+    console.log('Moving to next statement from:', currentId);
+    moveToNext(currentId);
+  };
+
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
@@ -152,7 +158,7 @@ const SessionPage = () => {
         <SessionHeader 
           name={session.name} 
           status={session.status} 
-          sessionId={sessionId}
+          sessionId={sessionId.toString()}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           onUpdateName={updateSession}
@@ -185,6 +191,7 @@ const SessionPage = () => {
           onDeleteStatement={deleteStatement}
           onUpdateStatement={handleUpdateStatement}
           onToggleLock={handleToggleLock}
+          onMoveToNext={handleMoveToNext}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
         />
