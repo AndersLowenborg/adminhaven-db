@@ -9,6 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 
+// Define a color palette for the bubbles
+const COLORS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
+  '#D4A5A5', '#9B59B6', '#3498DB', '#E67E22', '#2ECC71',
+  '#F1C40F', '#E74C3C', '#1ABC9C', '#34495E', '#95A5A6'
+];
+
 type Answer = {
   id: number;
   content: string;
@@ -110,7 +117,8 @@ const PresenterPage = () => {
       y: index + 1, // Spread vertically based on index
       z: answer.confidence_level,
       agreement: answer.agreement_level,
-      confidence: answer.confidence_level
+      confidence: answer.confidence_level,
+      colorIndex: index % COLORS.length // Add color index for each bubble
     }));
   };
 
@@ -176,10 +184,12 @@ const PresenterPage = () => {
                       />
                       <Scatter 
                         data={chartData} 
-                        fill="#0ea5e9"
                       >
                         {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill="#0ea5e9" />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[entry.colorIndex]}
+                          />
                         ))}
                       </Scatter>
                       <ChartTooltip 
