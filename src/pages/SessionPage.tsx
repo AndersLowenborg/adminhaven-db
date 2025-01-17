@@ -23,7 +23,8 @@ const SessionPage = () => {
     statements, 
     isLoadingStatements, 
     addStatement, 
-    updateStatement: updateStatementMutation, 
+    updateStatement: updateStatementMutation,
+    toggleLock,
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
@@ -84,6 +85,11 @@ const SessionPage = () => {
     updateStatementMutation({ id, content });
   };
 
+  const handleToggleLock = (id: number, currentStatus: string) => {
+    console.log('Toggling lock for statement:', id, 'Current status:', currentStatus);
+    toggleLock({ id, currentStatus });
+  };
+
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
@@ -119,7 +125,7 @@ const SessionPage = () => {
         <SessionHeader 
           name={session.name} 
           status={session.status} 
-          sessionId={session.id}
+          sessionId={sessionId.toString()}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           onUpdateName={updateSession}
@@ -150,6 +156,7 @@ const SessionPage = () => {
           onSubmitStatement={handleAddStatement}
           onDeleteStatement={deleteStatement}
           onUpdateStatement={handleUpdateStatement}
+          onToggleLock={handleToggleLock}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
         />
