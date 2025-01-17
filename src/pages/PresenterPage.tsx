@@ -7,14 +7,13 @@ import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 
 type Answer = {
   id: number;
   content: string;
   created_at: string;
   statement_id: number;
-  user_id: number;
   agreement_level: number;
   confidence_level: number;
   statement: {
@@ -105,10 +104,12 @@ const PresenterPage = () => {
   };
 
   const prepareChartData = (statementAnswers: Answer[]) => {
-    const agreementLevels = Array.from({ length: 5 }, (_, i) => i + 1);
-    return agreementLevels.map(level => ({
-      level: level.toString(),
-      count: statementAnswers.filter(answer => answer.agreement_level === level).length
+    return statementAnswers.map(answer => ({
+      x: answer.agreement_level,
+      y: 1, // Fixed y-value for alignment
+      z: answer.confidence_level, // Bubble size
+      agreement: answer.agreement_level,
+      confidence: answer.confidence_level
     }));
   };
 
@@ -147,17 +148,55 @@ const PresenterPage = () => {
                 <div className="h-64">
                   <ChartContainer
                     config={{
-                      line1: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } },
+                      bubble: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } },
                     }}
                   >
-                    <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                      <XAxis dataKey="level" />
-                      <YAxis />
-                      <Bar dataKey="count" fill="var(--color-line1)" />
-                      <ChartTooltip>
-                        <ChartTooltipContent />
-                      </ChartTooltip>
-                    </BarChart>
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <XAxis 
+                        type="number" 
+                        dataKey="x" 
+                        name="Agreement" 
+                        domain={[0, 6]}
+                        tickCount={6}
+                        label={{ value: 'Agreement Level', position: 'bottom' }}
+                      />
+                      <YAxis 
+                        type="number" 
+                        dataKey="y" 
+                        name="Position"
+                        domain={[0, 2]}
+                        hide
+                      />
+                      <ZAxis 
+                        type="number" 
+                        dataKey="z" 
+                        range={[400, 1000]} 
+                        name="Confidence"
+                      />
+                      <Scatter 
+                        data={chartData} 
+                        fill="#0ea5e9"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill="#0ea5e9" />
+                        ))}
+                      </Scatter>
+                      <ChartTooltip 
+                        cursor={{ strokeDasharray: '3 3' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-white p-2 border rounded shadow">
+                                <p>Agreement: {data.agreement}</p>
+                                <p>Confidence: {data.confidence}</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </ScatterChart>
                   </ChartContainer>
                 </div>
                 <div className="mt-4 text-sm text-muted-foreground">
@@ -189,20 +228,11 @@ const PresenterPage = () => {
       </Card>
 
       {sessionUsers && (
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Participants</h2>
-          <div className="flex flex-wrap gap-2">
-            {sessionUsers.map(user => (
-              <Badge 
-                key={user.id}
-                variant="secondary"
-                className="text-sm py-1 px-3"
-              >
-                {user.name}
-              </Badge>
-            ))}
-          </div>
-        </Card>
+        <ParticipantsList 
+          participants={sessionUsers} 
+          sessionId={sessionId} 
+          queryKey={['session-users', sessionId]}
+        />
       )}
     </div>
   );
