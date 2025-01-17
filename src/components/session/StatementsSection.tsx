@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Lock, Unlock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ interface StatementsSectionProps {
   onSubmitStatement: (e: React.FormEvent) => void;
   onDeleteStatement: (id: number) => void;
   onUpdateStatement: (id: number, content: string) => void;
+  onToggleLock: (id: number, currentStatus: string) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
 }
@@ -41,6 +43,7 @@ export const StatementsSection = ({
   onSubmitStatement,
   onDeleteStatement,
   onUpdateStatement,
+  onToggleLock,
   isAddingStatementPending,
   isDeletingStatementPending,
 }: StatementsSectionProps) => {
@@ -95,7 +98,7 @@ export const StatementsSection = ({
         <TableHeader>
           <TableRow>
             <TableHead>Statement</TableHead>
-            <TableHead className="w-[200px]">Actions</TableHead>
+            <TableHead className="w-[250px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -122,7 +125,7 @@ export const StatementsSection = ({
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  {editingId !== statement.id && (
+                  {editingId !== statement.id && statement.status !== 'locked' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -131,6 +134,17 @@ export const StatementsSection = ({
                       Edit
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onToggleLock(statement.id, statement.status)}
+                  >
+                    {statement.status === 'locked' ? (
+                      <Unlock className="h-4 w-4" />
+                    ) : (
+                      <Lock className="h-4 w-4" />
+                    )}
+                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"

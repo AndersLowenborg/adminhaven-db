@@ -84,6 +84,36 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
+  const toggleLockMutation = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: number; currentStatus: string }) => {
+      const newStatus = currentStatus === 'locked' ? 'pending' : 'locked';
+      const { data, error } = await supabase
+        .from('Statements')
+        .update({ status: newStatus })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: "Statement status updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error toggling statement lock:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update statement status",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
@@ -115,6 +145,7 @@ export const useStatements = (sessionId: number) => {
     isLoadingStatements,
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
+    toggleLock: toggleLockMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,

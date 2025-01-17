@@ -9,6 +9,7 @@ interface UserResponseFormProps {
   statement: {
     id: number;
     content: string;
+    status: string;
   };
   onSubmit: () => void;
 }
@@ -20,6 +21,15 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async () => {
+    if (statement.status === 'locked') {
+      toast({
+        title: "Error",
+        description: "This statement is locked and cannot receive new responses",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase
@@ -71,6 +81,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
+              disabled={statement.status === 'locked'}
             />
           </div>
           
@@ -85,6 +96,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
+              disabled={statement.status === 'locked'}
             />
           </div>
         </div>
@@ -92,9 +104,9 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting}
+          disabled={isSubmitting || statement.status === 'locked'}
         >
-          {isSubmitting ? "Submitting..." : "Submit Response"}
+          {isSubmitting ? "Submitting..." : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
         </Button>
       </CardContent>
     </Card>
