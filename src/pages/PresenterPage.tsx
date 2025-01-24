@@ -113,7 +113,7 @@ const PresenterPage = () => {
     
     // Channel for session updates
     const sessionChannel = supabase
-      .channel('presenter-session-updates')
+      .channel(`presenter-session-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -131,7 +131,7 @@ const PresenterPage = () => {
 
     // Channel for statements updates
     const statementsChannel = supabase
-      .channel('presenter-statements-updates')
+      .channel(`presenter-statements-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -149,36 +149,17 @@ const PresenterPage = () => {
 
     // Channel for answers updates
     const answersChannel = supabase
-      .channel('presenter-answers-updates')
+      .channel(`presenter-answers-${sessionId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'Answers',
-          filter: `statement:Statements(session_id=eq.${sessionId})`,
         },
         (payload) => {
           console.log('Answers update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['presenter-answers', sessionId] });
-        }
-      )
-      .subscribe();
-
-    // Channel for participants updates
-    const participantsChannel = supabase
-      .channel('presenter-participants-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'SessionUsers',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          console.log('Participants update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['session-users', sessionId] });
         }
       )
       .subscribe();
@@ -188,7 +169,6 @@ const PresenterPage = () => {
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(statementsChannel);
       supabase.removeChannel(answersChannel);
-      supabase.removeChannel(participantsChannel);
     };
   }, [sessionId, queryClient]);
 

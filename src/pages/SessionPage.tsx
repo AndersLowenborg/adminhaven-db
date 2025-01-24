@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
 import { useStatements } from '@/hooks/use-statements';
@@ -11,8 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const SessionPage = () => {
-  const { id } = useParams();
-  const sessionId = id ? parseInt(id, 10) : 0;
+  const { id: sessionIdString } = useParams();
+  const sessionId = sessionIdString ? parseInt(sessionIdString, 10) : 0;
   const [newStatement, setNewStatement] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
   const queryClient = useQueryClient();
@@ -33,14 +33,14 @@ const SessionPage = () => {
   const { participants, isLoadingParticipants } = useParticipants(sessionId);
 
   // Set up real-time subscriptions
-  React.useEffect(() => {
+  useEffect(() => {
     if (!sessionId) return;
 
     console.log('Setting up real-time subscriptions for session:', sessionId);
     
     // Channel for session updates
     const sessionChannel = supabase
-      .channel('session-updates')
+      .channel(`session-updates-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -58,7 +58,7 @@ const SessionPage = () => {
 
     // Channel for statements updates
     const statementsChannel = supabase
-      .channel('statements-updates')
+      .channel(`statements-updates-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -74,29 +74,10 @@ const SessionPage = () => {
       )
       .subscribe();
 
-    // Channel for participants updates
-    const participantsChannel = supabase
-      .channel('participants-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'SessionUsers',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          console.log('Participants update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['participants', sessionId] });
-        }
-      )
-      .subscribe();
-
     return () => {
       console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(statementsChannel);
-      supabase.removeChannel(participantsChannel);
     };
   }, [sessionId, queryClient]);
 
