@@ -105,31 +105,90 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Set up real-time subscription for participants
+  // Set up real-time subscriptions
   useEffect(() => {
     if (!sessionId) return;
 
-    console.log('Setting up real-time subscription for participants...');
-    const channel = supabase
-      .channel(`participants-${sessionId}`)
+    console.log('Setting up real-time subscriptions for presenter view:', sessionId);
+    
+    // Channel for session updates
+    const sessionChannel = supabase
+      .channel('presenter-session-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Sessions',
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Session update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['presenter-session', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Channel for statements updates
+    const statementsChannel = supabase
+      .channel('presenter-statements-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Statements',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Statements update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Channel for answers updates
+    const answersChannel = supabase
+      .channel('presenter-answers-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Answers',
+          filter: `statement:Statements(session_id=eq.${sessionId})`,
+        },
+        (payload) => {
+          console.log('Answers update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['presenter-answers', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Channel for participants updates
+    const participantsChannel = supabase
+      .channel('presenter-participants-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'SessionUsers',
-          filter: `session_id=eq.${sessionId}`
+          filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          console.log('Participants change detected:', payload);
+          console.log('Participants update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['session-users', sessionId] });
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up participants subscription');
-      supabase.removeChannel(channel);
+      console.log('Cleaning up real-time subscriptions');
+      supabase.removeChannel(sessionChannel);
+      supabase.removeChannel(statementsChannel);
+      supabase.removeChannel(answersChannel);
+      supabase.removeChannel(participantsChannel);
     };
   }, [sessionId, queryClient]);
 

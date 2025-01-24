@@ -12,13 +12,13 @@ import { useToast } from '@/hooks/use-toast';
 
 const SessionPage = () => {
   const { id } = useParams();
-  const sessionId = id ? parseInt(id, 10) : undefined;
+  const sessionId = id ? parseInt(id, 10) : 0;
   const [newStatement, setNewStatement] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { session, isLoadingSession, updateSession } = useSession(sessionId || 0);
+  const { session, isLoadingSession, updateSession } = useSession(sessionId);
   const { 
     statements, 
     isLoadingStatements, 
@@ -29,16 +29,54 @@ const SessionPage = () => {
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
-  } = useStatements(sessionId || 0);
-  const { participants, isLoadingParticipants } = useParticipants(sessionId || 0);
+  } = useStatements(sessionId);
+  const { participants, isLoadingParticipants } = useParticipants(sessionId);
 
-  // Set up real-time subscription for participants
+  // Set up real-time subscriptions
   React.useEffect(() => {
     if (!sessionId) return;
 
-    console.log('Setting up participants subscription for session:', sessionId);
-    const channel = supabase
-      .channel('session-participants')
+    console.log('Setting up real-time subscriptions for session:', sessionId);
+    
+    // Channel for session updates
+    const sessionChannel = supabase
+      .channel('session-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Sessions',
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Session update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Channel for statements updates
+    const statementsChannel = supabase
+      .channel('statements-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Statements',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Statements update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Channel for participants updates
+    const participantsChannel = supabase
+      .channel('participants-updates')
       .on(
         'postgres_changes',
         {
@@ -48,17 +86,17 @@ const SessionPage = () => {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          console.log('Participants change received:', payload);
+          console.log('Participants update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['participants', sessionId] });
         }
       )
-      .subscribe((status) => {
-        console.log('Participants subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up participants subscription');
-      supabase.removeChannel(channel);
+      console.log('Cleaning up real-time subscriptions');
+      supabase.removeChannel(sessionChannel);
+      supabase.removeChannel(statementsChannel);
+      supabase.removeChannel(participantsChannel);
     };
   }, [sessionId, queryClient]);
 
@@ -156,8 +194,8 @@ const SessionPage = () => {
     <div className="container mx-auto p-8">
       <div className="mb-8">
         <SessionHeader 
-          name={session.name} 
-          status={session.status} 
+          name={session?.name || ''} 
+          status={session?.status || ''} 
           sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
