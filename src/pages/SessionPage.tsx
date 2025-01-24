@@ -18,7 +18,7 @@ const SessionPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { session, isLoadingSession, updateSession } = useSession(sessionId!);
+  const { session, isLoadingSession, updateSession } = useSession(sessionId || 0);
   const { 
     statements, 
     isLoadingStatements, 
@@ -29,8 +29,8 @@ const SessionPage = () => {
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
-  } = useStatements(sessionId!);
-  const { participants, isLoadingParticipants } = useParticipants(sessionId!);
+  } = useStatements(sessionId || 0);
+  const { participants, isLoadingParticipants } = useParticipants(sessionId || 0);
 
   // Set up real-time subscription for participants
   React.useEffect(() => {
@@ -158,7 +158,7 @@ const SessionPage = () => {
         <SessionHeader 
           name={session.name} 
           status={session.status} 
-          sessionId={sessionId?.toString() || ''}
+          sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           onUpdateName={updateSession}
@@ -170,7 +170,7 @@ const SessionPage = () => {
 
       <ParticipantsList 
         participants={participants || []} 
-        sessionId={sessionId?.toString() || ''}
+        sessionId={sessionId.toString()}
         queryKey={['participants', sessionId]}
       />
 

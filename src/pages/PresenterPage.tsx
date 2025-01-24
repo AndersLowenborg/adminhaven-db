@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
-import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell } from 'recharts';
 
