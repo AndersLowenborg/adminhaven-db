@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { Badge } from '@/components/ui/badge';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 
 // Define a color palette for the bubbles
@@ -37,8 +37,9 @@ type Statement = {
 
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
-  const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
+  const sessionId = sessionIdString ? parseInt(sessionIdString, 10) : null;
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
+  const queryClient = useQueryClient();
 
   // Fetch session data
   const { data: session, isLoading: isSessionLoading } = useQuery({
@@ -106,19 +107,46 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
+  // Set up real-time subscription for participants
+  useEffect(() => {
+    if (!sessionId) return;
+
+    console.log('Setting up real-time subscription for participants...');
+    const channel = supabase
+      .channel(`participants-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'SessionUsers',
+          filter: `session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          console.log('Participants change detected:', payload);
+          queryClient.invalidateQueries({ queryKey: ['session-users', sessionId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up participants subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryClient]);
+
   const getAnswersForStatement = (statementId: number) => {
     return answers?.filter(answer => answer.statement_id === statementId) || [];
   };
 
   const prepareChartData = (statementAnswers: Answer[]) => {
-    // Distribute answers vertically based on their index
     return statementAnswers.map((answer, index) => ({
       x: answer.agreement_level,
-      y: index + 1, // Spread vertically based on index
+      y: index + 1,
       z: answer.confidence_level,
       agreement: answer.agreement_level,
       confidence: answer.confidence_level,
-      colorIndex: index % COLORS.length // Add color index for each bubble
+      colorIndex: index % COLORS.length
     }));
   };
 
@@ -155,11 +183,7 @@ const PresenterPage = () => {
               <Card key={statement.id} className="p-6">
                 <h3 className="text-xl font-medium mb-4">{statement.content}</h3>
                 <div className="h-64">
-                  <ChartContainer
-                    config={{
-                      bubble: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } },
-                    }}
-                  >
+                  <ChartContainer>
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <XAxis 
                         type="number" 
@@ -182,9 +206,7 @@ const PresenterPage = () => {
                         range={[400, 1000]} 
                         name="Confidence"
                       />
-                      <Scatter 
-                        data={chartData} 
-                      >
+                      <Scatter data={chartData}>
                         {chartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
@@ -241,7 +263,7 @@ const PresenterPage = () => {
       {sessionUsers && (
         <ParticipantsList 
           participants={sessionUsers} 
-          sessionId={sessionId!} 
+          sessionId={sessionId}
           queryKey={['session-users', sessionId]}
         />
       )}

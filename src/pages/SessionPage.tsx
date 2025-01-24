@@ -158,7 +158,7 @@ const SessionPage = () => {
         <SessionHeader 
           name={session.name} 
           status={session.status} 
-          sessionId={sessionId.toString()}
+          sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           onUpdateName={updateSession}
@@ -170,7 +170,7 @@ const SessionPage = () => {
 
       <ParticipantsList 
         participants={participants || []} 
-        sessionId={sessionId.toString()}
+        sessionId={sessionId}
         queryKey={['participants', sessionId]}
       />
 
