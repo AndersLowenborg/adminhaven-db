@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,9 +7,8 @@ import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { Badge } from '@/components/ui/badge';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell } from 'recharts';
 
-// Define a color palette for the bubbles
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
   '#D4A5A5', '#9B59B6', '#3498DB', '#E67E22', '#2ECC71',
@@ -183,7 +182,11 @@ const PresenterPage = () => {
               <Card key={statement.id} className="p-6">
                 <h3 className="text-xl font-medium mb-4">{statement.content}</h3>
                 <div className="h-64">
-                  <ChartContainer>
+                  <ChartContainer
+                    config={{
+                      data: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } }
+                    }}
+                  >
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <XAxis 
                         type="number" 
@@ -263,7 +266,7 @@ const PresenterPage = () => {
       {sessionUsers && (
         <ParticipantsList 
           participants={sessionUsers} 
-          sessionId={sessionId}
+          sessionId={sessionId?.toString() || ''}
           queryKey={['session-users', sessionId]}
         />
       )}
