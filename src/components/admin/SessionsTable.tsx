@@ -53,8 +53,9 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
       // If there are statements, delete their answers first
       if (statements && statements.length > 0) {
         const statementIds = statements.map(s => s.id);
-        
-        // Delete all answers for these statements
+        console.log('Found statements to delete:', statementIds);
+
+        // Delete all answers for these statements in one operation
         const { error: answersError } = await supabase
           .from('Answers')
           .delete()
@@ -65,27 +66,27 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           throw answersError;
         }
 
-        console.log('Successfully deleted answers for statements:', statementIds);
+        console.log('Successfully deleted all answers for session:', sessionId);
         
-        // Wait a moment to ensure answers are deleted
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait to ensure answers are deleted
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Now delete all statements
+        const { error: deleteStatementsError } = await supabase
+          .from('Statements')
+          .delete()
+          .eq('session_id', sessionId);
+
+        if (deleteStatementsError) {
+          console.error('Error deleting statements:', deleteStatementsError);
+          throw deleteStatementsError;
+        }
+
+        console.log('Successfully deleted all statements for session:', sessionId);
       }
 
-      // Now delete all statements for this session
-      const { error: deleteStatementsError } = await supabase
-        .from('Statements')
-        .delete()
-        .eq('session_id', sessionId);
-
-      if (deleteStatementsError) {
-        console.error('Error deleting statements:', deleteStatementsError);
-        throw deleteStatementsError;
-      }
-
-      console.log('Successfully deleted statements for session:', sessionId);
-      
-      // Wait a moment to ensure statements are deleted
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait to ensure statements are deleted
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Delete session users
       const { error: deleteUsersError } = await supabase
@@ -100,8 +101,8 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
       console.log('Successfully deleted users for session:', sessionId);
       
-      // Wait a moment to ensure users are deleted
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait to ensure users are deleted
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Finally delete the session
       const { error: deleteSessionError } = await supabase
