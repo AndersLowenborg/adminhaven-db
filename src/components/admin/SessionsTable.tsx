@@ -66,6 +66,9 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         }
 
         console.log('Successfully deleted answers for statements:', statementIds);
+        
+        // Wait a moment to ensure answers are deleted
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Now delete all statements for this session
@@ -80,6 +83,9 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
       }
 
       console.log('Successfully deleted statements for session:', sessionId);
+      
+      // Wait a moment to ensure statements are deleted
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Delete session users
       const { error: deleteUsersError } = await supabase
@@ -93,6 +99,9 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
       }
 
       console.log('Successfully deleted users for session:', sessionId);
+      
+      // Wait a moment to ensure users are deleted
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Finally delete the session
       const { error: deleteSessionError } = await supabase
