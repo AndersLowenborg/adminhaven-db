@@ -50,11 +50,11 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         throw statementsError;
       }
 
-      // Delete all answers for these statements
+      // If there are statements, delete their answers first
       if (statements && statements.length > 0) {
         const statementIds = statements.map(s => s.id);
         
-        // Delete all answers first
+        // Delete all answers for these statements
         const { error: answersError } = await supabase
           .from('Answers')
           .delete()
@@ -65,17 +65,21 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           throw answersError;
         }
 
-        // Then delete all statements
-        const { error: deleteStatementsError } = await supabase
-          .from('Statements')
-          .delete()
-          .eq('session_id', sessionId);
-
-        if (deleteStatementsError) {
-          console.error('Error deleting statements:', deleteStatementsError);
-          throw deleteStatementsError;
-        }
+        console.log('Successfully deleted answers for statements:', statementIds);
       }
+
+      // Now delete all statements for this session
+      const { error: deleteStatementsError } = await supabase
+        .from('Statements')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (deleteStatementsError) {
+        console.error('Error deleting statements:', deleteStatementsError);
+        throw deleteStatementsError;
+      }
+
+      console.log('Successfully deleted statements for session:', sessionId);
 
       // Delete session users
       const { error: deleteUsersError } = await supabase
@@ -88,6 +92,8 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         throw deleteUsersError;
       }
 
+      console.log('Successfully deleted users for session:', sessionId);
+
       // Finally delete the session
       const { error: deleteSessionError } = await supabase
         .from('Sessions')
@@ -99,7 +105,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         throw deleteSessionError;
       }
 
-      console.log('Session and related data deleted successfully');
+      console.log('Successfully deleted session:', sessionId);
       
       // Invalidate the sessions query to refresh the list
       queryClient.invalidateQueries({ 
