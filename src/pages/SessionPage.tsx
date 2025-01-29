@@ -189,7 +189,7 @@ const SessionPage = () => {
 
       <ParticipantsList 
         participants={participants || []} 
-        sessionId={sessionId}
+        sessionId={sessionId.toString()}
         queryKey={['participants', sessionId]}
       />
 

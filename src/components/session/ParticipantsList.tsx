@@ -12,7 +12,7 @@ type Participant = {
 
 type ParticipantsListProps = {
   participants: Participant[];
-  sessionId: number | string;  // Updated to accept both number and string
+  sessionId: string;  // Changed to expect string only
   queryKey: string[];
 };
 
