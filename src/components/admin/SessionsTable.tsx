@@ -8,6 +8,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 interface Session {
   id: number;
@@ -23,6 +29,46 @@ interface SessionsTableProps {
 
 export const SessionsTable = ({ sessions }: SessionsTableProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { session: authSession } = useSessionContext();
+
+  const handleDelete = async (sessionId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from triggering
+
+    try {
+      console.log('Attempting to delete session:', sessionId);
+      
+      const { error } = await supabase
+        .from('Sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error deleting session:', error);
+        throw error;
+      }
+
+      console.log('Session deleted successfully');
+      
+      // Invalidate the sessions query to refresh the list
+      queryClient.invalidateQueries({ 
+        queryKey: ['admin-sessions', authSession?.user?.id] 
+      });
+
+      toast({
+        title: "Success",
+        description: "Session deleted successfully",
+      });
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete session. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="rounded-md border">
@@ -33,6 +79,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
             <TableHead>Status</TableHead>
             <TableHead className="min-w-[200px]">Participants</TableHead>
             <TableHead>Created At</TableHead>
+            <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,6 +113,16 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
               </TableCell>
               <TableCell>
                 {new Date(session.created_at).toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => handleDelete(session.id, e)}
+                  className="w-8 h-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </TableCell>
             </TableRow>
           ))}
