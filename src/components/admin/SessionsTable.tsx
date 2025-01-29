@@ -50,10 +50,11 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         throw statementsError;
       }
 
+      // Delete all answers for these statements
       if (statements && statements.length > 0) {
         const statementIds = statements.map(s => s.id);
         
-        // Delete all answers for these statements
+        // Delete all answers first
         const { error: answersError } = await supabase
           .from('Answers')
           .delete()
@@ -64,7 +65,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           throw answersError;
         }
 
-        // Delete all statements
+        // Then delete all statements
         const { error: deleteStatementsError } = await supabase
           .from('Statements')
           .delete()
