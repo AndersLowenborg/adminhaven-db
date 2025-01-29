@@ -39,17 +39,66 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     try {
       console.log('Attempting to delete session:', sessionId);
       
-      const { error } = await supabase
+      // First, get all statements for this session
+      const { data: statements, error: statementsError } = await supabase
+        .from('Statements')
+        .select('id')
+        .eq('session_id', sessionId);
+
+      if (statementsError) {
+        console.error('Error fetching statements:', statementsError);
+        throw statementsError;
+      }
+
+      if (statements && statements.length > 0) {
+        const statementIds = statements.map(s => s.id);
+        
+        // Delete all answers for these statements
+        const { error: answersError } = await supabase
+          .from('Answers')
+          .delete()
+          .in('statement_id', statementIds);
+
+        if (answersError) {
+          console.error('Error deleting answers:', answersError);
+          throw answersError;
+        }
+
+        // Delete all statements
+        const { error: deleteStatementsError } = await supabase
+          .from('Statements')
+          .delete()
+          .eq('session_id', sessionId);
+
+        if (deleteStatementsError) {
+          console.error('Error deleting statements:', deleteStatementsError);
+          throw deleteStatementsError;
+        }
+      }
+
+      // Delete session users
+      const { error: deleteUsersError } = await supabase
+        .from('SessionUsers')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (deleteUsersError) {
+        console.error('Error deleting session users:', deleteUsersError);
+        throw deleteUsersError;
+      }
+
+      // Finally delete the session
+      const { error: deleteSessionError } = await supabase
         .from('Sessions')
         .delete()
         .eq('id', sessionId);
 
-      if (error) {
-        console.error('Error deleting session:', error);
-        throw error;
+      if (deleteSessionError) {
+        console.error('Error deleting session:', deleteSessionError);
+        throw deleteSessionError;
       }
 
-      console.log('Session deleted successfully');
+      console.log('Session and related data deleted successfully');
       
       // Invalidate the sessions query to refresh the list
       queryClient.invalidateQueries({ 
