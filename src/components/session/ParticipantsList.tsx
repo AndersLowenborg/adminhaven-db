@@ -12,15 +12,15 @@ type Participant = {
 
 type ParticipantsListProps = {
   participants: Participant[];
-  sessionId?: number | string;  // Updated to accept both number and string
-  queryKey?: string[];
+  sessionId: number | string;  // Updated to accept both number and string
+  queryKey: string[];
 };
 
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!sessionId || !queryKey) return;
+    if (!sessionId) return;
 
     console.log('Setting up real-time subscription for participants in session:', sessionId);
     const channel = supabase

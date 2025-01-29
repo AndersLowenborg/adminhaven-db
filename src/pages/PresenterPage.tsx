@@ -304,7 +304,7 @@ const PresenterPage = () => {
       {sessionUsers && (
         <ParticipantsList 
           participants={sessionUsers}
-          sessionId={sessionId.toString()}
+          sessionId={sessionId}
           queryKey={['session-users', sessionId]}
         />
       )}
