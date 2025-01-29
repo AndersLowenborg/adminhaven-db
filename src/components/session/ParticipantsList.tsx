@@ -12,8 +12,8 @@ type Participant = {
 
 type ParticipantsListProps = {
   participants: Participant[];
-  sessionId: string;  // Changed to expect string only
-  queryKey: string[];
+  sessionId: string;
+  queryKey: (string | number)[];  // Updated to accept both string and number in array
 };
 
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
