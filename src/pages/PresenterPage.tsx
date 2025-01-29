@@ -195,7 +195,7 @@ const PresenterPage = () => {
     );
   }
 
-  if (!session) {
+  if (!session || !sessionId) {
     return (
       <div className="container mx-auto p-8 text-center">
         <p className="text-red-600">Session not found</p>
@@ -303,8 +303,8 @@ const PresenterPage = () => {
 
       {sessionUsers && (
         <ParticipantsList 
-          participants={sessionUsers} 
-          sessionId={sessionId?.toString() || ''}
+          participants={sessionUsers}
+          sessionId={sessionId.toString()}
           queryKey={['session-users', sessionId]}
         />
       )}
