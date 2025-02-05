@@ -13,16 +13,17 @@ interface UserResponseFormProps {
     status: string;
   };
   onSubmit: () => void;
+  participantId?: number;
 }
 
-export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps) => {
+export const UserResponseForm = ({ statement, onSubmit, participantId }: UserResponseFormProps) => {
   const [agreementLevel, setAgreementLevel] = React.useState(5);
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async () => {
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting || !participantId) return;
     
     if (statement.status === 'locked') {
       toast({
@@ -40,13 +41,25 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         .insert([
           {
             statement_id: statement.id,
+            participant_id: participantId,
             agreement_level: agreementLevel,
             confidence_level: confidenceLevel,
             content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') { // Unique violation error code
+          toast({
+            title: "Error",
+            description: "You have already submitted a response for this statement",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       toast({
         title: "Success",
@@ -107,9 +120,9 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting || statement.status === 'locked'}
+          disabled={isSubmitting || statement.status === 'locked' || !participantId}
         >
-          {isSubmitting ? "Submitting..." : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
+          {isSubmitting ? "Submitting..." : !participantId ? "Please join session first" : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
         </Button>
       </CardContent>
     </Card>
