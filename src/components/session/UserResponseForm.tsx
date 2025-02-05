@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { WaitingPage } from './WaitingPage';
 
 interface UserResponseFormProps {
   statement: {
@@ -13,24 +13,18 @@ interface UserResponseFormProps {
     status: string;
   };
   onSubmit: () => void;
-  participantId?: number;
 }
 
-export const UserResponseForm = ({ statement, onSubmit, participantId }: UserResponseFormProps) => {
+export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps) => {
   const [agreementLevel, setAgreementLevel] = React.useState(5);
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async () => {
-    if (isSubmitting || !participantId) return;
+    if (isSubmitting) return;
     
     if (statement.status === 'locked') {
-      toast({
-        title: "Error",
-        description: "This statement is locked and cannot receive new responses",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -41,43 +35,26 @@ export const UserResponseForm = ({ statement, onSubmit, participantId }: UserRes
         .insert([
           {
             statement_id: statement.id,
-            participant_id: participantId,
             agreement_level: agreementLevel,
             confidence_level: confidenceLevel,
             content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`
           }
         ]);
 
-      if (error) {
-        if (error.code === '23505') { // Unique violation error code
-          toast({
-            title: "Error",
-            description: "You have already submitted a response for this statement",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Response submitted successfully",
-      });
+      if (error) throw error;
       
+      setIsSubmitted(true);
       onSubmit();
     } catch (error) {
       console.error('Error submitting response:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit response",
-        variant: "destructive",
-      });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isSubmitted) {
+    return <WaitingPage />;
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -120,9 +97,9 @@ export const UserResponseForm = ({ statement, onSubmit, participantId }: UserRes
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting || statement.status === 'locked' || !participantId}
+          disabled={isSubmitting || statement.status === 'locked'}
         >
-          {isSubmitting ? "Submitting..." : !participantId ? "Please join session first" : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
+          {isSubmitting ? "Submitting..." : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
         </Button>
       </CardContent>
     </Card>
