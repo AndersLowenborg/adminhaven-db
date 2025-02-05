@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +110,15 @@ export const SessionHeader = ({
               className="ml-2"
             >
               End Session
+            </Button>
+          )}
+          {status === 'ended' && (
+            <Button 
+              onClick={onStartSession}
+              variant="default"
+              className="ml-2"
+            >
+              Reopen Session
             </Button>
           )}
         </div>

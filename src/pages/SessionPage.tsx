@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -121,7 +122,7 @@ const SessionPage = () => {
 
   const handleStartSession = async () => {
     try {
-      console.log('Starting session:', sessionId);
+      console.log('Starting/reopening session:', sessionId);
       const { error } = await supabase
         .from('Sessions')
         .update({ status: 'started' })
@@ -131,15 +132,15 @@ const SessionPage = () => {
 
       toast({
         title: "Success",
-        description: "Session started successfully",
+        description: session?.status === 'ended' ? "Session reopened successfully" : "Session started successfully",
       });
       
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
     } catch (error) {
-      console.error('Error starting session:', error);
+      console.error('Error starting/reopening session:', error);
       toast({
         title: "Error",
-        description: "Failed to start session",
+        description: session?.status === 'ended' ? "Failed to reopen session" : "Failed to start session",
         variant: "destructive",
       });
     }
