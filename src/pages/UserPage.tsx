@@ -1,9 +1,9 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
+import { WaitingPage } from '@/components/session/WaitingPage';
 import { useEffect, useState } from 'react';
 
 const UserPage = () => {
