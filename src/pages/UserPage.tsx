@@ -1,6 +1,6 @@
 
 import { useParams } from 'react-router-dom';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
@@ -10,6 +10,7 @@ const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
   const [currentStatementIndex, setCurrentStatementIndex] = useState(0);
+  const queryClient = useQueryClient();
 
   // Fetch session details to verify it's published
   const { data: session, isLoading: isLoadingSession } = useQuery({
@@ -68,8 +69,10 @@ const UserPage = () => {
   useEffect(() => {
     if (!sessionId) return;
 
+    console.log('Setting up real-time subscription for session status:', sessionId);
+    
     const channel = supabase
-      .channel('session-status')
+      .channel(`session-status-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -80,14 +83,20 @@ const UserPage = () => {
         },
         (payload) => {
           console.log('Session status changed:', payload);
+          // Invalidate and refetch session data
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+          // Also invalidate statements and user data if needed
+          queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['user', sessionId] });
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up session status subscription');
       supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [sessionId, queryClient]);
 
   if (isLoadingSession) {
     return (
@@ -149,3 +158,4 @@ const UserPage = () => {
 };
 
 export default UserPage;
+
