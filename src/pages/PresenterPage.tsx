@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +69,7 @@ const PresenterPage = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      console.log('Fetched statements:', data);
       return data as Statement[];
     },
     enabled: !!sessionId,
@@ -129,7 +131,9 @@ const PresenterPage = () => {
         },
         (payload) => {
           console.log('Statements update received:', payload);
+          // Invalidate both statements and answers queries when a statement changes
           queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['presenter-answers', sessionId] });
         }
       )
       .subscribe();
