@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -165,8 +164,7 @@ const PresenterPage = () => {
   const prepareChartData = (statementAnswers: Answer[]) => {
     return statementAnswers.map((answer, index) => ({
       x: answer.agreement_level,
-      y: index + 1,
-      z: answer.confidence_level,
+      y: answer.confidence_level,
       agreement: answer.agreement_level,
       confidence: answer.confidence_level,
       colorIndex: index % COLORS.length
@@ -208,7 +206,7 @@ const PresenterPage = () => {
                 {chartData.length > 0 ? (
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
                         <XAxis 
                           type="number" 
                           dataKey="x" 
@@ -220,15 +218,10 @@ const PresenterPage = () => {
                         <YAxis 
                           type="number" 
                           dataKey="y" 
-                          name="Position"
-                          domain={[0, 'auto']}
-                          hide
-                        />
-                        <ZAxis 
-                          type="number" 
-                          dataKey="z" 
-                          range={[400, 1000]} 
                           name="Confidence"
+                          domain={[0, 6]}
+                          tickCount={7}
+                          label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft' }}
                         />
                         <Scatter data={chartData}>
                           {chartData.map((entry, index) => (
