@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -84,23 +85,8 @@ const PresenterPage = () => {
         .eq('statement.session_id', sessionId);
 
       if (error) throw error;
+      console.log('Fetched answers:', data);
       return data as Answer[];
-    },
-    enabled: !!sessionId,
-  });
-
-  // Fetch session users
-  const { data: sessionUsers } = useQuery({
-    queryKey: ['session-users', sessionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('SessionUsers')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data;
     },
     enabled: !!sessionId,
   });
@@ -209,7 +195,7 @@ const PresenterPage = () => {
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
       
-      {lockedStatements.length > 0 && (
+      {lockedStatements.length > 0 ? (
         <div className="space-y-6 mb-8">
           <h2 className="text-2xl font-semibold">Results</h2>
           {lockedStatements.map(statement => {
@@ -219,66 +205,73 @@ const PresenterPage = () => {
             return (
               <Card key={statement.id} className="p-6">
                 <h3 className="text-xl font-medium mb-4">{statement.content}</h3>
-                <div className="h-64">
-                  <ChartContainer
-                    config={{
-                      data: { theme: { light: "#0ea5e9", dark: "#0ea5e9" } }
-                    }}
-                  >
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                      <XAxis 
-                        type="number" 
-                        dataKey="x" 
-                        name="Agreement" 
-                        domain={[0, 6]}
-                        tickCount={6}
-                        label={{ value: 'Agreement Level', position: 'bottom' }}
-                      />
-                      <YAxis 
-                        type="number" 
-                        dataKey="y" 
-                        name="Position"
-                        domain={[0, 'auto']}
-                        hide
-                      />
-                      <ZAxis 
-                        type="number" 
-                        dataKey="z" 
-                        range={[400, 1000]} 
-                        name="Confidence"
-                      />
-                      <Scatter data={chartData}>
-                        {chartData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={COLORS[entry.colorIndex]}
-                          />
-                        ))}
-                      </Scatter>
-                      <ChartTooltip 
-                        cursor={{ strokeDasharray: '3 3' }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            return (
-                              <div className="bg-white p-2 border rounded shadow">
-                                <p>Agreement: {data.agreement}</p>
-                                <p>Confidence: {data.confidence}</p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </ScatterChart>
-                  </ChartContainer>
-                </div>
+                {chartData.length > 0 ? (
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <XAxis 
+                          type="number" 
+                          dataKey="x" 
+                          name="Agreement" 
+                          domain={[0, 6]}
+                          tickCount={7}
+                          label={{ value: 'Agreement Level', position: 'bottom' }}
+                        />
+                        <YAxis 
+                          type="number" 
+                          dataKey="y" 
+                          name="Position"
+                          domain={[0, 'auto']}
+                          hide
+                        />
+                        <ZAxis 
+                          type="number" 
+                          dataKey="z" 
+                          range={[400, 1000]} 
+                          name="Confidence"
+                        />
+                        <Scatter data={chartData}>
+                          {chartData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={COLORS[entry.colorIndex]}
+                            />
+                          ))}
+                        </Scatter>
+                        <ChartTooltip 
+                          cursor={{ strokeDasharray: '3 3' }}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white p-2 border rounded shadow">
+                                  <p>Agreement: {data.agreement}</p>
+                                  <p>Confidence: {data.confidence}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 w-full flex items-center justify-center text-gray-500">
+                    No answers yet
+                  </div>
+                )}
                 <div className="mt-4 text-sm text-muted-foreground">
                   Total responses: {statementAnswers.length}
                 </div>
               </Card>
             );
           })}
+        </div>
+      ) : (
+        <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center">
+          <p className="text-gray-600">No locked statements to show results for.</p>
+          <p className="text-sm text-gray-500 mt-2">Lock a statement to see participant responses here.</p>
         </div>
       )}
       
@@ -301,10 +294,10 @@ const PresenterPage = () => {
         </div>
       </Card>
 
-      {sessionUsers && (
+      {session && (
         <ParticipantsList 
-          participants={sessionUsers}
-          sessionId={sessionId ? sessionId.toString() : ''}
+          participants={[]} 
+          sessionId={sessionId.toString()}
           queryKey={['session-users', sessionId]}
         />
       )}
