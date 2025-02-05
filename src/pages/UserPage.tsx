@@ -9,12 +9,17 @@ import { useEffect, useState } from 'react';
 const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
-  const [currentStatementIndex, setCurrentStatementIndex] = useState(0);
   const queryClient = useQueryClient();
 
   // Get user's localStorage name to fetch the correct user data
   const storedName = localStorage.getItem(`session_${sessionId}_name`);
   console.log('Stored name from localStorage:', storedName);
+
+  // Get the stored statement index from localStorage or default to 0
+  const storedIndex = localStorage.getItem(`session_${sessionId}_statement_index`);
+  const [currentStatementIndex, setCurrentStatementIndex] = useState(
+    storedIndex ? parseInt(storedIndex) : 0
+  );
 
   // Fetch session details to verify it's published
   const { data: session, isLoading: isLoadingSession } = useQuery({
@@ -61,16 +66,33 @@ const UserPage = () => {
       
       const { data, error } = await supabase
         .from('SessionUsers')
-        .select('*')  // Changed from just 'name' to '*' to get all user data
+        .select('*')
         .eq('session_id', sessionId)
         .eq('name', storedName)
-        .maybeSingle();  // Changed from single() to maybeSingle() to handle case where user might not exist
+        .maybeSingle();
 
       if (error) throw error;
       console.log('User data retrieved:', data);
       return data;
     },
     enabled: !!sessionId && !!storedName,
+  });
+
+  // Fetch user's answers to check progress
+  const { data: userAnswers } = useQuery({
+    queryKey: ['userAnswers', sessionId, statements?.[currentStatementIndex]?.id],
+    queryFn: async () => {
+      if (!sessionId || !statements?.[currentStatementIndex]?.id) return null;
+      const { data, error } = await supabase
+        .from('Answers')
+        .select('*')
+        .eq('statement_id', statements[currentStatementIndex].id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId && !!statements?.[currentStatementIndex]?.id,
   });
 
   // Set up real-time subscription for session status changes
@@ -125,6 +147,13 @@ const UserPage = () => {
     };
   }, [sessionId, queryClient, storedName]);
 
+  // Save current statement index to localStorage when it changes
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem(`session_${sessionId}_statement_index`, currentStatementIndex.toString());
+    }
+  }, [sessionId, currentStatementIndex]);
+
   if (isLoadingSession) {
     return (
       <div className="container mx-auto p-8">
@@ -155,6 +184,9 @@ const UserPage = () => {
     }
   };
 
+  // Show WaitingPage if user has already answered the current statement
+  const shouldShowWaitingPage = userAnswers !== null;
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
@@ -171,13 +203,21 @@ const UserPage = () => {
       
       {session.status === 'started' && statements && statements.length > 0 && (
         <div className="mt-8">
-          <p className="text-center mb-4">
-            Statement {currentStatementIndex + 1} of {statements.length}
-          </p>
-          <UserResponseForm 
-            statement={statements[currentStatementIndex]}
-            onSubmit={handleResponseSubmit}
-          />
+          {!shouldShowWaitingPage ? (
+            <>
+              <p className="text-center mb-4">
+                Statement {currentStatementIndex + 1} of {statements.length}
+              </p>
+              <UserResponseForm 
+                statement={statements[currentStatementIndex]}
+                onSubmit={handleResponseSubmit}
+              />
+            </>
+          ) : (
+            <div className="mt-8">
+              <WaitingPage />
+            </div>
+          )}
         </div>
       )}
     </div>
