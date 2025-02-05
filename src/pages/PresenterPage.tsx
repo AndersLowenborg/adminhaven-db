@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
+import { useParticipants } from '@/hooks/use-participants';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -38,6 +39,7 @@ const PresenterPage = () => {
   const sessionId = sessionIdString ? parseInt(sessionIdString, 10) : null;
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
   const queryClient = useQueryClient();
+  const { participants } = useParticipants(sessionId!);
 
   // Fetch session data
   const { data: session, isLoading: isSessionLoading } = useQuery({
@@ -289,9 +291,9 @@ const PresenterPage = () => {
 
       {session && (
         <ParticipantsList 
-          participants={[]} 
+          participants={participants || []} 
           sessionId={sessionId.toString()}
-          queryKey={['session-users', sessionId]}
+          queryKey={['participants', sessionId]}
         />
       )}
     </div>
