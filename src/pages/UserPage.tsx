@@ -12,6 +12,10 @@ const UserPage = () => {
   const [currentStatementIndex, setCurrentStatementIndex] = useState(0);
   const queryClient = useQueryClient();
 
+  // Get user's localStorage name to fetch the correct user data
+  const storedName = localStorage.getItem(`session_${sessionId}_name`);
+  console.log('Stored name from localStorage:', storedName);
+
   // Fetch session details to verify it's published
   const { data: session, isLoading: isLoadingSession } = useQuery({
     queryKey: ['session', sessionId],
@@ -48,9 +52,6 @@ const UserPage = () => {
     enabled: !!sessionId && session?.status === 'started',
   });
 
-  // Get user's localStorage name to fetch the correct user data
-  const storedName = localStorage.getItem(`session_${sessionId}_name`);
-
   // Fetch user information using the stored name
   const { data: userData } = useQuery({
     queryKey: ['user', sessionId, storedName],
@@ -60,10 +61,10 @@ const UserPage = () => {
       
       const { data, error } = await supabase
         .from('SessionUsers')
-        .select('name')
+        .select('*')  // Changed from just 'name' to '*' to get all user data
         .eq('session_id', sessionId)
         .eq('name', storedName)
-        .maybeSingle();
+        .maybeSingle();  // Changed from single() to maybeSingle() to handle case where user might not exist
 
       if (error) throw error;
       console.log('User data retrieved:', data);
