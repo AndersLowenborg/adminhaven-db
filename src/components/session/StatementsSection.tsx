@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Statement {
   id: number;
@@ -51,6 +60,7 @@ export const StatementsSection = ({
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
+  const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
@@ -68,6 +78,11 @@ export const StatementsSection = ({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditedContent("");
+  };
+
+  const handleDelete = (id: number) => {
+    onDeleteStatement(id);
+    setStatementToDelete(null);
   };
 
   return (
@@ -159,7 +174,7 @@ export const StatementsSection = ({
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => onDeleteStatement(statement.id)}
+                    onClick={() => setStatementToDelete(statement.id)}
                     disabled={isDeletingStatementPending}
                   >
                     Delete
@@ -177,6 +192,33 @@ export const StatementsSection = ({
           )}
         </TableBody>
       </Table>
+
+      <Dialog open={!!statementToDelete} onOpenChange={() => setStatementToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Statement</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this statement? This action cannot be undone.
+              All associated responses will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStatementToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => statementToDelete && handleDelete(statementToDelete)}
+              disabled={isDeletingStatementPending}
+            >
+              {isDeletingStatementPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
