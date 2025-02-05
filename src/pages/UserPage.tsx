@@ -60,6 +60,7 @@ const UserPage = () => {
         .single();
 
       if (error) throw error;
+      console.log('User data retrieved:', data);
       return data;
     },
     enabled: !!sessionId && session?.status === 'started',
@@ -92,9 +93,28 @@ const UserPage = () => {
       )
       .subscribe();
 
+    // Set up real-time subscription for SessionUsers changes
+    const userChannel = supabase
+      .channel(`session-users-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'SessionUsers',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('SessionUsers changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['user', sessionId] });
+        }
+      )
+      .subscribe();
+
     return () => {
-      console.log('Cleaning up session status subscription');
+      console.log('Cleaning up subscriptions');
       supabase.removeChannel(channel);
+      supabase.removeChannel(userChannel);
     };
   }, [sessionId, queryClient]);
 
@@ -158,4 +178,3 @@ const UserPage = () => {
 };
 
 export default UserPage;
-
