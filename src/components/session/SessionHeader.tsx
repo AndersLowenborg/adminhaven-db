@@ -138,18 +138,17 @@ export const SessionHeader = ({
         </div>
       </div>
       
-      {status === 'published' && (
-        <div className="flex items-center gap-2 mt-2">
-          <Input 
-            value={presenterLink}
-            readOnly
-            className="bg-muted"
-          />
-          <Button onClick={copyPresenterLink} variant="secondary">
-            Copy Link
-          </Button>
-        </div>
-      )}
+      {/* Presenter link section - now always visible */}
+      <div className="flex items-center gap-2 mt-2">
+        <Input 
+          value={presenterLink}
+          readOnly
+          className="bg-muted"
+        />
+        <Button onClick={copyPresenterLink} variant="secondary">
+          Copy Link
+        </Button>
+      </div>
     </div>
   );
 };
