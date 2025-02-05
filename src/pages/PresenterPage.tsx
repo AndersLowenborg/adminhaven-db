@@ -199,6 +199,14 @@ const PresenterPage = () => {
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
       
+      {session && (
+        <ParticipantsList 
+          participants={participants || []} 
+          sessionId={sessionId.toString()}
+          queryKey={['participants', sessionId]}
+        />
+      )}
+      
       {lockedStatements.length > 0 ? (
         <div className="space-y-6 mb-8">
           <h2 className="text-2xl font-semibold">Results</h2>
@@ -292,14 +300,6 @@ const PresenterPage = () => {
           </div>
         </div>
       </Card>
-
-      {session && (
-        <ParticipantsList 
-          participants={participants || []} 
-          sessionId={sessionId.toString()}
-          queryKey={['participants', sessionId]}
-        />
-      )}
     </div>
   );
 };
