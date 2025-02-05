@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -170,6 +171,7 @@ export const useStatements = (sessionId: number) => {
 
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
+      // With CASCADE deletion, we can directly delete the statement
       const { error } = await supabase
         .from('Statements')
         .delete()

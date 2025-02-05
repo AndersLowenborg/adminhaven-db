@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -39,72 +40,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     try {
       console.log('Attempting to delete session:', sessionId);
       
-      // First, get all statements for this session
-      const { data: statements, error: statementsError } = await supabase
-        .from('Statements')
-        .select('id')
-        .eq('session_id', sessionId);
-
-      if (statementsError) {
-        console.error('Error fetching statements:', statementsError);
-        throw statementsError;
-      }
-
-      // If there are statements, delete their answers first
-      if (statements && statements.length > 0) {
-        const statementIds = statements.map(s => s.id);
-        console.log('Found statements to delete:', statementIds);
-
-        // Delete all answers for these statements in one operation
-        const { error: answersError } = await supabase
-          .from('Answers')
-          .delete()
-          .in('statement_id', statementIds);
-
-        if (answersError) {
-          console.error('Error deleting answers:', answersError);
-          throw answersError;
-        }
-
-        console.log('Successfully deleted all answers for session:', sessionId);
-        
-        // Wait to ensure answers are deleted
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Now delete all statements
-        const { error: deleteStatementsError } = await supabase
-          .from('Statements')
-          .delete()
-          .eq('session_id', sessionId);
-
-        if (deleteStatementsError) {
-          console.error('Error deleting statements:', deleteStatementsError);
-          throw deleteStatementsError;
-        }
-
-        console.log('Successfully deleted all statements for session:', sessionId);
-      }
-
-      // Wait to ensure statements are deleted
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Delete session users
-      const { error: deleteUsersError } = await supabase
-        .from('SessionUsers')
-        .delete()
-        .eq('session_id', sessionId);
-
-      if (deleteUsersError) {
-        console.error('Error deleting session users:', deleteUsersError);
-        throw deleteUsersError;
-      }
-
-      console.log('Successfully deleted users for session:', sessionId);
-      
-      // Wait to ensure users are deleted
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Finally delete the session
+      // With CASCADE deletion, we can now directly delete the session
       const { error: deleteSessionError } = await supabase
         .from('Sessions')
         .delete()
