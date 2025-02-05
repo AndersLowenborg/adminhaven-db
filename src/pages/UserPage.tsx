@@ -1,9 +1,11 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
 import { useEffect, useState } from 'react';
+import { Toaster } from "@/components/ui/sonner";
 
 const UserPage = () => {
   const { id: sessionIdString } = useParams();
@@ -103,6 +105,7 @@ const UserPage = () => {
 
   return (
     <div className="container mx-auto p-8">
+      <Toaster />
       <h1 className="text-3xl font-bold mb-8 text-center">
         {session.status === 'started' ? session.name : `Join Session: ${session.name}`}
       </h1>

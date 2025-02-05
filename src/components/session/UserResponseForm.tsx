@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent double submission
+    
     if (statement.status === 'locked') {
       toast({
         title: "Error",
@@ -81,7 +84,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={statement.status === 'locked'}
+              disabled={isSubmitting || statement.status === 'locked'}
             />
           </div>
           
@@ -96,7 +99,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={statement.status === 'locked'}
+              disabled={isSubmitting || statement.status === 'locked'}
             />
           </div>
         </div>
