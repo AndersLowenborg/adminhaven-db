@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,9 @@ export const JoinSessionForm = () => {
         }
         throw error;
       }
+
+      // Store the user's name in localStorage for this session
+      localStorage.setItem(`session_${id}_name`, name.trim());
 
       toast({
         title: "Success",

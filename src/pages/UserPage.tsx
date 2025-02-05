@@ -48,22 +48,28 @@ const UserPage = () => {
     enabled: !!sessionId && session?.status === 'started',
   });
 
-  // Fetch user information
+  // Get user's localStorage name to fetch the correct user data
+  const storedName = localStorage.getItem(`session_${sessionId}_name`);
+
+  // Fetch user information using the stored name
   const { data: userData } = useQuery({
-    queryKey: ['user', sessionId],
+    queryKey: ['user', sessionId, storedName],
     queryFn: async () => {
-      if (!sessionId) throw new Error('Session ID is required');
+      if (!sessionId || !storedName) throw new Error('Session ID and name are required');
+      console.log('Fetching user data with name:', storedName);
+      
       const { data, error } = await supabase
         .from('SessionUsers')
         .select('name')
         .eq('session_id', sessionId)
-        .single();
+        .eq('name', storedName)
+        .maybeSingle();
 
       if (error) throw error;
       console.log('User data retrieved:', data);
       return data;
     },
-    enabled: !!sessionId && session?.status === 'started',
+    enabled: !!sessionId && !!storedName,
   });
 
   // Set up real-time subscription for session status changes
@@ -88,7 +94,7 @@ const UserPage = () => {
           queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
           // Also invalidate statements and user data if needed
           queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['user', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['user', sessionId, storedName] });
         }
       )
       .subscribe();
@@ -106,7 +112,7 @@ const UserPage = () => {
         },
         (payload) => {
           console.log('SessionUsers changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['user', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['user', sessionId, storedName] });
         }
       )
       .subscribe();
@@ -116,7 +122,7 @@ const UserPage = () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(userChannel);
     };
-  }, [sessionId, queryClient]);
+  }, [sessionId, queryClient, storedName]);
 
   if (isLoadingSession) {
     return (
