@@ -47,6 +47,23 @@ const UserPage = () => {
     enabled: !!sessionId && session?.status === 'started',
   });
 
+  // Fetch user information
+  const { data: userData } = useQuery({
+    queryKey: ['user', sessionId],
+    queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
+      const { data, error } = await supabase
+        .from('SessionUsers')
+        .select('name')
+        .eq('session_id', sessionId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId && session?.status === 'started',
+  });
+
   // Set up real-time subscription for session status changes
   useEffect(() => {
     if (!sessionId) return;
@@ -107,6 +124,12 @@ const UserPage = () => {
       <h1 className="text-3xl font-bold mb-8 text-center">
         {session.status === 'started' ? session.name : `Join Session: ${session.name}`}
       </h1>
+
+      {userData?.name && (
+        <p className="text-center text-lg mb-6">
+          Welcome, <span className="font-semibold">{userData.name}</span>!
+        </p>
+      )}
       
       {session.status === 'published' && <JoinSessionForm />}
       
