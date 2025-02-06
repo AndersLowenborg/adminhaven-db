@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Unlock, ArrowRight } from "lucide-react";
+import { Play, Square } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -39,8 +39,7 @@ interface StatementsSectionProps {
   onSubmitStatement: (e: React.FormEvent) => void;
   onDeleteStatement: (id: number) => void;
   onUpdateStatement: (id: number, content: string, background?: string) => void;
-  onToggleLock: (id: number, currentStatus: string) => void;
-  onMoveToNext: (currentId: number) => void;
+  onToggleStatementStatus: (id: number, currentStatus: string) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
   newBackground?: string;
@@ -57,8 +56,7 @@ export const StatementsSection = ({
   onSubmitStatement,
   onDeleteStatement,
   onUpdateStatement,
-  onToggleLock,
-  onMoveToNext,
+  onToggleStatementStatus,
   isAddingStatementPending,
   isDeletingStatementPending,
   newBackground,
@@ -178,43 +176,36 @@ export const StatementsSection = ({
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  {editingId !== statement.id && statement.status !== 'locked' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditClick(statement)}
-                    >
-                      Edit
-                    </Button>
+                  {editingId !== statement.id && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClick(statement)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant={statement.status === 'active' ? "destructive" : "default"}
+                        size="sm"
+                        onClick={() => onToggleStatementStatus(statement.id, statement.status)}
+                      >
+                        {statement.status === 'active' ? (
+                          <Square className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setStatementToDelete(statement.id)}
+                        disabled={isDeletingStatementPending}
+                      >
+                        Delete
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onToggleLock(statement.id, statement.status)}
-                  >
-                    {statement.status === 'locked' ? (
-                      <Unlock className="h-4 w-4" />
-                    ) : (
-                      <Lock className="h-4 w-4" />
-                    )}
-                  </Button>
-                  {statement.status === 'locked' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onMoveToNext(statement.id)}
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setStatementToDelete(statement.id)}
-                    disabled={isDeletingStatementPending}
-                  >
-                    Delete
-                  </Button>
                 </div>
               </TableCell>
             </TableRow>

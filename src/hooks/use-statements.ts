@@ -31,7 +31,7 @@ export const useStatements = (sessionId: number) => {
             content,
             background,
             session_id: sessionId,
-            status: 'pending'
+            status: 'inactive'
           }
         ])
         .select()
@@ -86,9 +86,9 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
-  const toggleLockMutation = useMutation({
+  const toggleStatementStatusMutation = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: number; currentStatus: string }) => {
-      const newStatus = currentStatus === 'locked' ? 'pending' : 'locked';
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       const { data, error } = await supabase
         .from('Statements')
         .update({ status: newStatus })
@@ -99,15 +99,15 @@ export const useStatements = (sessionId: number) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",
-        description: "Statement status updated successfully",
+        description: `Statement ${data.status === 'active' ? 'activated' : 'deactivated'} successfully`,
       });
     },
     onError: (error) => {
-      console.error('Error toggling statement lock:', error);
+      console.error('Error toggling statement status:', error);
       toast({
         title: "Error",
         description: "Failed to update statement status",
@@ -116,63 +116,8 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
-  const moveToNextMutation = useMutation({
-    mutationFn: async (currentId: number) => {
-      // First, unlock the current statement
-      const { error: unlockError } = await supabase
-        .from('Statements')
-        .update({ status: 'completed' })
-        .eq('id', currentId);
-
-      if (unlockError) throw unlockError;
-
-      // Get all statements to find the next one
-      const { data: allStatements, error: fetchError } = await supabase
-        .from('Statements')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (fetchError) throw fetchError;
-
-      // Find the index of the current statement and get the next one
-      const currentIndex = allStatements.findIndex(s => s.id === currentId);
-      const nextStatement = allStatements[currentIndex + 1];
-
-      if (nextStatement) {
-        // Lock the next statement
-        const { error: lockError } = await supabase
-          .from('Statements')
-          .update({ status: 'locked' })
-          .eq('id', nextStatement.id);
-
-        if (lockError) throw lockError;
-      }
-
-      return nextStatement;
-    },
-    onSuccess: (nextStatement) => {
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: nextStatement 
-          ? "Moved to next statement successfully" 
-          : "No more statements available",
-      });
-    },
-    onError: (error) => {
-      console.error('Error moving to next statement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to move to next statement",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
-      // With CASCADE deletion, we can directly delete the statement
       const { error } = await supabase
         .from('Statements')
         .delete()
@@ -202,8 +147,7 @@ export const useStatements = (sessionId: number) => {
     isLoadingStatements,
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
-    toggleLock: toggleLockMutation.mutate,
-    moveToNext: moveToNextMutation.mutate,
+    toggleStatementStatus: toggleStatementStatusMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,
