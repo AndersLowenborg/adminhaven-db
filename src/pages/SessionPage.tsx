@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -10,6 +9,16 @@ import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface Session {
+  id: number;
+  created_at: string;
+  created_by: string | null;
+  name: string | null;
+  status: string | null;
+  test_mode: boolean;
+  test_participants_count: number;
+}
 
 const SessionPage = () => {
   const { id: sessionIdString } = useParams();
@@ -90,7 +99,7 @@ const SessionPage = () => {
         .update({ 
           test_mode: enabled,
           test_participants_count: enabled ? 5 : 0 // Default to 5 test participants
-        })
+        } as Partial<Session>)
         .eq('id', sessionId);
 
       if (error) throw error;
@@ -143,7 +152,7 @@ const SessionPage = () => {
       // Update session
       const { error: sessionError } = await supabase
         .from('Sessions')
-        .update({ test_participants_count: count })
+        .update({ test_participants_count: count } as Partial<Session>)
         .eq('id', sessionId);
 
       if (sessionError) throw sessionError;

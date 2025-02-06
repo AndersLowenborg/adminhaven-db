@@ -248,6 +248,8 @@ export type Database = {
           id: number
           name: string | null
           status: string | null
+          test_mode: boolean | null
+          test_participants_count: number | null
         }
         Insert: {
           created_at?: string
@@ -255,6 +257,8 @@ export type Database = {
           id?: number
           name?: string | null
           status?: string | null
+          test_mode?: boolean | null
+          test_participants_count?: number | null
         }
         Update: {
           created_at?: string
@@ -262,6 +266,8 @@ export type Database = {
           id?: number
           name?: string | null
           status?: string | null
+          test_mode?: boolean | null
+          test_participants_count?: number | null
         }
         Relationships: []
       }
@@ -269,18 +275,21 @@ export type Database = {
         Row: {
           created_at: string | null
           id: number
+          is_test_participant: boolean | null
           name: string
           session_id: number | null
         }
         Insert: {
           created_at?: string | null
           id?: number
+          is_test_participant?: boolean | null
           name: string
           session_id?: number | null
         }
         Update: {
           created_at?: string | null
           id?: number
+          is_test_participant?: boolean | null
           name?: string
           session_id?: number | null
         }
