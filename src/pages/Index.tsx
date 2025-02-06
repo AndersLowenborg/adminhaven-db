@@ -8,7 +8,7 @@ const Index = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="text-center space-y-8 p-8">
         <img 
-          src="/lovable-uploads/e518161d-733c-4d45-858a-66cb99847c94.png" 
+          src="/lovable-uploads/logo.png" 
           alt="Grousion Logo" 
           className="mx-auto w-96 h-auto"
         />
