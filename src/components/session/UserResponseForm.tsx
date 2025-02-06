@@ -28,8 +28,14 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
       return;
     }
 
-    const sessionId = window.location.pathname.split('/').pop();
+    const sessionIdString = window.location.pathname.split('/').pop();
+    const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
     const storedName = localStorage.getItem(`session_${sessionId}_name`);
+
+    if (!sessionId) {
+      console.error('Invalid session ID');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
