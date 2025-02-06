@@ -16,6 +16,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: number
+          session_user_id: number | null
           statement_id: number | null
           status: string | null
         }
@@ -25,6 +26,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: number
+          session_user_id?: number | null
           statement_id?: number | null
           status?: string | null
         }
@@ -34,10 +36,18 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: number
+          session_user_id?: number | null
           statement_id?: number | null
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "Answers_session_user_id_fkey"
+            columns: ["session_user_id"]
+            isOneToOne: false
+            referencedRelation: "SessionUsers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Answers_statement_id_fkey"
             columns: ["statement_id"]

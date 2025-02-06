@@ -28,13 +28,28 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
       return;
     }
 
+    const sessionId = window.location.pathname.split('/').pop();
+    const storedName = localStorage.getItem(`session_${sessionId}_name`);
+
     setIsSubmitting(true);
     try {
+      // First, get the session_user_id
+      const { data: userData, error: userError } = await supabase
+        .from('SessionUsers')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('name', storedName)
+        .single();
+
+      if (userError) throw userError;
+
+      // Then submit the answer with the session_user_id
       const { error } = await supabase
         .from('Answers')
         .insert([
           {
             statement_id: statement.id,
+            session_user_id: userData.id,
             agreement_level: agreementLevel,
             confidence_level: confidenceLevel,
             content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`
