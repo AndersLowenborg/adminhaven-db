@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +36,7 @@ type Statement = {
   timer_seconds?: number;
   timer_started_at?: string;
   timer_status?: string;
+  show_results?: boolean;
 };
 
 const PresenterPage = () => {
@@ -181,7 +181,7 @@ const PresenterPage = () => {
     }));
   };
 
-  if (isSessionLoading) {
+  if (isLoadingSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
         <p className="text-[#8E9196]">Loading session...</p>
@@ -197,7 +197,7 @@ const PresenterPage = () => {
     );
   }
 
-  const lockedStatements = statements?.filter(statement => statement.status === 'locked') || [];
+  const statementsToShow = statements?.filter(statement => statement.show_results) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -231,10 +231,10 @@ const PresenterPage = () => {
           </Card>
         ))}
         
-        {lockedStatements.length > 0 ? (
+        {statementsToShow.length > 0 ? (
           <div className="space-y-6 mb-8">
             <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
-            {lockedStatements.map(statement => {
+            {statementsToShow.map(statement => {
               const statementAnswers = getAnswersForStatement(statement.id);
               const chartData = prepareChartData(statementAnswers);
               
@@ -301,8 +301,8 @@ const PresenterPage = () => {
           </div>
         ) : (
           <Card className="mb-8 p-6 shadow-sm text-center">
-            <p className="text-[#8E9196]">No locked statements to show results for.</p>
-            <p className="text-sm text-[#8E9196] mt-2">Lock a statement to see participant responses here.</p>
+            <p className="text-[#8E9196]">No statements with results to show.</p>
+            <p className="text-sm text-[#8E9196] mt-2">Click "Show Results" on a statement to see participant responses here.</p>
           </Card>
         )}
         
