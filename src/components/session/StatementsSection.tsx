@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Square, Timer, BarChart2 } from "lucide-react";
+import { Play, Square, Timer } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,13 +25,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScatterChart, Scatter, XAxis, YAxis, Cell, ResponsiveContainer } from 'recharts';
-
-const COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
-  '#D4A5A5', '#9B59B6', '#3498DB', '#E67E22', '#2ECC71',
-  '#F1C40F', '#E74C3C', '#1ABC9C', '#34495E', '#95A5A6'
-];
 
 interface Statement {
   id: number;
@@ -42,11 +35,6 @@ interface Statement {
   timer_seconds?: number;
   timer_started_at?: string;
   timer_status?: string;
-}
-
-interface Answer {
-  agreement_level: number;
-  confidence_level: number;
 }
 
 interface StatementsSectionProps {
@@ -67,7 +55,6 @@ interface StatementsSectionProps {
   onStartTimer: (id: number, seconds: number) => void;
   onStopTimer: (id: number) => void;
   sessionStatus: string;
-  answers?: Record<number, Answer[]>;
 }
 
 export const StatementsSection = ({
@@ -88,14 +75,12 @@ export const StatementsSection = ({
   onStartTimer,
   onStopTimer,
   sessionStatus,
-  answers,
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
   const [editedBackground, setEditedBackground] = React.useState("");
   const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
   const [timerSeconds, setTimerSeconds] = useState<number>(300); // Default 5 minutes
-  const [showingResultsFor, setShowingResultsFor] = useState<number | null>(null);
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
@@ -129,20 +114,10 @@ export const StatementsSection = ({
 
   const isSessionActive = sessionStatus === 'started';
 
-  const prepareChartData = (statementAnswers: Answer[] = []) => {
-    return statementAnswers.map((answer, index) => ({
-      x: answer.agreement_level,
-      y: answer.confidence_level,
-      agreement: answer.agreement_level,
-      confidence: answer.confidence_level,
-      colorIndex: index % COLORS.length
-    }));
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Statements</h2>
+        <h2 className="text-2xl font-semibold text-[#403E43]">Statements</h2>
         <Button onClick={onAddClick} disabled={isAddingStatement}>
           Add Statement
         </Button>
@@ -151,7 +126,7 @@ export const StatementsSection = ({
       {isAddingStatement && (
         <form onSubmit={onSubmitStatement} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Statement</label>
+            <label className="block text-sm font-medium mb-2 text-[#403E43]">Statement</label>
             <Input
               value={newStatement}
               onChange={(e) => onNewStatementChange(e.target.value)}
@@ -160,7 +135,7 @@ export const StatementsSection = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Background/Context (Optional)</label>
+            <label className="block text-sm font-medium mb-2 text-[#403E43]">Background/Context (Optional)</label>
             <Textarea
               value={newBackground}
               onChange={(e) => onNewBackgroundChange?.(e.target.value)}
@@ -185,7 +160,7 @@ export const StatementsSection = ({
             <TableHead>Statement</TableHead>
             <TableHead>Background</TableHead>
             <TableHead>Timer</TableHead>
-            <TableHead className="w-[350px]">Actions</TableHead>
+            <TableHead className="w-[250px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -215,54 +190,17 @@ export const StatementsSection = ({
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div>{statement.content}</div>
-                    {showingResultsFor === statement.id && answers?.[statement.id] && (
-                      <div className="mt-4 h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-                            <XAxis 
-                              type="number" 
-                              dataKey="x" 
-                              name="Agreement" 
-                              domain={[0, 10]}
-                              tickCount={11}
-                              label={{ value: 'Agreement Level', position: 'bottom' }}
-                            />
-                            <YAxis 
-                              type="number" 
-                              dataKey="y" 
-                              name="Confidence"
-                              domain={[0, 10]}
-                              tickCount={11}
-                              label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft' }}
-                            />
-                            <Scatter data={prepareChartData(answers[statement.id])}>
-                              {prepareChartData(answers[statement.id]).map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={COLORS[entry.colorIndex]}
-                                />
-                              ))}
-                            </Scatter>
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                        <div className="mt-2 text-sm text-muted-foreground">
-                          Total responses: {answers[statement.id]?.length || 0}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="text-[#403E43]">{statement.content}</div>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-[#8E9196]">
                 {editingId !== statement.id && statement.background}
               </TableCell>
               <TableCell>
                 {statement.timer_status === 'running' ? (
                   <div className="flex items-center gap-2">
                     <Timer className="h-4 w-4" />
-                    <span>Timer running</span>
+                    <span className="text-[#403E43]">Timer running</span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -281,7 +219,7 @@ export const StatementsSection = ({
                     </PopoverTrigger>
                     <PopoverContent className="w-80">
                       <div className="space-y-4">
-                        <h4 className="font-medium">Set Timer Duration</h4>
+                        <h4 className="font-medium text-[#403E43]">Set Timer Duration</h4>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
@@ -325,14 +263,6 @@ export const StatementsSection = ({
                         )}
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowingResultsFor(showingResultsFor === statement.id ? null : statement.id)}
-                      >
-                        <BarChart2 className="h-4 w-4 mr-2" />
-                        {showingResultsFor === statement.id ? 'Hide Results' : 'Show Results'}
-                      </Button>
-                      <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => setStatementToDelete(statement.id)}
@@ -348,7 +278,7 @@ export const StatementsSection = ({
           ))}
           {!statements?.length && (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground">
+              <TableCell colSpan={4} className="text-center text-[#8E9196]">
                 No statements found. Add one to get started.
               </TableCell>
             </TableRow>
