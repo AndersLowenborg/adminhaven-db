@@ -1,4 +1,3 @@
-
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +49,7 @@ const LoginPage = () => {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div className="text-center space-y-6">
           <img 
-            src="/lovable-uploads/logo.png" 
+            src="/lovable-uploads/7f867208-6c5c-4b53-aad8-f74c1fab9c89.png" 
             alt="Grousion Logo" 
             className="mx-auto h-20 w-auto"
           />
