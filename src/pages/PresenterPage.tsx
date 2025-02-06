@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -182,15 +183,15 @@ const PresenterPage = () => {
 
   if (isSessionLoading) {
     return (
-      <div className="container mx-auto p-8 text-center">
-        <p className="text-gray-600">Loading session...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+        <p className="text-[#8E9196]">Loading session...</p>
       </div>
     );
   }
 
   if (!session || !sessionId) {
     return (
-      <div className="container mx-auto p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
         <p className="text-red-600">Session not found</p>
       </div>
     );
@@ -199,119 +200,131 @@ const PresenterPage = () => {
   const lockedStatements = statements?.filter(statement => statement.status === 'locked') || [];
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Presenter Dashboard</h1>
-      
-      {session && (
-        <ParticipantsList 
-          participants={participants || []} 
-          sessionId={sessionId.toString()}
-          queryKey={['participants', sessionId]}
-        />
-      )}
-
-      {statements?.filter(s => s.status === 'active').map(statement => (
-        <StatementTimer
-          key={statement.id}
-          timerSeconds={statement.timer_seconds}
-          timerStartedAt={statement.timer_started_at}
-          timerStatus={statement.timer_status}
-        />
-      ))}
-      
-      {lockedStatements.length > 0 ? (
-        <div className="space-y-6 mb-8">
-          <h2 className="text-2xl font-semibold">Results</h2>
-          {lockedStatements.map(statement => {
-            const statementAnswers = getAnswersForStatement(statement.id);
-            const chartData = prepareChartData(statementAnswers);
-            
-            return (
-              <Card key={statement.id} className="p-6">
-                <h3 className="text-xl font-medium mb-4">{statement.content}</h3>
-                {chartData.length > 0 ? (
-                  <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-                        <XAxis 
-                          type="number" 
-                          dataKey="x" 
-                          name="Agreement" 
-                          domain={[0, 10]}
-                          tickCount={11}
-                          label={{ value: 'Agreement Level', position: 'bottom' }}
-                        />
-                        <YAxis 
-                          type="number" 
-                          dataKey="y" 
-                          name="Confidence"
-                          domain={[0, 10]}
-                          tickCount={11}
-                          label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft' }}
-                        />
-                        <Scatter data={chartData}>
-                          {chartData.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={COLORS[entry.colorIndex]}
-                            />
-                          ))}
-                        </Scatter>
-                        <ChartTooltip 
-                          cursor={{ strokeDasharray: '3 3' }}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-white p-2 border rounded shadow">
-                                  <p>Agreement: {data.agreement}</p>
-                                  <p>Confidence: {data.confidence}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-64 w-full flex items-center justify-center text-gray-500">
-                    No answers yet
-                  </div>
-                )}
-                <div className="mt-4 text-sm text-muted-foreground">
-                  Total responses: {statementAnswers.length}
-                </div>
-              </Card>
-            );
-          })}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="container mx-auto p-8">
+        <div className="flex items-center gap-4 mb-8">
+          <img 
+            src="/lovable-uploads/7f867208-6c5c-4b53-aad8-f74c1fab9c89.png" 
+            alt="Grousion Logo" 
+            className="h-12 w-auto"
+          />
+          <h1 className="text-3xl font-bold text-[#403E43]">Presenter Dashboard</h1>
         </div>
-      ) : (
-        <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center">
-          <p className="text-gray-600">No locked statements to show results for.</p>
-          <p className="text-sm text-gray-500 mt-2">Lock a statement to see participant responses here.</p>
-        </div>
-      )}
-      
-      <Card className="p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Session Information</h2>
-        <div className="flex items-start gap-8">
-          <div className="flex-1">
-            <p className="mb-2">Share this link with participants:</p>
-            <input
-              type="text"
-              value={sessionUrl}
-              readOnly
-              className="w-full p-2 border rounded bg-gray-50"
-              onClick={(e) => e.currentTarget.select()}
+        
+        {session && (
+          <Card className="mb-8 p-6 shadow-sm">
+            <ParticipantsList 
+              participants={participants || []} 
+              sessionId={sessionId.toString()}
+              queryKey={['participants', sessionId]}
             />
+          </Card>
+        )}
+
+        {statements?.filter(s => s.status === 'active').map(statement => (
+          <Card key={statement.id} className="mb-8 p-6 shadow-sm">
+            <StatementTimer
+              timerSeconds={statement.timer_seconds}
+              timerStartedAt={statement.timer_started_at}
+              timerStatus={statement.timer_status}
+            />
+          </Card>
+        ))}
+        
+        {lockedStatements.length > 0 ? (
+          <div className="space-y-6 mb-8">
+            <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
+            {lockedStatements.map(statement => {
+              const statementAnswers = getAnswersForStatement(statement.id);
+              const chartData = prepareChartData(statementAnswers);
+              
+              return (
+                <Card key={statement.id} className="p-6 shadow-sm">
+                  <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.content}</h3>
+                  {chartData.length > 0 ? (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+                          <XAxis 
+                            type="number" 
+                            dataKey="x" 
+                            name="Agreement" 
+                            domain={[0, 10]}
+                            tickCount={11}
+                            label={{ value: 'Agreement Level', position: 'bottom', style: { fill: '#8E9196' } }}
+                          />
+                          <YAxis 
+                            type="number" 
+                            dataKey="y" 
+                            name="Confidence"
+                            domain={[0, 10]}
+                            tickCount={11}
+                            label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft', style: { fill: '#8E9196' } }}
+                          />
+                          <Scatter data={chartData}>
+                            {chartData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={COLORS[entry.colorIndex]}
+                              />
+                            ))}
+                          </Scatter>
+                          <ChartTooltip 
+                            cursor={{ strokeDasharray: '3 3' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-white p-2 border rounded shadow">
+                                    <p>Agreement: {data.agreement}</p>
+                                    <p>Confidence: {data.confidence}</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </ScatterChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
+                      No answers yet
+                    </div>
+                  )}
+                  <div className="mt-4 text-sm text-[#8E9196]">
+                    Total responses: {statementAnswers.length}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
-          <div className="flex-shrink-0">
-            <QRCodeSVG value={sessionUrl} size={200} />
+        ) : (
+          <Card className="mb-8 p-6 shadow-sm text-center">
+            <p className="text-[#8E9196]">No locked statements to show results for.</p>
+            <p className="text-sm text-[#8E9196] mt-2">Lock a statement to see participant responses here.</p>
+          </Card>
+        )}
+        
+        <Card className="p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-[#403E43]">Session Information</h2>
+          <div className="flex items-start gap-8">
+            <div className="flex-1">
+              <p className="mb-2 text-[#8E9196]">Share this link with participants:</p>
+              <input
+                type="text"
+                value={sessionUrl}
+                readOnly
+                className="w-full p-2 border rounded bg-gray-50 text-[#403E43]"
+                onClick={(e) => e.currentTarget.select()}
+              />
+            </div>
+            <div className="flex-shrink-0">
+              <QRCodeSVG value={sessionUrl} size={200} />
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
