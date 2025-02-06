@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -141,7 +142,7 @@ const SessionPage = () => {
         .from('Sessions')
         .update({ 
           status: 'started',
-          allow_joins: true // Reset allow_joins when starting/reopening
+          allow_joins: false // Changed from true to false
         } as Partial<Session>)
         .eq('id', sessionId);
 
