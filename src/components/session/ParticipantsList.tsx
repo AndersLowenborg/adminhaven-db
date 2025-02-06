@@ -1,8 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 type Participant = {
   id: number;
@@ -13,37 +15,79 @@ type Participant = {
 type ParticipantsListProps = {
   participants: Participant[];
   sessionId: string;
-  queryKey: (string | number)[];  // Updated to accept both string and number in array
+  queryKey: (string | number)[];
 };
 
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
   const queryClient = useQueryClient();
 
+  // Fetch answers for the current session to track who has answered
+  const { data: participantAnswers } = useQuery({
+    queryKey: ['participant-answers', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Answers')
+        .select(`
+          id,
+          statement:Statements(
+            id,
+            status
+          )
+        `)
+        .eq('statement.session_id', sessionId)
+        .eq('statement.status', 'locked');
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Subscribe to changes in both SessionUsers and Answers tables
   useEffect(() => {
     if (!sessionId) return;
 
     console.log('Setting up real-time subscription for participants in session:', sessionId);
-    const channel = supabase
+    
+    // Channel for participant updates
+    const participantsChannel = supabase
       .channel(`participants-${sessionId}`)
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'SessionUsers',
           filter: `session_id=eq.${sessionId}`
         },
         (payload) => {
           console.log('Participants change detected:', payload);
-          // Invalidate the query to refetch the updated data
           queryClient.invalidateQueries({ queryKey });
         }
       )
       .subscribe();
 
+    // Channel for answer updates
+    const answersChannel = supabase
+      .channel(`answers-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Answers',
+          filter: `statement.session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          console.log('Answers change detected:', payload);
+          queryClient.invalidateQueries({ queryKey: ['participant-answers', sessionId] });
+        }
+      )
+      .subscribe();
+
     return () => {
-      console.log('Cleaning up participants subscription');
-      supabase.removeChannel(channel);
+      console.log('Cleaning up participants and answers subscriptions');
+      supabase.removeChannel(participantsChannel);
+      supabase.removeChannel(answersChannel);
     };
   }, [sessionId, queryKey, queryClient]);
 
@@ -57,15 +101,23 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           <p className="text-muted-foreground">No participants have joined yet</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {participants.map((participant) => (
-              <Badge 
-                key={participant.id}
-                variant="secondary"
-                className="text-sm py-1 px-3"
-              >
-                {participant.name}
-              </Badge>
-            ))}
+            {participants.map((participant) => {
+              const hasAnswered = participantAnswers?.some(
+                answer => answer.statement?.status === 'locked'
+              );
+
+              return (
+                <Badge 
+                  key={participant.id}
+                  variant={hasAnswered ? "default" : "secondary"}
+                  className={`text-sm py-1 px-3 ${
+                    hasAnswered ? "bg-green-500 hover:bg-green-600" : ""
+                  }`}
+                >
+                  {participant.name}
+                </Badge>
+              );
+            })}
           </div>
         )}
       </CardContent>
