@@ -2,16 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
-
-interface Session {
-  id: number;
-  created_at: string;
-  created_by: string | null;
-  name: string | null;
-  status: string | null;
-  test_mode: boolean;
-  test_participants_count: number;
-}
+import { Session } from '@/types/session';
 
 export const useSession = (sessionId: number) => {
   const { toast } = useToast();
