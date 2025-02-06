@@ -225,16 +225,16 @@ const PresenterPage = () => {
                           type="number" 
                           dataKey="x" 
                           name="Agreement" 
-                          domain={[0, 6]}
-                          tickCount={7}
+                          domain={[0, 10]}
+                          tickCount={11}
                           label={{ value: 'Agreement Level', position: 'bottom' }}
                         />
                         <YAxis 
                           type="number" 
                           dataKey="y" 
                           name="Confidence"
-                          domain={[0, 6]}
-                          tickCount={7}
+                          domain={[0, 10]}
+                          tickCount={11}
                           label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft' }}
                         />
                         <Scatter data={chartData}>
