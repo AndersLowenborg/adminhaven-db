@@ -6,7 +6,7 @@ import { useParticipants } from '@/hooks/use-participants';
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Session } from '@/types/session';
@@ -34,6 +34,36 @@ const SessionPage = () => {
     isDeletingStatement: isDeletingStatementPending,
   } = useStatements(sessionId);
   const { participants, isLoadingParticipants } = useParticipants(sessionId);
+
+  const { data: answers } = useQuery({
+    queryKey: ['answers', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Answers')
+        .select(`
+          *,
+          statement:Statements(content)
+        `)
+        .eq('statement.session_id', sessionId);
+
+      if (error) throw error;
+      
+      // Transform the answers into a map of statement_id -> answers[]
+      const answersMap: Record<number, any[]> = {};
+      data.forEach((answer) => {
+        if (!answersMap[answer.statement_id]) {
+          answersMap[answer.statement_id] = [];
+        }
+        answersMap[answer.statement_id].push({
+          agreement_level: answer.agreement_level,
+          confidence_level: answer.confidence_level,
+        });
+      });
+      
+      return answersMap;
+    },
+    enabled: !!sessionId,
+  });
 
   // Set up real-time subscriptions
   useEffect(() => {
@@ -77,10 +107,29 @@ const SessionPage = () => {
       )
       .subscribe();
 
+    // Add subscription for answers
+    const answersChannel = supabase
+      .channel(`session-answers-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Answers',
+          filter: `statement.session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('Answers update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['answers', sessionId] });
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(statementsChannel);
+      supabase.removeChannel(answersChannel);
     };
   }, [sessionId, queryClient]);
 
@@ -367,6 +416,7 @@ const SessionPage = () => {
           onStartTimer={handleStartTimer}
           onStopTimer={handleStopTimer}
           sessionStatus={session?.status || ''}
+          answers={answers}
         />
       )}
     </div>
