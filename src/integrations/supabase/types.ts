@@ -324,6 +324,9 @@ export type Database = {
           id: number
           session_id: number | null
           status: string | null
+          timer_seconds: number | null
+          timer_started_at: string | null
+          timer_status: string | null
         }
         Insert: {
           background?: string | null
@@ -332,6 +335,9 @@ export type Database = {
           id?: number
           session_id?: number | null
           status?: string | null
+          timer_seconds?: number | null
+          timer_started_at?: string | null
+          timer_status?: string | null
         }
         Update: {
           background?: string | null
@@ -340,6 +346,9 @@ export type Database = {
           id?: number
           session_id?: number | null
           status?: string | null
+          timer_seconds?: number | null
+          timer_started_at?: string | null
+          timer_status?: string | null
         }
         Relationships: [
           {

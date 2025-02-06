@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Square } from "lucide-react";
+import { Play, Square, Timer } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Statement {
   id: number;
@@ -27,6 +31,9 @@ interface Statement {
   background?: string;
   status: string;
   created_at: string;
+  timer_seconds?: number;
+  timer_started_at?: string;
+  timer_status?: string;
 }
 
 interface StatementsSectionProps {
@@ -44,6 +51,8 @@ interface StatementsSectionProps {
   isDeletingStatementPending: boolean;
   newBackground?: string;
   onNewBackgroundChange?: (value: string) => void;
+  onStartTimer: (id: number, seconds: number) => void;
+  onStopTimer: (id: number) => void;
 }
 
 export const StatementsSection = ({
@@ -61,11 +70,14 @@ export const StatementsSection = ({
   isDeletingStatementPending,
   newBackground,
   onNewBackgroundChange,
+  onStartTimer,
+  onStopTimer,
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
   const [editedBackground, setEditedBackground] = React.useState("");
   const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
+  const [timerSeconds, setTimerSeconds] = useState<number>(300); // Default 5 minutes
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
@@ -91,6 +103,10 @@ export const StatementsSection = ({
   const handleDelete = (id: number) => {
     onDeleteStatement(id);
     setStatementToDelete(null);
+  };
+
+  const handleStartTimer = (id: number) => {
+    onStartTimer(id, timerSeconds);
   };
 
   return (
@@ -138,6 +154,7 @@ export const StatementsSection = ({
           <TableRow>
             <TableHead>Statement</TableHead>
             <TableHead>Background</TableHead>
+            <TableHead>Timer</TableHead>
             <TableHead className="w-[300px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -173,6 +190,49 @@ export const StatementsSection = ({
               </TableCell>
               <TableCell>
                 {editingId !== statement.id && statement.background}
+              </TableCell>
+              <TableCell>
+                {statement.timer_status === 'running' ? (
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4" />
+                    <span>Timer running</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStopTimer(statement.id)}
+                    >
+                      Stop Timer
+                    </Button>
+                  </div>
+                ) : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Timer className="h-4 w-4 mr-2" />
+                        Set Timer
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Set Timer Duration</h4>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={timerSeconds}
+                            onChange={(e) => setTimerSeconds(parseInt(e.target.value))}
+                            min="1"
+                            placeholder="Seconds"
+                          />
+                          <Button
+                            onClick={() => handleStartTimer(statement.id)}
+                          >
+                            Start
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -212,7 +272,7 @@ export const StatementsSection = ({
           ))}
           {!statements?.length && (
             <TableRow>
-              <TableCell colSpan={3} className="text-center text-muted-foreground">
+              <TableCell colSpan={4} className="text-center text-muted-foreground">
                 No statements found. Add one to get started.
               </TableCell>
             </TableRow>

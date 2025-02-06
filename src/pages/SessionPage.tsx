@@ -28,6 +28,8 @@ const SessionPage = () => {
     updateStatement: updateStatementMutation,
     toggleStatementStatus,
     deleteStatement,
+    startTimer,
+    stopTimer,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
   } = useStatements(sessionId);
@@ -292,6 +294,14 @@ const SessionPage = () => {
     toggleStatementStatus({ id, currentStatus });
   };
 
+  const handleStartTimer = async (id: number, seconds: number) => {
+    startTimer({ id, seconds });
+  };
+
+  const handleStopTimer = async (id: number) => {
+    stopTimer(id);
+  };
+
   if (!sessionId) {
     return <div className="container mx-auto p-8">Invalid session ID</div>;
   }
@@ -354,6 +364,8 @@ const SessionPage = () => {
           onToggleStatementStatus={handleToggleStatementStatus}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
+          onStartTimer={handleStartTimer}
+          onStopTimer={handleStopTimer}
         />
       )}
     </div>

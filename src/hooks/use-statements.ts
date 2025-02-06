@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -142,6 +141,70 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
+  const startTimerMutation = useMutation({
+    mutationFn: async ({ id, seconds }: { id: number; seconds: number }) => {
+      const { data, error } = await supabase
+        .from('Statements')
+        .update({ 
+          timer_seconds: seconds,
+          timer_started_at: new Date().toISOString(),
+          timer_status: 'running'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: "Timer started successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error starting timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start timer",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stopTimerMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { data, error } = await supabase
+        .from('Statements')
+        .update({ 
+          timer_status: 'stopped'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: "Timer stopped successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error stopping timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to stop timer",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     statements,
     isLoadingStatements,
@@ -149,6 +212,8 @@ export const useStatements = (sessionId: number) => {
     updateStatement: updateStatementMutation.mutate,
     toggleStatementStatus: toggleStatementStatusMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
+    startTimer: startTimerMutation.mutate,
+    stopTimer: stopTimerMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,
   };
