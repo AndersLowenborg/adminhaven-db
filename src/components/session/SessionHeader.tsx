@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PublishSession } from './PublishSession';
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Timer, DoorClosed } from "lucide-react";
+import { ChevronLeft, DoorClosed } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Label } from "@/components/ui/label";
 
@@ -18,7 +18,6 @@ interface SessionHeaderProps {
   testMode: boolean;
   testParticipantsCount: number;
   allowJoins: boolean;
-  timeLimit: number | null;
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
   onStartSession: () => void;
@@ -26,7 +25,6 @@ interface SessionHeaderProps {
   onTestModeChange: (enabled: boolean) => void;
   onTestParticipantsCountChange: (count: number) => void;
   onAllowJoinsChange: (allow: boolean) => void;
-  onTimeLimitChange: (minutes: number | null) => void;
 }
 
 export const SessionHeader = ({ 
@@ -38,7 +36,6 @@ export const SessionHeader = ({
   testMode,
   testParticipantsCount,
   allowJoins,
-  timeLimit,
   onUpdateName,
   onStatusChange,
   onStartSession,
@@ -46,12 +43,9 @@ export const SessionHeader = ({
   onTestModeChange,
   onTestParticipantsCountChange,
   onAllowJoinsChange,
-  onTimeLimitChange
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
-  const [editingTimeLimit, setEditingTimeLimit] = useState(false);
-  const [tempTimeLimit, setTempTimeLimit] = useState(timeLimit?.toString() || '');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,15 +54,6 @@ export const SessionHeader = ({
     if (editedName.trim()) {
       onUpdateName(editedName.trim());
       setIsEditing(false);
-    }
-  };
-
-  const handleTimeLimitSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const minutes = tempTimeLimit ? parseInt(tempTimeLimit, 10) : null;
-    if (!tempTimeLimit || (minutes && minutes > 0)) {
-      onTimeLimitChange(minutes);
-      setEditingTimeLimit(false);
     }
   };
 
@@ -194,49 +179,6 @@ export const SessionHeader = ({
             <DoorClosed className="h-4 w-4" />
             Allow Joins
           </Label>
-        </div>
-
-        {/* Time limit control */}
-        <div className="flex items-center gap-2">
-          <Timer className="h-4 w-4" />
-          {editingTimeLimit ? (
-            <form onSubmit={handleTimeLimitSubmit} className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="1"
-                placeholder="Minutes"
-                value={tempTimeLimit}
-                onChange={(e) => setTempTimeLimit(e.target.value)}
-                className="w-24"
-              />
-              <Button type="submit" size="sm">Set</Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setEditingTimeLimit(false);
-                  setTempTimeLimit(timeLimit?.toString() || '');
-                }}
-              >
-                Cancel
-              </Button>
-            </form>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span>
-                Time Limit: {timeLimit ? `${timeLimit} minutes` : 'None'}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setEditingTimeLimit(true)}
-                disabled={!isSessionActive}
-              >
-                Edit
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Test mode controls */}

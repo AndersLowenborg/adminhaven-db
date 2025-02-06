@@ -109,32 +109,6 @@ const SessionPage = () => {
     }
   };
 
-  const handleTimeLimitChange = async (minutes: number | null) => {
-    try {
-      console.log('Updating time limit:', minutes);
-      const { error } = await supabase
-        .from('Sessions')
-        .update({ time_limit: minutes } as Partial<Session>)
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: minutes ? `Time limit set to ${minutes} minutes` : "Time limit removed",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-    } catch (error) {
-      console.error('Error updating time limit:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update time limit",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleStartSession = async () => {
     try {
       console.log('Starting session:', sessionId);
@@ -142,7 +116,7 @@ const SessionPage = () => {
         .from('Sessions')
         .update({ 
           status: 'started',
-          allow_joins: false // Changed from true to false
+          allow_joins: false
         } as Partial<Session>)
         .eq('id', sessionId);
 
@@ -171,7 +145,7 @@ const SessionPage = () => {
         .from('Sessions')
         .update({ 
           status: 'completed',
-          allow_joins: false // Automatically close joins when completing
+          allow_joins: false
         } as Partial<Session>)
         .eq('id', sessionId);
 
@@ -200,7 +174,7 @@ const SessionPage = () => {
         .from('Sessions')
         .update({ 
           test_mode: enabled,
-          test_participants_count: enabled ? 5 : 0 // Default to 5 test participants
+          test_participants_count: enabled ? 5 : 0
         } as Partial<Session>)
         .eq('id', sessionId);
 
@@ -348,7 +322,6 @@ const SessionPage = () => {
           testMode={session?.test_mode || false}
           testParticipantsCount={session?.test_participants_count || 0}
           allowJoins={session?.allow_joins || false}
-          timeLimit={session?.time_limit || null}
           onUpdateName={updateSession}
           onStatusChange={handleStatusChange}
           onStartSession={handleStartSession}
@@ -356,7 +329,6 @@ const SessionPage = () => {
           onTestModeChange={handleTestModeChange}
           onTestParticipantsCountChange={handleTestParticipantsCountChange}
           onAllowJoinsChange={handleAllowJoinsChange}
-          onTimeLimitChange={handleTimeLimitChange}
         />
       </div>
 

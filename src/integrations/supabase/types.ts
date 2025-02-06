@@ -261,7 +261,6 @@ export type Database = {
           status: string | null
           test_mode: boolean | null
           test_participants_count: number | null
-          time_limit: number | null
         }
         Insert: {
           allow_joins?: boolean | null
@@ -272,7 +271,6 @@ export type Database = {
           status?: string | null
           test_mode?: boolean | null
           test_participants_count?: number | null
-          time_limit?: number | null
         }
         Update: {
           allow_joins?: boolean | null
@@ -283,7 +281,6 @@ export type Database = {
           status?: string | null
           test_mode?: boolean | null
           test_participants_count?: number | null
-          time_limit?: number | null
         }
         Relationships: []
       }

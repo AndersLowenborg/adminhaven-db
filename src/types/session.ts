@@ -8,5 +8,4 @@ export interface Session {
   test_mode: boolean | null;
   test_participants_count: number | null;
   allow_joins: boolean | null;
-  time_limit: number | null;
 }
