@@ -323,6 +323,7 @@ export type Database = {
           created_at: string | null
           id: number
           session_id: number | null
+          show_results: boolean | null
           status: string | null
           timer_seconds: number | null
           timer_started_at: string | null
@@ -334,6 +335,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           session_id?: number | null
+          show_results?: boolean | null
           status?: string | null
           timer_seconds?: number | null
           timer_started_at?: string | null
@@ -345,6 +347,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           session_id?: number | null
+          show_results?: boolean | null
           status?: string | null
           timer_seconds?: number | null
           timer_started_at?: string | null

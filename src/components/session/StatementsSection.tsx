@@ -35,6 +35,7 @@ interface Statement {
   timer_seconds?: number;
   timer_started_at?: string;
   timer_status?: string;
+  show_results?: boolean;
 }
 
 interface StatementsSectionProps {
@@ -48,6 +49,7 @@ interface StatementsSectionProps {
   onDeleteStatement: (id: number) => void;
   onUpdateStatement: (id: number, content: string, background?: string) => void;
   onToggleStatementStatus: (id: number, currentStatus: string) => void;
+  onToggleShowResults: (id: number, currentShowResults: boolean) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
   newBackground?: string;
@@ -68,6 +70,7 @@ export const StatementsSection = ({
   onDeleteStatement,
   onUpdateStatement,
   onToggleStatementStatus,
+  onToggleShowResults,
   isAddingStatementPending,
   isDeletingStatementPending,
   newBackground,
@@ -228,9 +231,7 @@ export const StatementsSection = ({
                             min="1"
                             placeholder="Seconds"
                           />
-                          <Button
-                            onClick={() => handleStartTimer(statement.id)}
-                          >
+                          <Button onClick={() => handleStartTimer(statement.id)}>
                             Start
                           </Button>
                         </div>
@@ -261,6 +262,13 @@ export const StatementsSection = ({
                         ) : (
                           <Play className="h-4 w-4" />
                         )}
+                      </Button>
+                      <Button
+                        variant={statement.show_results ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onToggleShowResults(statement.id, !!statement.show_results)}
+                      >
+                        {statement.show_results ? 'Hide Results' : 'Show Results'}
                       </Button>
                       <Button
                         variant="destructive"
@@ -315,4 +323,3 @@ export const StatementsSection = ({
     </div>
   );
 };
-

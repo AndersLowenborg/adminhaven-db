@@ -27,6 +27,7 @@ const SessionPage = () => {
     addStatement, 
     updateStatement: updateStatementMutation,
     toggleStatementStatus,
+    toggleShowResults,
     deleteStatement,
     startTimer,
     stopTimer,
@@ -343,6 +344,11 @@ const SessionPage = () => {
     toggleStatementStatus({ id, currentStatus });
   };
 
+  const handleToggleShowResults = (id: number, currentShowResults: boolean) => {
+    console.log('Toggling show results:', id, 'Current show results:', currentShowResults);
+    toggleShowResults({ id, currentShowResults });
+  };
+
   const handleStartTimer = async (id: number, seconds: number) => {
     startTimer({ id, seconds });
   };
@@ -411,12 +417,12 @@ const SessionPage = () => {
           onDeleteStatement={deleteStatement}
           onUpdateStatement={handleUpdateStatement}
           onToggleStatementStatus={handleToggleStatementStatus}
+          onToggleShowResults={handleToggleShowResults}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
           onStartTimer={handleStartTimer}
           onStopTimer={handleStopTimer}
           sessionStatus={session?.status || ''}
-          answers={answers}
         />
       )}
     </div>

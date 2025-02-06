@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -115,6 +116,35 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
+  const toggleShowResultsMutation = useMutation({
+    mutationFn: async ({ id, currentShowResults }: { id: number; currentShowResults: boolean }) => {
+      const { data, error } = await supabase
+        .from('Statements')
+        .update({ show_results: !currentShowResults })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+      toast({
+        title: "Success",
+        description: `Results ${data.show_results ? 'shown' : 'hidden'} successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error toggling show results:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle results visibility",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
@@ -211,6 +241,7 @@ export const useStatements = (sessionId: number) => {
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
     toggleStatementStatus: toggleStatementStatusMutation.mutate,
+    toggleShowResults: toggleShowResultsMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
     startTimer: startTimerMutation.mutate,
     stopTimer: stopTimerMutation.mutate,
