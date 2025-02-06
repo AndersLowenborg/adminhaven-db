@@ -243,6 +243,7 @@ export type Database = {
       }
       Sessions: {
         Row: {
+          allow_joins: boolean | null
           created_at: string
           created_by: string | null
           id: number
@@ -250,8 +251,10 @@ export type Database = {
           status: string | null
           test_mode: boolean | null
           test_participants_count: number | null
+          time_limit: number | null
         }
         Insert: {
+          allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
           id?: number
@@ -259,8 +262,10 @@ export type Database = {
           status?: string | null
           test_mode?: boolean | null
           test_participants_count?: number | null
+          time_limit?: number | null
         }
         Update: {
+          allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
           id?: number
@@ -268,6 +273,7 @@ export type Database = {
           status?: string | null
           test_mode?: boolean | null
           test_participants_count?: number | null
+          time_limit?: number | null
         }
         Relationships: []
       }

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PublishSession } from './PublishSession';
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Timer, DoorClosed } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Label } from "@/components/ui/label";
 
@@ -17,12 +17,16 @@ interface SessionHeaderProps {
   participantCount: number;
   testMode: boolean;
   testParticipantsCount: number;
+  allowJoins: boolean;
+  timeLimit: number | null;
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
   onStartSession: () => void;
   onEndSession: () => void;
   onTestModeChange: (enabled: boolean) => void;
   onTestParticipantsCountChange: (count: number) => void;
+  onAllowJoinsChange: (allow: boolean) => void;
+  onTimeLimitChange: (minutes: number | null) => void;
 }
 
 export const SessionHeader = ({ 
@@ -33,15 +37,21 @@ export const SessionHeader = ({
   participantCount,
   testMode,
   testParticipantsCount,
+  allowJoins,
+  timeLimit,
   onUpdateName,
   onStatusChange,
   onStartSession,
   onEndSession,
   onTestModeChange,
-  onTestParticipantsCountChange
+  onTestParticipantsCountChange,
+  onAllowJoinsChange,
+  onTimeLimitChange
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
+  const [editingTimeLimit, setEditingTimeLimit] = useState(false);
+  const [tempTimeLimit, setTempTimeLimit] = useState(timeLimit?.toString() || '');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -50,6 +60,15 @@ export const SessionHeader = ({
     if (editedName.trim()) {
       onUpdateName(editedName.trim());
       setIsEditing(false);
+    }
+  };
+
+  const handleTimeLimitSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const minutes = tempTimeLimit ? parseInt(tempTimeLimit, 10) : null;
+    if (!tempTimeLimit || (minutes && minutes > 0)) {
+      onTimeLimitChange(minutes);
+      setEditingTimeLimit(false);
     }
   };
 
@@ -64,6 +83,7 @@ export const SessionHeader = ({
   };
 
   const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
+  const isSessionActive = status === 'started' || status === 'closed';
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,7 +130,7 @@ export const SessionHeader = ({
               (Need at least 2 participants to start)
             </p>
           )}
-          {status !== 'started' && status !== 'ended' && (
+          {status !== 'started' && status !== 'completed' && (
             <PublishSession
               sessionId={sessionId}
               status={status}
@@ -136,7 +156,7 @@ export const SessionHeader = ({
               End Session
             </Button>
           )}
-          {status === 'ended' && (
+          {status === 'completed' && (
             <Button 
               onClick={onStartSession}
               variant="default"
@@ -160,34 +180,94 @@ export const SessionHeader = ({
         </Button>
       </div>
 
-      {/* Test mode controls */}
-      {status === 'draft' && (
-        <div className="flex items-center gap-4 mt-4 p-4 border rounded-lg bg-muted">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="test-mode"
-              checked={testMode}
-              onCheckedChange={onTestModeChange}
-            />
-            <Label htmlFor="test-mode">Test Mode</Label>
-          </div>
-          
-          {testMode && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="test-participants">Test Participants:</Label>
+      {/* Session controls */}
+      <div className="flex flex-wrap items-center gap-4 mt-4 p-4 border rounded-lg bg-muted">
+        {/* Allow joins toggle */}
+        <div className="flex items-center gap-2">
+          <Switch
+            id="allow-joins"
+            checked={allowJoins}
+            onCheckedChange={onAllowJoinsChange}
+            disabled={!isSessionActive}
+          />
+          <Label htmlFor="allow-joins" className="flex items-center gap-2">
+            <DoorClosed className="h-4 w-4" />
+            Allow Joins
+          </Label>
+        </div>
+
+        {/* Time limit control */}
+        <div className="flex items-center gap-2">
+          <Timer className="h-4 w-4" />
+          {editingTimeLimit ? (
+            <form onSubmit={handleTimeLimitSubmit} className="flex items-center gap-2">
               <Input
-                id="test-participants"
                 type="number"
                 min="1"
-                max="50"
-                value={testParticipantsCount}
-                onChange={(e) => onTestParticipantsCountChange(parseInt(e.target.value) || 0)}
+                placeholder="Minutes"
+                value={tempTimeLimit}
+                onChange={(e) => setTempTimeLimit(e.target.value)}
                 className="w-24"
               />
+              <Button type="submit" size="sm">Set</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEditingTimeLimit(false);
+                  setTempTimeLimit(timeLimit?.toString() || '');
+                }}
+              >
+                Cancel
+              </Button>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span>
+                Time Limit: {timeLimit ? `${timeLimit} minutes` : 'None'}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setEditingTimeLimit(true)}
+                disabled={!isSessionActive}
+              >
+                Edit
+              </Button>
             </div>
           )}
         </div>
-      )}
+
+        {/* Test mode controls */}
+        {status === 'draft' && (
+          <>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="test-mode"
+                checked={testMode}
+                onCheckedChange={onTestModeChange}
+              />
+              <Label htmlFor="test-mode">Test Mode</Label>
+            </div>
+            
+            {testMode && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="test-participants">Test Participants:</Label>
+                <Input
+                  id="test-participants"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={testParticipantsCount}
+                  onChange={(e) => onTestParticipantsCountChange(parseInt(e.target.value) || 0)}
+                  className="w-24"
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

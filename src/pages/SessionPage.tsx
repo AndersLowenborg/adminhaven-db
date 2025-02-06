@@ -82,6 +82,116 @@ const SessionPage = () => {
     };
   }, [sessionId, queryClient]);
 
+  const handleAllowJoinsChange = async (allow: boolean) => {
+    try {
+      console.log('Updating allow joins:', allow);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ allow_joins: allow } as Partial<Session>)
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: allow ? "Session opened to new joins" : "Session closed to new joins",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error updating allow joins:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update join settings",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTimeLimitChange = async (minutes: number | null) => {
+    try {
+      console.log('Updating time limit:', minutes);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ time_limit: minutes } as Partial<Session>)
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: minutes ? `Time limit set to ${minutes} minutes` : "Time limit removed",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error updating time limit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update time limit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartSession = async () => {
+    try {
+      console.log('Starting session:', sessionId);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ 
+          status: 'started',
+          allow_joins: true // Reset allow_joins when starting/reopening
+        } as Partial<Session>)
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: session?.status === 'completed' ? "Session reopened successfully" : "Session started successfully",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error starting session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEndSession = async () => {
+    try {
+      console.log('Ending session:', sessionId);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ 
+          status: 'completed',
+          allow_joins: false // Automatically close joins when completing
+        } as Partial<Session>)
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Session completed successfully",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error completing session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete session",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTestModeChange = async (enabled: boolean) => {
     try {
       console.log('Updating test mode:', enabled);
@@ -225,75 +335,27 @@ const SessionPage = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
 
-  const handleStartSession = async () => {
-    try {
-      console.log('Starting/reopening session:', sessionId);
-      const { error } = await supabase
-        .from('Sessions')
-        .update({ status: 'started' })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: session?.status === 'ended' ? "Session reopened successfully" : "Session started successfully",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-    } catch (error) {
-      console.error('Error starting/reopening session:', error);
-      toast({
-        title: "Error",
-        description: session?.status === 'ended' ? "Failed to reopen session" : "Failed to start session",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEndSession = async () => {
-    try {
-      console.log('Ending session:', sessionId);
-      const { error } = await supabase
-        .from('Sessions')
-        .update({ status: 'ended' })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Session ended successfully",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-    } catch (error) {
-      console.error('Error ending session:', error);
-      toast({
-        title: "Error",
-        description: "Failed to end session",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8">
         <SessionHeader 
           name={session?.name || ''} 
-          status={session?.status || ''} 
+          status={session?.status || ''}
           sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
           testMode={session?.test_mode || false}
           testParticipantsCount={session?.test_participants_count || 0}
+          allowJoins={session?.allow_joins || false}
+          timeLimit={session?.time_limit || null}
           onUpdateName={updateSession}
           onStatusChange={handleStatusChange}
           onStartSession={handleStartSession}
           onEndSession={handleEndSession}
           onTestModeChange={handleTestModeChange}
           onTestParticipantsCountChange={handleTestParticipantsCountChange}
+          onAllowJoinsChange={handleAllowJoinsChange}
+          onTimeLimitChange={handleTimeLimitChange}
         />
       </div>
 
