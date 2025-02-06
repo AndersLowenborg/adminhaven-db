@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ interface StatementsSectionProps {
   onNewBackgroundChange?: (value: string) => void;
   onStartTimer: (id: number, seconds: number) => void;
   onStopTimer: (id: number) => void;
+  sessionStatus: string;
 }
 
 export const StatementsSection = ({
@@ -72,6 +74,7 @@ export const StatementsSection = ({
   onNewBackgroundChange,
   onStartTimer,
   onStopTimer,
+  sessionStatus,
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
@@ -108,6 +111,8 @@ export const StatementsSection = ({
   const handleStartTimer = (id: number) => {
     onStartTimer(id, timerSeconds);
   };
+
+  const isSessionActive = sessionStatus === 'started';
 
   return (
     <div className="space-y-6">
@@ -249,6 +254,7 @@ export const StatementsSection = ({
                         variant={statement.status === 'active' ? "destructive" : "default"}
                         size="sm"
                         onClick={() => onToggleStatementStatus(statement.id, statement.status)}
+                        disabled={!isSessionActive}
                       >
                         {statement.status === 'active' ? (
                           <Square className="h-4 w-4" />
@@ -309,3 +315,4 @@ export const StatementsSection = ({
     </div>
   );
 };
+

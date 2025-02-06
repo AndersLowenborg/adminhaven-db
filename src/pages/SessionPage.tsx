@@ -366,6 +366,7 @@ const SessionPage = () => {
           isDeletingStatementPending={isDeletingStatementPending}
           onStartTimer={handleStartTimer}
           onStopTimer={handleStopTimer}
+          sessionStatus={session?.status || ''}
         />
       )}
     </div>
