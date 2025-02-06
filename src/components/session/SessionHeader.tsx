@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +68,7 @@ export const SessionHeader = ({
 
   const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
   const isSessionActive = status === 'started' || status === 'closed';
+  const showPresenterLink = status !== 'draft' && status !== 'unpublished';
 
   return (
     <div className="flex flex-col gap-2">
@@ -153,17 +153,19 @@ export const SessionHeader = ({
         </div>
       </div>
       
-      {/* Presenter link section */}
-      <div className="flex items-center gap-2 mt-2">
-        <Input 
-          value={presenterLink}
-          readOnly
-          className="bg-muted"
-        />
-        <Button onClick={copyPresenterLink} variant="secondary">
-          Copy Link
-        </Button>
-      </div>
+      {/* Presenter link section - only shown when session is published or beyond */}
+      {showPresenterLink && (
+        <div className="flex items-center gap-2 mt-2">
+          <Input 
+            value={presenterLink}
+            readOnly
+            className="bg-muted"
+          />
+          <Button onClick={copyPresenterLink} variant="secondary">
+            Copy Link
+          </Button>
+        </div>
+      )}
 
       {/* Session controls */}
       <div className="flex flex-wrap items-center gap-4 mt-4 p-4 border rounded-lg bg-muted">
