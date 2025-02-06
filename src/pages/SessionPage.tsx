@@ -82,6 +82,111 @@ const SessionPage = () => {
     };
   }, [sessionId, queryClient]);
 
+  const handleTestModeChange = async (enabled: boolean) => {
+    try {
+      console.log('Updating test mode:', enabled);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ 
+          test_mode: enabled,
+          test_participants_count: enabled ? 5 : 0 // Default to 5 test participants
+        })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      if (enabled) {
+        // Create test participants
+        const testParticipants = Array.from({ length: 5 }, (_, i) => ({
+          session_id: sessionId,
+          name: `Test Participant ${i + 1}`,
+          is_test_participant: true
+        }));
+
+        const { error: participantsError } = await supabase
+          .from('SessionUsers')
+          .insert(testParticipants);
+
+        if (participantsError) throw participantsError;
+      } else {
+        // Remove test participants
+        const { error: deleteError } = await supabase
+          .from('SessionUsers')
+          .delete()
+          .eq('session_id', sessionId)
+          .eq('is_test_participant', true);
+
+        if (deleteError) throw deleteError;
+      }
+
+      toast({
+        title: "Success",
+        description: enabled ? "Test mode enabled" : "Test mode disabled",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['participants', sessionId] });
+    } catch (error) {
+      console.error('Error updating test mode:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update test mode",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestParticipantsCountChange = async (count: number) => {
+    try {
+      console.log('Updating test participants count:', count);
+      
+      // Update session
+      const { error: sessionError } = await supabase
+        .from('Sessions')
+        .update({ test_participants_count: count })
+        .eq('id', sessionId);
+
+      if (sessionError) throw sessionError;
+
+      // Remove existing test participants
+      const { error: deleteError } = await supabase
+        .from('SessionUsers')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('is_test_participant', true);
+
+      if (deleteError) throw deleteError;
+
+      // Create new test participants
+      const testParticipants = Array.from({ length: count }, (_, i) => ({
+        session_id: sessionId,
+        name: `Test Participant ${i + 1}`,
+        is_test_participant: true
+      }));
+
+      const { error: participantsError } = await supabase
+        .from('SessionUsers')
+        .insert(testParticipants);
+
+      if (participantsError) throw participantsError;
+
+      toast({
+        title: "Success",
+        description: "Test participants updated",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['participants', sessionId] });
+    } catch (error) {
+      console.error('Error updating test participants:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update test participants",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!sessionId) {
     return <div className="container mx-auto p-8">Invalid session ID</div>;
   }
@@ -181,10 +286,14 @@ const SessionPage = () => {
           sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
+          testMode={session?.test_mode || false}
+          testParticipantsCount={session?.test_participants_count || 0}
           onUpdateName={updateSession}
           onStatusChange={handleStatusChange}
           onStartSession={handleStartSession}
           onEndSession={handleEndSession}
+          onTestModeChange={handleTestModeChange}
+          onTestParticipantsCountChange={handleTestParticipantsCountChange}
         />
       </div>
 

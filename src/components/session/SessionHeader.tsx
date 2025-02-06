@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { PublishSession } from './PublishSession';
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { Label } from "@/components/ui/label";
 
 interface SessionHeaderProps {
   name: string;
@@ -13,10 +15,14 @@ interface SessionHeaderProps {
   sessionId: number;
   hasStatements: boolean;
   participantCount: number;
+  testMode: boolean;
+  testParticipantsCount: number;
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
   onStartSession: () => void;
   onEndSession: () => void;
+  onTestModeChange: (enabled: boolean) => void;
+  onTestParticipantsCountChange: (count: number) => void;
 }
 
 export const SessionHeader = ({ 
@@ -25,10 +31,14 @@ export const SessionHeader = ({
   sessionId,
   hasStatements,
   participantCount,
+  testMode,
+  testParticipantsCount,
   onUpdateName,
   onStatusChange,
   onStartSession,
-  onEndSession
+  onEndSession,
+  onTestModeChange,
+  onTestParticipantsCountChange
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
@@ -138,7 +148,7 @@ export const SessionHeader = ({
         </div>
       </div>
       
-      {/* Presenter link section - now always visible */}
+      {/* Presenter link section */}
       <div className="flex items-center gap-2 mt-2">
         <Input 
           value={presenterLink}
@@ -149,7 +159,35 @@ export const SessionHeader = ({
           Copy Link
         </Button>
       </div>
+
+      {/* Test mode controls */}
+      {status === 'draft' && (
+        <div className="flex items-center gap-4 mt-4 p-4 border rounded-lg bg-muted">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="test-mode"
+              checked={testMode}
+              onCheckedChange={onTestModeChange}
+            />
+            <Label htmlFor="test-mode">Test Mode</Label>
+          </div>
+          
+          {testMode && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="test-participants">Test Participants:</Label>
+              <Input
+                id="test-participants"
+                type="number"
+                min="1"
+                max="50"
+                value={testParticipantsCount}
+                onChange={(e) => onTestParticipantsCountChange(parseInt(e.target.value) || 0)}
+                className="w-24"
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
-
