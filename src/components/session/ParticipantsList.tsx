@@ -32,16 +32,18 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           session_user_id,
           statement:Statements(
             id,
-            status
+            status,
+            session_id
           )
         `)
         .eq('statement.session_id', sessionId)
-        .eq('statement.status', 'locked');
+        .eq('statement.status', 'active');
 
       if (error) throw error;
       console.log('Fetched participant answers:', data);
       return data || [];
     },
+    enabled: !!sessionId,
   });
 
   // Subscribe to changes in both SessionUsers and Answers tables
@@ -105,7 +107,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           <div className="flex flex-wrap gap-2">
             {participants.map((participant) => {
               const hasAnswered = participantAnswers?.some(
-                answer => answer.session_user_id === participant.id && answer.statement?.status === 'locked'
+                answer => answer.session_user_id === participant.id && answer.statement?.status === 'active'
               );
 
               return (

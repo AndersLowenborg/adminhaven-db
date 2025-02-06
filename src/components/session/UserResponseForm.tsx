@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from '@/integrations/supabase/client';
 import { WaitingPage } from './WaitingPage';
 import { StatementTimer } from './StatementTimer';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UserResponseFormProps {
   statement: {
@@ -24,6 +25,33 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for statement updates
+  useEffect(() => {
+    if (!statement.id) return;
+
+    const channel = supabase
+      .channel(`statement-${statement.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Statements',
+          filter: `id=eq.${statement.id}`,
+        },
+        (payload) => {
+          console.log('Statement update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['statements'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [statement.id, queryClient]);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;

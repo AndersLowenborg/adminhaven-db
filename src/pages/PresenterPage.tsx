@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,7 +80,7 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch answers for locked statements
+  // Fetch answers for statements
   const { data: answers } = useQuery({
     queryKey: ['presenter-answers', sessionId],
     queryFn: async () => {
@@ -104,25 +105,7 @@ const PresenterPage = () => {
 
     console.log('Setting up real-time subscriptions for presenter view:', sessionId);
     
-    // Channel for session updates
-    const sessionChannel = supabase
-      .channel(`presenter-session-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'Sessions',
-          filter: `id=eq.${sessionId}`,
-        },
-        (payload) => {
-          console.log('Session update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['presenter-session', sessionId] });
-        }
-      )
-      .subscribe();
-
-    // Channel for statements updates
+    // Channel for statements updates (including show_results and timer changes)
     const statementsChannel = supabase
       .channel(`presenter-statements-${sessionId}`)
       .on(
@@ -135,9 +118,7 @@ const PresenterPage = () => {
         },
         (payload) => {
           console.log('Statements update received:', payload);
-          // Invalidate both statements and answers queries when a statement changes
           queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['presenter-answers', sessionId] });
         }
       )
       .subscribe();
@@ -151,6 +132,7 @@ const PresenterPage = () => {
           event: '*',
           schema: 'public',
           table: 'Answers',
+          filter: `statement.session_id=eq.${sessionId}`,
         },
         (payload) => {
           console.log('Answers update received:', payload);
@@ -161,7 +143,6 @@ const PresenterPage = () => {
 
     return () => {
       console.log('Cleaning up real-time subscriptions');
-      supabase.removeChannel(sessionChannel);
       supabase.removeChannel(statementsChannel);
       supabase.removeChannel(answersChannel);
     };
