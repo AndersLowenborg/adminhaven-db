@@ -23,12 +23,13 @@ export const useStatements = (sessionId: number) => {
   });
 
   const addStatementMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, background }: { content: string; background?: string }) => {
       const { data, error } = await supabase
         .from('Statements')
         .insert([
           {
             content,
+            background,
             session_id: sessionId,
             status: 'pending'
           }
@@ -57,10 +58,10 @@ export const useStatements = (sessionId: number) => {
   });
 
   const updateStatementMutation = useMutation({
-    mutationFn: async ({ id, content }: { id: number; content: string }) => {
+    mutationFn: async ({ id, content, background }: { id: number; content: string; background?: string }) => {
       const { data, error } = await supabase
         .from('Statements')
-        .update({ content })
+        .update({ content, background })
         .eq('id', id)
         .select()
         .single();

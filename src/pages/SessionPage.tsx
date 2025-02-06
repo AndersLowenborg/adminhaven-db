@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -16,6 +15,7 @@ const SessionPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString, 10) : 0;
   const [newStatement, setNewStatement] = useState('');
+  const [newBackground, setNewBackground] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -272,28 +272,20 @@ const SessionPage = () => {
     }
   };
 
-  if (!sessionId) {
-    return <div className="container mx-auto p-8">Invalid session ID</div>;
-  }
-
-  if (isLoadingSession || isLoadingParticipants) {
-    return <div className="container mx-auto p-8">Loading session...</div>;
-  }
-
-  if (!session) {
-    return <div className="container mx-auto p-8">Session not found</div>;
-  }
-
   const handleAddStatement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStatement.trim()) return;
-    addStatement(newStatement);
+    addStatement({ 
+      content: newStatement,
+      background: newBackground.trim() || undefined 
+    });
     setNewStatement('');
+    setNewBackground('');
     setIsAddingStatement(false);
   };
 
-  const handleUpdateStatement = (id: number, content: string) => {
-    updateStatementMutation({ id, content });
+  const handleUpdateStatement = (id: number, content: string, background?: string) => {
+    updateStatementMutation({ id, content, background });
   };
 
   const handleToggleLock = (id: number, currentStatus: string) => {
@@ -309,6 +301,18 @@ const SessionPage = () => {
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
   };
+
+  if (!sessionId) {
+    return <div className="container mx-auto p-8">Invalid session ID</div>;
+  }
+
+  if (isLoadingSession || isLoadingParticipants) {
+    return <div className="container mx-auto p-8">Loading session...</div>;
+  }
+
+  if (!session) {
+    return <div className="container mx-auto p-8">Session not found</div>;
+  }
 
   return (
     <div className="container mx-auto p-8">
@@ -345,11 +349,14 @@ const SessionPage = () => {
           statements={statements || []}
           isAddingStatement={isAddingStatement}
           newStatement={newStatement}
+          newBackground={newBackground}
           onNewStatementChange={setNewStatement}
+          onNewBackgroundChange={setNewBackground}
           onAddClick={() => setIsAddingStatement(true)}
           onCancelAdd={() => {
             setIsAddingStatement(false);
             setNewStatement('');
+            setNewBackground('');
           }}
           onSubmitStatement={handleAddStatement}
           onDeleteStatement={deleteStatement}

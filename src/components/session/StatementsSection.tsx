@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Lock, Unlock, ArrowRight } from "lucide-react";
 import {
   Table,
@@ -23,6 +24,7 @@ import {
 interface Statement {
   id: number;
   content: string;
+  background?: string;
   status: string;
   created_at: string;
 }
@@ -36,11 +38,13 @@ interface StatementsSectionProps {
   onCancelAdd: () => void;
   onSubmitStatement: (e: React.FormEvent) => void;
   onDeleteStatement: (id: number) => void;
-  onUpdateStatement: (id: number, content: string) => void;
+  onUpdateStatement: (id: number, content: string, background?: string) => void;
   onToggleLock: (id: number, currentStatus: string) => void;
   onMoveToNext: (currentId: number) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
+  newBackground?: string;
+  onNewBackgroundChange?: (value: string) => void;
 }
 
 export const StatementsSection = ({
@@ -57,27 +61,33 @@ export const StatementsSection = ({
   onMoveToNext,
   isAddingStatementPending,
   isDeletingStatementPending,
+  newBackground,
+  onNewBackgroundChange,
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
+  const [editedBackground, setEditedBackground] = React.useState("");
   const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
     setEditedContent(statement.content);
+    setEditedBackground(statement.background || "");
   };
 
   const handleSaveEdit = (id: number) => {
     if (editedContent.trim()) {
-      onUpdateStatement(id, editedContent.trim());
+      onUpdateStatement(id, editedContent.trim(), editedBackground.trim() || undefined);
       setEditingId(null);
       setEditedContent("");
+      setEditedBackground("");
     }
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditedContent("");
+    setEditedBackground("");
   };
 
   const handleDelete = (id: number) => {
@@ -95,19 +105,33 @@ export const StatementsSection = ({
       </div>
 
       {isAddingStatement && (
-        <form onSubmit={onSubmitStatement} className="flex gap-4">
-          <Input
-            value={newStatement}
-            onChange={(e) => onNewStatementChange(e.target.value)}
-            placeholder="Enter statement content"
-            className="flex-1"
-          />
-          <Button type="submit" disabled={isAddingStatementPending}>
-            {isAddingStatementPending ? "Adding..." : "Add"}
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancelAdd}>
-            Cancel
-          </Button>
+        <form onSubmit={onSubmitStatement} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Statement</label>
+            <Input
+              value={newStatement}
+              onChange={(e) => onNewStatementChange(e.target.value)}
+              placeholder="Enter statement content"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Background/Context (Optional)</label>
+            <Textarea
+              value={newBackground}
+              onChange={(e) => onNewBackgroundChange?.(e.target.value)}
+              placeholder="Enter background or context for this statement"
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-4">
+            <Button type="submit" disabled={isAddingStatementPending}>
+              {isAddingStatementPending ? "Adding..." : "Add"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancelAdd}>
+              Cancel
+            </Button>
+          </div>
         </form>
       )}
 
@@ -115,6 +139,7 @@ export const StatementsSection = ({
         <TableHeader>
           <TableRow>
             <TableHead>Statement</TableHead>
+            <TableHead>Background</TableHead>
             <TableHead className="w-[300px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -123,22 +148,33 @@ export const StatementsSection = ({
             <TableRow key={statement.id}>
               <TableCell>
                 {editingId === statement.id ? (
-                  <div className="flex gap-2">
+                  <div className="space-y-4">
                     <Input
                       value={editedContent}
                       onChange={(e) => setEditedContent(e.target.value)}
-                      className="flex-1"
+                      className="w-full"
                     />
-                    <Button size="sm" onClick={() => handleSaveEdit(statement.id)}>
-                      Save
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                      Cancel
-                    </Button>
+                    <Textarea
+                      value={editedBackground}
+                      onChange={(e) => setEditedBackground(e.target.value)}
+                      placeholder="Enter background or context"
+                      className="w-full"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleSaveEdit(statement.id)}>
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   statement.content
                 )}
+              </TableCell>
+              <TableCell>
+                {editingId !== statement.id && statement.background}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -185,7 +221,7 @@ export const StatementsSection = ({
           ))}
           {!statements?.length && (
             <TableRow>
-              <TableCell colSpan={2} className="text-center text-muted-foreground">
+              <TableCell colSpan={3} className="text-center text-muted-foreground">
                 No statements found. Add one to get started.
               </TableCell>
             </TableRow>
