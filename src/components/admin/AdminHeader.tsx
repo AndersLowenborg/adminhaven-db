@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,7 @@ export const AdminHeader = () => {
     <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-lg shadow-sm">
       <div className="flex items-center gap-4">
         <img 
-          src="/lovable-uploads/e518161d-733c-4d45-858a-66cb99847c94.png" 
+          src="/lovable-uploads/logo.png" 
           alt="Grousion Logo" 
           className="h-12 w-auto"
         />
