@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -29,9 +30,20 @@ export const AdminHeader = () => {
   };
 
   return (
-    <div className="flex justify-between items-center mb-8">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-      <Button variant="outline" onClick={handleLogout}>
+    <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-lg shadow-sm">
+      <div className="flex items-center gap-4">
+        <img 
+          src="/lovable-uploads/7f867208-6c5c-4b53-aad8-f74c1fab9c89.png" 
+          alt="Grousion Logo" 
+          className="h-12 w-auto"
+        />
+        <h1 className="text-2xl font-bold text-[#403E43]">Admin Dashboard</h1>
+      </div>
+      <Button 
+        variant="outline" 
+        onClick={handleLogout}
+        className="border-[#F97316] text-[#F97316] hover:bg-[#F97316] hover:text-white transition-colors"
+      >
         <LogOut className="mr-2 h-4 w-4" />
         Logout
       </Button>
