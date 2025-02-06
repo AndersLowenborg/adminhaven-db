@@ -26,8 +26,7 @@ const SessionPage = () => {
     isLoadingStatements, 
     addStatement, 
     updateStatement: updateStatementMutation,
-    toggleLock,
-    moveToNext,
+    toggleStatementStatus,
     deleteStatement,
     isAddingStatement: isAddingStatementPending,
     isDeletingStatement: isDeletingStatementPending,
@@ -288,18 +287,9 @@ const SessionPage = () => {
     updateStatementMutation({ id, content, background });
   };
 
-  const handleToggleLock = (id: number, currentStatus: string) => {
-    console.log('Toggling lock for statement:', id, 'Current status:', currentStatus);
-    toggleLock({ id, currentStatus });
-  };
-
-  const handleMoveToNext = (currentId: number) => {
-    console.log('Moving to next statement from:', currentId);
-    moveToNext(currentId);
-  };
-
-  const handleStatusChange = () => {
-    queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+  const handleToggleStatementStatus = (id: number, currentStatus: string) => {
+    console.log('Toggling statement status:', id, 'Current status:', currentStatus);
+    toggleStatementStatus({ id, currentStatus });
   };
 
   if (!sessionId) {
@@ -327,7 +317,7 @@ const SessionPage = () => {
           testParticipantsCount={session?.test_participants_count || 0}
           allowJoins={session?.allow_joins || false}
           onUpdateName={updateSession}
-          onStatusChange={handleStatusChange}
+          onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
           onStartSession={handleStartSession}
           onEndSession={handleEndSession}
           onTestModeChange={handleTestModeChange}
@@ -361,8 +351,7 @@ const SessionPage = () => {
           onSubmitStatement={handleAddStatement}
           onDeleteStatement={deleteStatement}
           onUpdateStatement={handleUpdateStatement}
-          onToggleLock={handleToggleLock}
-          onMoveToNext={handleMoveToNext}
+          onToggleStatementStatus={handleToggleStatementStatus}
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
         />
