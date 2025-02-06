@@ -5,12 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from '@/integrations/supabase/client';
 import { WaitingPage } from './WaitingPage';
+import { StatementTimer } from './StatementTimer';
 
 interface UserResponseFormProps {
   statement: {
     id: number;
     content: string;
     status: string;
+    timer_seconds?: number;
+    timer_started_at?: string;
+    timer_status?: string;
   };
   onSubmit: () => void;
 }
@@ -79,6 +83,11 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
+      <StatementTimer 
+        timerSeconds={statement.timer_seconds}
+        timerStartedAt={statement.timer_started_at}
+        timerStatus={statement.timer_status}
+      />
       <CardHeader>
         <CardTitle className="text-xl">{statement.content}</CardTitle>
       </CardHeader>

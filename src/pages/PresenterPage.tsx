@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +8,7 @@ import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 import { useParticipants } from '@/hooks/use-participants';
+import { StatementTimer } from '@/components/session/StatementTimer';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -33,6 +33,9 @@ type Statement = {
   content: string;
   created_at: string;
   status: string;
+  timer_seconds?: number;
+  timer_started_at?: string;
+  timer_status?: string;
 };
 
 const PresenterPage = () => {
@@ -206,6 +209,15 @@ const PresenterPage = () => {
           queryKey={['participants', sessionId]}
         />
       )}
+
+      {statements?.filter(s => s.status === 'active').map(statement => (
+        <StatementTimer
+          key={statement.id}
+          timerSeconds={statement.timer_seconds}
+          timerStartedAt={statement.timer_started_at}
+          timerStatus={statement.timer_status}
+        />
+      ))}
       
       {lockedStatements.length > 0 ? (
         <div className="space-y-6 mb-8">
