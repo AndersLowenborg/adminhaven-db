@@ -29,6 +29,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
         .from('Answers')
         .select(`
           id,
+          created_by:session_user_id,
           statement:Statements(
             id,
             status
@@ -103,7 +104,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           <div className="flex flex-wrap gap-2">
             {participants.map((participant) => {
               const hasAnswered = participantAnswers?.some(
-                answer => answer.statement?.status === 'locked'
+                answer => answer.created_by === participant.id && answer.statement?.status === 'locked'
               );
 
               return (
