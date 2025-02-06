@@ -47,6 +47,200 @@ export type Database = {
           },
         ]
       }
+      GroupAnswers: {
+        Row: {
+          agreement_level: number | null
+          created_at: string | null
+          group_id: number | null
+          id: number
+          round_id: number | null
+          statement_id: number | null
+          uncertainty_comment: string | null
+          uncertainty_level: number | null
+        }
+        Insert: {
+          agreement_level?: number | null
+          created_at?: string | null
+          group_id?: number | null
+          id?: never
+          round_id?: number | null
+          statement_id?: number | null
+          uncertainty_comment?: string | null
+          uncertainty_level?: number | null
+        }
+        Update: {
+          agreement_level?: number | null
+          created_at?: string | null
+          group_id?: number | null
+          id?: never
+          round_id?: number | null
+          statement_id?: number | null
+          uncertainty_comment?: string | null
+          uncertainty_level?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "GroupAnswers_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "Groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "GroupAnswers_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "Rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "GroupAnswers_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "Statements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      GroupMembers: {
+        Row: {
+          created_at: string | null
+          group_id: number | null
+          id: number
+          session_user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: number | null
+          id?: never
+          session_user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: number | null
+          id?: never
+          session_user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "GroupMembers_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "Groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "GroupMembers_session_user_id_fkey"
+            columns: ["session_user_id"]
+            isOneToOne: false
+            referencedRelation: "SessionUsers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      Groups: {
+        Row: {
+          created_at: string | null
+          id: number
+          leader_id: number | null
+          merged_into_group_id: number | null
+          round_id: number | null
+          session_id: number | null
+          status: Database["public"]["Enums"]["group_status"] | null
+          uncertainty_comment: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          leader_id?: number | null
+          merged_into_group_id?: number | null
+          round_id?: number | null
+          session_id?: number | null
+          status?: Database["public"]["Enums"]["group_status"] | null
+          uncertainty_comment?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          leader_id?: number | null
+          merged_into_group_id?: number | null
+          round_id?: number | null
+          session_id?: number | null
+          status?: Database["public"]["Enums"]["group_status"] | null
+          uncertainty_comment?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Groups_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "SessionUsers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Groups_merged_into_group_id_fkey"
+            columns: ["merged_into_group_id"]
+            isOneToOne: false
+            referencedRelation: "Groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Groups_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "Rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Groups_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      Rounds: {
+        Row: {
+          created_at: string | null
+          ended_at: string | null
+          id: number
+          round_number: number
+          session_id: number | null
+          started_at: string | null
+          status: string | null
+          time_limit: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: never
+          round_number: number
+          session_id?: number | null
+          started_at?: string | null
+          status?: string | null
+          time_limit?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: never
+          round_number?: number
+          session_id?: number | null
+          started_at?: string | null
+          status?: string | null
+          time_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Sessions: {
         Row: {
           created_at: string
@@ -102,6 +296,7 @@ export type Database = {
       }
       Statements: {
         Row: {
+          background: string | null
           content: string
           created_at: string | null
           id: number
@@ -109,6 +304,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          background?: string | null
           content: string
           created_at?: string | null
           id?: number
@@ -116,6 +312,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          background?: string | null
           content?: string
           created_at?: string | null
           id?: number
@@ -140,7 +337,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      group_status: "active" | "merged" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
