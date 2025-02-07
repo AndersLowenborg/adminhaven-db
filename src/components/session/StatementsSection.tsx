@@ -82,7 +82,7 @@ export const StatementsSection = ({
   const [editedContent, setEditedContent] = React.useState("");
   const [editedBackground, setEditedBackground] = React.useState("");
   const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState<number>(300); // Default 5 minutes
+  const [timerSeconds, setTimerSeconds] = useState<number>(300);
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
@@ -256,11 +256,7 @@ export const StatementsSection = ({
                         onClick={() => onToggleStatementStatus(statement.id, statement.status)}
                         disabled={!isSessionActive}
                       >
-                        {statement.status === 'active' ? (
-                          <Square className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
+                        {statement.status === 'active' ? 'Stop Round' : 'Start Round'}
                       </Button>
                       <Button
                         variant={statement.show_results ? "default" : "outline"}
