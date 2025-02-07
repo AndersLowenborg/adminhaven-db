@@ -194,7 +194,7 @@ export const SessionHeader = ({
           </Label>
         </div>
 
-        {status === 'draft' && (
+        {(status === 'draft' || status === 'unpublished') && (
           <>
             <div className="flex items-center gap-2">
               <Switch
