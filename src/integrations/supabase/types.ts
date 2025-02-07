@@ -531,6 +531,7 @@ export type Database = {
           allow_joins: boolean | null
           created_at: string
           created_by: string | null
+          current_round: number | null
           id: number
           name: string | null
           status: string | null
@@ -541,6 +542,7 @@ export type Database = {
           allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
+          current_round?: number | null
           id?: number
           name?: string | null
           status?: string | null
@@ -551,6 +553,7 @@ export type Database = {
           allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
+          current_round?: number | null
           id?: number
           name?: string | null
           status?: string | null

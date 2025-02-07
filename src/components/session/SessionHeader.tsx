@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PublishSession } from './PublishSession';
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, DoorClosed } from "lucide-react";
+import { ChevronLeft, DoorClosed, Users } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Label } from "@/components/ui/label";
 
@@ -17,10 +18,12 @@ interface SessionHeaderProps {
   testMode: boolean;
   testParticipantsCount: number;
   allowJoins: boolean;
+  currentRound: number;
   onUpdateName: (newName: string) => void;
   onStatusChange: () => void;
-  onStartSession: () => void;
-  onEndSession: () => void;
+  onStartRound: () => void;
+  onEndRound: () => void;
+  onGenerateGroups: () => void;
   onTestModeChange: (enabled: boolean) => void;
   onTestParticipantsCountChange: (count: number) => void;
   onAllowJoinsChange: (allow: boolean) => void;
@@ -35,10 +38,12 @@ export const SessionHeader = ({
   testMode,
   testParticipantsCount,
   allowJoins,
+  currentRound,
   onUpdateName,
   onStatusChange,
-  onStartSession,
-  onEndSession,
+  onStartRound,
+  onEndRound,
+  onGenerateGroups,
   onTestModeChange,
   onTestParticipantsCountChange,
   onAllowJoinsChange,
@@ -66,9 +71,36 @@ export const SessionHeader = ({
     });
   };
 
-  const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
-  const isSessionActive = status === 'started' || status === 'closed';
+  const canStartRound = status === 'published' && participantCount > 1 && hasStatements;
+  const isRoundActive = status === 'round_in_progress';
+  const isRoundEnded = status === 'round_ended';
   const showPresenterLink = status !== 'draft' && status !== 'unpublished';
+
+  const getButtonText = () => {
+    if (isRoundActive) {
+      return `End Round ${currentRound}`;
+    } else if (isRoundEnded) {
+      if (currentRound < Math.ceil(Math.log2(participantCount / 3))) {
+        return 'Generate Groups';
+      }
+      return 'Complete Session';
+    }
+    return `Start Round ${currentRound + 1}`;
+  };
+
+  const handleMainAction = () => {
+    if (isRoundActive) {
+      onEndRound();
+    } else if (isRoundEnded) {
+      if (currentRound < Math.ceil(Math.log2(participantCount / 3))) {
+        onGenerateGroups();
+      } else {
+        onEndRound(); // This will complete the session
+      }
+    } else {
+      onStartRound();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,12 +142,12 @@ export const SessionHeader = ({
           <p className="text-muted-foreground">
             Status: <span className="font-medium capitalize">{status}</span>
           </p>
-          {status === 'published' && !canStartSession && (
+          {status === 'published' && !canStartRound && (
             <p className="text-sm text-muted-foreground">
               (Need at least 2 participants to start)
             </p>
           )}
-          {status !== 'started' && status !== 'completed' && (
+          {status !== 'round_in_progress' && status !== 'completed' && (
             <PublishSession
               sessionId={sessionId}
               status={status}
@@ -123,37 +155,18 @@ export const SessionHeader = ({
               onPublish={onStatusChange}
             />
           )}
-          {canStartSession && (
+          {(canStartRound || isRoundActive || isRoundEnded) && (
             <Button 
-              onClick={onStartSession}
-              variant="default"
+              onClick={handleMainAction}
+              variant={isRoundActive ? "destructive" : "default"}
               className="ml-2"
             >
-              Start Session
-            </Button>
-          )}
-          {status === 'started' && (
-            <Button 
-              onClick={onEndSession}
-              variant="destructive"
-              className="ml-2"
-            >
-              End Session
-            </Button>
-          )}
-          {status === 'completed' && (
-            <Button 
-              onClick={onStartSession}
-              variant="default"
-              className="ml-2"
-            >
-              Reopen Session
+              {getButtonText()}
             </Button>
           )}
         </div>
       </div>
       
-      {/* Presenter link section - only shown when session is published or beyond */}
       {showPresenterLink && (
         <div className="flex items-center gap-2 mt-2">
           <Input 
@@ -167,15 +180,13 @@ export const SessionHeader = ({
         </div>
       )}
 
-      {/* Session controls */}
       <div className="flex flex-wrap items-center gap-4 mt-4 p-4 border rounded-lg bg-muted">
-        {/* Allow joins toggle */}
         <div className="flex items-center gap-2">
           <Switch
             id="allow-joins"
             checked={allowJoins}
             onCheckedChange={onAllowJoinsChange}
-            disabled={!isSessionActive}
+            disabled={isRoundActive}
           />
           <Label htmlFor="allow-joins" className="flex items-center gap-2">
             <DoorClosed className="h-4 w-4" />
@@ -183,7 +194,6 @@ export const SessionHeader = ({
           </Label>
         </div>
 
-        {/* Test mode controls */}
         {status === 'draft' && (
           <>
             <div className="flex items-center gap-2">
@@ -210,6 +220,13 @@ export const SessionHeader = ({
               </div>
             )}
           </>
+        )}
+
+        {currentRound > 0 && (
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span>Round {currentRound}</span>
+          </div>
         )}
       </div>
     </div>
