@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +84,7 @@ export const SessionHeader = ({
       }
       return 'Complete Session';
     }
-    return 'Start Session';  // Changed from "Start Round ${currentRound + 1}"
+    return 'Start Session';
   };
 
   const handleMainAction = () => {
@@ -97,8 +96,8 @@ export const SessionHeader = ({
       } else {
         onEndRound(); // This will complete the session
       }
-    } else {
-      onStartRound();
+    } else if (canStartRound) {
+      onStartRound(); // Add check for canStartRound before calling onStartRound
     }
   };
 
