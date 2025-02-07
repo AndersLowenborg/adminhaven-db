@@ -72,17 +72,17 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
     setIsSubmitting(true);
     try {
-      // First, get the session_user_id
+      // First, get the session_user_id and check if it's a test participant
       const { data: userData, error: userError } = await supabase
         .from('SessionUsers')
-        .select('id')
+        .select('id, is_test_participant')
         .eq('session_id', sessionId)
         .eq('name', storedName)
         .single();
 
       if (userError) throw userError;
 
-      // Then submit the answer with the session_user_id
+      // Then submit the answer with the session_user_id and is_test_answer flag
       const { error } = await supabase
         .from('Answers')
         .insert([
@@ -91,7 +91,8 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
             session_user_id: userData.id,
             agreement_level: agreementLevel,
             confidence_level: confidenceLevel,
-            content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`
+            content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
+            is_test_answer: userData.is_test_participant
           }
         ]);
 
@@ -166,3 +167,4 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
     </Card>
   );
 };
+

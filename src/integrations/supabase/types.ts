@@ -64,6 +64,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: number
+          is_test_answer: boolean | null
           session_user_id: number | null
           statement_id: number | null
           status: string | null
@@ -74,6 +75,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: number
+          is_test_answer?: boolean | null
           session_user_id?: number | null
           statement_id?: number | null
           status?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: number
+          is_test_answer?: boolean | null
           session_user_id?: number | null
           statement_id?: number | null
           status?: string | null
@@ -166,6 +169,7 @@ export type Database = {
           created_at: string | null
           group_id: number | null
           id: number
+          is_test_answer: boolean | null
           round_id: number | null
           statement_id: number | null
           uncertainty_comment: string | null
@@ -176,6 +180,7 @@ export type Database = {
           created_at?: string | null
           group_id?: number | null
           id?: never
+          is_test_answer?: boolean | null
           round_id?: number | null
           statement_id?: number | null
           uncertainty_comment?: string | null
@@ -186,6 +191,7 @@ export type Database = {
           created_at?: string | null
           group_id?: number | null
           id?: never
+          is_test_answer?: boolean | null
           round_id?: number | null
           statement_id?: number | null
           uncertainty_comment?: string | null
