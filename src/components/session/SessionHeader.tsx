@@ -85,7 +85,7 @@ export const SessionHeader = ({
       }
       return 'Complete Session';
     }
-    return `Start Round ${currentRound + 1}`;
+    return 'Start Session';  // Changed from "Start Round ${currentRound + 1}"
   };
 
   const handleMainAction = () => {
