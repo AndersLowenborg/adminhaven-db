@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,7 @@ export const SessionHeader = ({
     });
   };
 
-  const canStartRound = status === 'published' && participantCount > 1 && hasStatements;
+  const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
   const isRoundActive = status === 'round_in_progress';
   const isRoundEnded = status === 'round_ended';
   const showPresenterLink = status !== 'draft' && status !== 'unpublished';
@@ -96,8 +97,10 @@ export const SessionHeader = ({
       } else {
         onEndRound(); // This will complete the session
       }
-    } else if (canStartRound) {
-      onStartRound(); // Add check for canStartRound before calling onStartRound
+    } else if (canStartSession) {
+      // Close session to new joins when starting
+      onAllowJoinsChange(false);
+      // Now the admin can start rounds for individual statements
     }
   };
 
@@ -141,7 +144,7 @@ export const SessionHeader = ({
           <p className="text-muted-foreground">
             Status: <span className="font-medium capitalize">{status}</span>
           </p>
-          {status === 'published' && !canStartRound && (
+          {status === 'published' && !canStartSession && (
             <p className="text-sm text-muted-foreground">
               (Need at least 2 participants to start)
             </p>
@@ -154,7 +157,7 @@ export const SessionHeader = ({
               onPublish={onStatusChange}
             />
           )}
-          {(canStartRound || isRoundActive || isRoundEnded) && (
+          {(canStartSession || isRoundActive || isRoundEnded) && (
             <Button 
               onClick={handleMainAction}
               variant={isRoundActive ? "destructive" : "default"}
