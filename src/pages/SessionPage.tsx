@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -160,13 +161,13 @@ const SessionPage = () => {
     }
   };
 
-  const handleStartSession = async () => {
+  const handleStartRound = async () => {
     try {
-      console.log('Starting session:', sessionId);
+      console.log('Starting round for session:', sessionId);
       const { error } = await supabase
         .from('Sessions')
         .update({ 
-          status: 'started',
+          status: 'round_in_progress',
           allow_joins: false
         } as Partial<Session>)
         .eq('id', sessionId);
@@ -175,27 +176,31 @@ const SessionPage = () => {
 
       toast({
         title: "Success",
-        description: session?.status === 'completed' ? "Session reopened successfully" : "Session started successfully",
+        description: "Round started successfully",
       });
       
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
     } catch (error) {
-      console.error('Error starting session:', error);
+      console.error('Error starting round:', error);
       toast({
         title: "Error",
-        description: "Failed to start session",
+        description: "Failed to start round",
         variant: "destructive",
       });
     }
   };
 
-  const handleEndSession = async () => {
+  const handleEndRound = async () => {
     try {
-      console.log('Ending session:', sessionId);
+      console.log('Ending round for session:', sessionId);
+      const newStatus = session?.current_round === Math.ceil(Math.log2((participants?.length || 0) / 3)) 
+        ? 'completed' 
+        : 'round_ended';
+      
       const { error } = await supabase
         .from('Sessions')
         .update({ 
-          status: 'completed',
+          status: newStatus,
           allow_joins: false
         } as Partial<Session>)
         .eq('id', sessionId);
@@ -204,15 +209,45 @@ const SessionPage = () => {
 
       toast({
         title: "Success",
-        description: "Session completed successfully",
+        description: newStatus === 'completed' ? "Session completed successfully" : "Round ended successfully",
       });
       
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
     } catch (error) {
-      console.error('Error completing session:', error);
+      console.error('Error ending round:', error);
       toast({
         title: "Error",
-        description: "Failed to complete session",
+        description: "Failed to end round",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateGroups = async () => {
+    try {
+      console.log('Generating groups for session:', sessionId);
+      const { error } = await supabase
+        .from('Sessions')
+        .update({ 
+          status: 'published',
+          current_round: (session?.current_round || 0) + 1,
+          allow_joins: false
+        } as Partial<Session>)
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Groups generated successfully",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    } catch (error) {
+      console.error('Error generating groups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate groups",
         variant: "destructive",
       });
     }
@@ -381,10 +416,12 @@ const SessionPage = () => {
           testMode={session?.test_mode || false}
           testParticipantsCount={session?.test_participants_count || 0}
           allowJoins={session?.allow_joins || false}
+          currentRound={session?.current_round || 0}
           onUpdateName={updateSession}
           onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
-          onStartSession={handleStartSession}
-          onEndSession={handleEndSession}
+          onStartRound={handleStartRound}
+          onEndRound={handleEndRound}
+          onGenerateGroups={handleGenerateGroups}
           onTestModeChange={handleTestModeChange}
           onTestParticipantsCountChange={handleTestParticipantsCountChange}
           onAllowJoinsChange={handleAllowJoinsChange}
@@ -430,3 +467,4 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
+
