@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +55,7 @@ const UserPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!sessionId && session?.status === 'started',
+    enabled: !!sessionId && session?.status === 'round_in_progress',
   });
 
   // Fetch user information using the stored name
@@ -82,17 +83,18 @@ const UserPage = () => {
   const { data: userAnswers } = useQuery({
     queryKey: ['userAnswers', sessionId, statements?.[currentStatementIndex]?.id],
     queryFn: async () => {
-      if (!sessionId || !statements?.[currentStatementIndex]?.id) return null;
+      if (!sessionId || !userData?.id || !statements?.[currentStatementIndex]?.id) return null;
       const { data, error } = await supabase
         .from('Answers')
         .select('*')
         .eq('statement_id', statements[currentStatementIndex].id)
+        .eq('session_user_id', userData.id)
         .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!sessionId && !!statements?.[currentStatementIndex]?.id,
+    enabled: !!sessionId && !!userData?.id && !!statements?.[currentStatementIndex]?.id,
   });
 
   // Set up real-time subscription for session status changes
@@ -184,13 +186,10 @@ const UserPage = () => {
     }
   };
 
-  // Show WaitingPage if user has already answered the current statement
-  const shouldShowWaitingPage = userAnswers !== null;
-
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        {session.status === 'started' ? session.name : `Join Session: ${session.name}`}
+        {session.status === 'round_in_progress' ? session.name : `Join Session: ${session.name}`}
       </h1>
 
       {userData?.name && (
@@ -201,9 +200,9 @@ const UserPage = () => {
       
       {session.status === 'published' && <JoinSessionForm />}
       
-      {session.status === 'started' && statements && statements.length > 0 && (
+      {session.status === 'round_in_progress' && statements && statements.length > 0 && (
         <div className="mt-8">
-          {!shouldShowWaitingPage ? (
+          {!userAnswers ? (
             <>
               <p className="text-center mb-4">
                 Statement {currentStatementIndex + 1} of {statements.length}
