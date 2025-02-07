@@ -731,7 +731,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      submit_test_answers: {
+        Args: {
+          p_statement_id: number
+          p_session_id: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       group_status: "active" | "merged" | "completed"
