@@ -56,7 +56,8 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const handleSubmit = async () => {
     if (isSubmitting) return;
     
-    if (statement.status === 'locked') {
+    // Check if statement is not active
+    if (statement.status !== 'active') {
       return;
     }
 
@@ -132,7 +133,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status === 'locked'}
+              disabled={isSubmitting || statement.status !== 'active'}
             />
           </div>
           
@@ -147,7 +148,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status === 'locked'}
+              disabled={isSubmitting || statement.status !== 'active'}
             />
           </div>
         </div>
@@ -155,9 +156,11 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting || statement.status === 'locked'}
+          disabled={isSubmitting || statement.status !== 'active'}
         >
-          {isSubmitting ? "Submitting..." : statement.status === 'locked' ? "Statement Locked" : "Submit Response"}
+          {isSubmitting ? "Submitting..." : 
+           statement.status !== 'active' ? "Waiting for admin to activate statement" : 
+           "Submit Response"}
         </Button>
       </CardContent>
     </Card>
