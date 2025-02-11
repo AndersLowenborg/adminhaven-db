@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -169,6 +168,7 @@ const SessionPage = () => {
       
       // First update the session status to 'started' if it's not already
       if (session?.status === 'published') {
+        console.log('Session status is published, updating to started');
         const { error: sessionError } = await supabase
           .from('Sessions')
           .update({ 
@@ -444,10 +444,14 @@ const SessionPage = () => {
   };
 
   const handleHeaderStartRound = () => {
+    console.log('handleHeaderStartRound clicked - Statements:', statements);
     // Choose the first inactive statement to start
     const firstInactiveStatement = statements?.find(s => s.status === 'inactive');
+    console.log('First inactive statement found:', firstInactiveStatement);
     if (firstInactiveStatement) {
       handleStartRound(firstInactiveStatement.id);
+    } else {
+      console.log('No inactive statements found');
     }
   };
 
