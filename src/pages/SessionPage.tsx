@@ -163,7 +163,23 @@ const SessionPage = () => {
   const handleStartRound = async () => {
     try {
       console.log('Starting round for session:', sessionId);
-      const { error } = await supabase
+      
+      // First create a new round
+      const { data: roundData, error: roundError } = await supabase
+        .from('Rounds')
+        .insert({
+          session_id: sessionId,
+          round_number: (session?.current_round || 0) + 1,
+          status: 'in_progress',
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (roundError) throw roundError;
+
+      // Then update the session status
+      const { error: sessionError } = await supabase
         .from('Sessions')
         .update({ 
           status: 'round_in_progress',
@@ -172,7 +188,7 @@ const SessionPage = () => {
         } as Partial<Session>)
         .eq('id', sessionId);
 
-      if (error) throw error;
+      if (sessionError) throw sessionError;
 
       toast({
         title: "Success",
