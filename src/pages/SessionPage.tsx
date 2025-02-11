@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -164,7 +165,21 @@ const SessionPage = () => {
     try {
       console.log('Starting round for statement:', statementId);
       
-      // First get the current round number for this statement
+      // First update the session status to 'started' if it's not already
+      if (session?.status === 'published') {
+        const { error: sessionError } = await supabase
+          .from('Sessions')
+          .update({ 
+            status: 'started',
+            current_round: (session?.current_round || 0) + 1,
+            allow_joins: false 
+          } as Partial<Session>)
+          .eq('id', sessionId);
+
+        if (sessionError) throw sessionError;
+      }
+
+      // Then get the current round number for this statement
       const { data: existingRounds, error: roundsError } = await supabase
         .from('Rounds')
         .select('round_number')
@@ -203,6 +218,8 @@ const SessionPage = () => {
         description: "Round started successfully",
       });
       
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
     } catch (error) {
       console.error('Error starting round:', error);
