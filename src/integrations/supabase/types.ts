@@ -466,6 +466,7 @@ export type Database = {
           round_number: number
           session_id: number | null
           started_at: string | null
+          statement_id: number | null
           status: string | null
           time_limit: number | null
         }
@@ -476,6 +477,7 @@ export type Database = {
           round_number: number
           session_id?: number | null
           started_at?: string | null
+          statement_id?: number | null
           status?: string | null
           time_limit?: number | null
         }
@@ -486,15 +488,16 @@ export type Database = {
           round_number?: number
           session_id?: number | null
           started_at?: string | null
+          statement_id?: number | null
           status?: string | null
           time_limit?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "Rounds_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "Rounds_statement_id_fkey"
+            columns: ["statement_id"]
             isOneToOne: false
-            referencedRelation: "Sessions"
+            referencedRelation: "Statements"
             referencedColumns: ["id"]
           },
         ]

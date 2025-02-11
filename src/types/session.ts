@@ -4,7 +4,7 @@ export interface Session {
   created_at: string;
   created_by: string | null;
   name: string | null;
-  status: 'unpublished' | 'published' | 'round_in_progress' | 'round_ended' | 'completed';
+  status: 'draft' | 'unpublished' | 'published' | 'completed';
   test_mode: boolean | null;
   test_participants_count: number | null;
   allow_joins: boolean | null;

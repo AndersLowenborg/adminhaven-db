@@ -160,42 +160,50 @@ const SessionPage = () => {
     }
   };
 
-  const handleStartRound = async () => {
+  const handleStartRound = async (statementId: number) => {
     try {
-      console.log('Starting round for session:', sessionId);
+      console.log('Starting round for statement:', statementId);
       
-      // First create a new round
-      const { data: roundData, error: roundError } = await supabase
+      // First get the current round number for this statement
+      const { data: existingRounds, error: roundsError } = await supabase
+        .from('Rounds')
+        .select('round_number')
+        .eq('statement_id', statementId)
+        .order('round_number', { ascending: false })
+        .limit(1);
+
+      if (roundsError) throw roundsError;
+
+      const nextRoundNumber = existingRounds && existingRounds.length > 0 
+        ? existingRounds[0].round_number + 1 
+        : 1;
+
+      // Create a new round for this statement
+      const { error: roundError } = await supabase
         .from('Rounds')
         .insert({
-          session_id: sessionId,
-          round_number: (session?.current_round || 0) + 1,
+          statement_id: statementId,
+          round_number: nextRoundNumber,
           status: 'in_progress',
           started_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+        });
 
       if (roundError) throw roundError;
 
-      // Then update the session status
-      const { error: sessionError } = await supabase
-        .from('Sessions')
-        .update({ 
-          status: 'round_in_progress',
-          allow_joins: false,
-          current_round: (session?.current_round || 0) + 1
-        } as Partial<Session>)
-        .eq('id', sessionId);
+      // Update the statement status to active
+      const { error: statementError } = await supabase
+        .from('Statements')
+        .update({ status: 'active' })
+        .eq('id', statementId);
 
-      if (sessionError) throw sessionError;
+      if (statementError) throw statementError;
 
       toast({
         title: "Success",
         description: "Round started successfully",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
     } catch (error) {
       console.error('Error starting round:', error);
       toast({
@@ -206,29 +214,36 @@ const SessionPage = () => {
     }
   };
 
-  const handleEndRound = async () => {
+  const handleEndRound = async (statementId: number) => {
     try {
-      console.log('Ending round for session:', sessionId);
-      const newStatus = session?.current_round === Math.ceil(Math.log2((participants?.length || 0) / 3)) 
-        ? 'completed' 
-        : 'round_ended';
+      console.log('Ending round for statement:', statementId);
       
-      const { error } = await supabase
-        .from('Sessions')
+      // Update the current round status to ended
+      const { error: roundError } = await supabase
+        .from('Rounds')
         .update({ 
-          status: newStatus,
-          allow_joins: false
-        } as Partial<Session>)
-        .eq('id', sessionId);
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('statement_id', statementId)
+        .eq('status', 'in_progress');
 
-      if (error) throw error;
+      if (roundError) throw roundError;
+
+      // Update the statement status back to inactive
+      const { error: statementError } = await supabase
+        .from('Statements')
+        .update({ status: 'inactive' })
+        .eq('id', statementId);
+
+      if (statementError) throw statementError;
 
       toast({
         title: "Success",
-        description: newStatus === 'completed' ? "Session completed successfully" : "Round ended successfully",
+        description: "Round ended successfully",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
     } catch (error) {
       console.error('Error ending round:', error);
       toast({
@@ -438,10 +453,9 @@ const SessionPage = () => {
           onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
           onStartRound={handleStartRound}
           onEndRound={handleEndRound}
-          onGenerateGroups={handleGenerateGroups}
+          onAllowJoinsChange={handleAllowJoinsChange}
           onTestModeChange={handleTestModeChange}
           onTestParticipantsCountChange={handleTestParticipantsCountChange}
-          onAllowJoinsChange={handleAllowJoinsChange}
         />
       </div>
 
