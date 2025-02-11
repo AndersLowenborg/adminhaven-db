@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -8,7 +9,7 @@ const Index = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="text-center space-y-8 p-8">
         <img 
-          src="/lovable-uploads/853e4d3d-589f-4424-8dd4-42d013e54554.png" 
+          src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
           alt="Grousion Logo" 
           className="mx-auto w-96 h-auto"
         />
