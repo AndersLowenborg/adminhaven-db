@@ -19,17 +19,26 @@ export const JoinSessionForm = () => {
 
     setIsJoining(true);
     try {
+      // First check if name already exists in session
+      const { data: existingUser, error: checkError } = await supabase
+        .from('SessionUsers')
+        .select('id')
+        .eq('session_id', parseInt(id))
+        .eq('name', name.trim())
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingUser) {
+        throw new Error('This name is already taken in this session. Please choose a different name.');
+      }
+
       console.log('Attempting to join session:', { sessionId: id, name });
       const { error } = await supabase
         .from('SessionUsers')
         .insert([{ session_id: parseInt(id), name: name.trim() }]);
 
-      if (error) {
-        if (error.code === '23505') { // Unique constraint violation
-          throw new Error('This name is already taken in this session');
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       // Store the user's name in localStorage for this session
       localStorage.setItem(`session_${id}_name`, name.trim());

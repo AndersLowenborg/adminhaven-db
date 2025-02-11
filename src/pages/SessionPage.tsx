@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -328,10 +327,11 @@ const SessionPage = () => {
 
       if (deleteError) throw deleteError;
 
-      // Create new test participants
+      // Create new test participants with unique names using timestamp
+      const timestamp = Date.now();
       const testParticipants = Array.from({ length: count }, (_, i) => ({
         session_id: sessionId,
-        name: `Test Participant ${i + 1}`,
+        name: `Test Participant ${i + 1}-${timestamp}`,
         is_test_participant: true
       }));
 
@@ -467,4 +467,3 @@ const SessionPage = () => {
 };
 
 export default SessionPage;
-
