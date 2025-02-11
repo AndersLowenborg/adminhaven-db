@@ -100,7 +100,8 @@ export const SessionHeader = ({
     } else if (canStartSession) {
       // Close session to new joins when starting
       onAllowJoinsChange(false);
-      // Now the admin can start rounds for individual statements
+      // Start the first round
+      onStartRound();
     }
   };
 
