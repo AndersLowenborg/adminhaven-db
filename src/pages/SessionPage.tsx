@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
 import { useStatements } from '@/hooks/use-statements';
 import { useParticipants } from '@/hooks/use-participants';
@@ -10,6 +11,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Session } from '@/types/session';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const SessionPage = () => {
   const { id: sessionIdString } = useParams();
@@ -470,6 +473,19 @@ const SessionPage = () => {
 
   return (
     <div className="container mx-auto p-8">
+      <div className="mb-4">
+        <Button
+          variant="ghost"
+          asChild
+          className="mb-4"
+        >
+          <Link to="/admin" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Admin
+          </Link>
+        </Button>
+      </div>
+
       <div className="mb-8">
         <SessionHeader 
           name={session?.name || ''} 
