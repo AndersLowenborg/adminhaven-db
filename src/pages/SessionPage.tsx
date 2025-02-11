@@ -424,6 +424,22 @@ const SessionPage = () => {
     stopTimer(id);
   };
 
+  const handleHeaderStartRound = () => {
+    // Choose the first inactive statement to start
+    const firstInactiveStatement = statements?.find(s => s.status === 'inactive');
+    if (firstInactiveStatement) {
+      handleStartRound(firstInactiveStatement.id);
+    }
+  };
+
+  const handleHeaderEndRound = () => {
+    // Find the active statement and end its round
+    const activeStatement = statements?.find(s => s.status === 'active');
+    if (activeStatement) {
+      handleEndRound(activeStatement.id);
+    }
+  };
+
   if (!sessionId) {
     return <div className="container mx-auto p-8">Invalid session ID</div>;
   }
@@ -451,8 +467,8 @@ const SessionPage = () => {
           currentRound={session?.current_round || 0}
           onUpdateName={updateSession}
           onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
-          onStartRound={handleStartRound}
-          onEndRound={handleEndRound}
+          onStartRound={handleHeaderStartRound}
+          onEndRound={handleHeaderEndRound}
           onAllowJoinsChange={handleAllowJoinsChange}
           onTestModeChange={handleTestModeChange}
           onTestParticipantsCountChange={handleTestParticipantsCountChange}

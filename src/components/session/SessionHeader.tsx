@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { PublishSession } from './PublishSession';
-import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, DoorClosed, Users } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { Label } from "@/components/ui/label";
+import { Session } from '@/types/session';
 
 interface SessionHeaderProps {
   name: string;
@@ -18,14 +14,13 @@ interface SessionHeaderProps {
   testParticipantsCount: number;
   allowJoins: boolean;
   currentRound: number;
-  onUpdateName: (newName: string) => void;
+  onUpdateName: (name: string) => void;
   onStatusChange: () => void;
-  onStartRound: () => void;
-  onEndRound: () => void;
-  onGenerateGroups: () => void;
+  onStartRound: () => void;     // Changed to match expected signature
+  onEndRound: () => void;       // Changed to match expected signature
+  onAllowJoinsChange: (allow: boolean) => void;
   onTestModeChange: (enabled: boolean) => void;
   onTestParticipantsCountChange: (count: number) => void;
-  onAllowJoinsChange: (allow: boolean) => void;
 }
 
 export const SessionHeader = ({
@@ -42,10 +37,9 @@ export const SessionHeader = ({
   onStatusChange,
   onStartRound,
   onEndRound,
-  onGenerateGroups,
+  onAllowJoinsChange,
   onTestModeChange,
   onTestParticipantsCountChange,
-  onAllowJoinsChange,
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedName, setEditedName] = React.useState(name);
@@ -92,7 +86,7 @@ export const SessionHeader = ({
           </span>
           {canStartSession && (
             <Button 
-              onClick={() => onStartRound(sessionId)}
+              onClick={onStartRound}  // Removed the sessionId argument
               className="ml-2"
             >
               Start Session
