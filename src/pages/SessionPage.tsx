@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -179,7 +178,7 @@ const SessionPage = () => {
         if (sessionError) throw sessionError;
       }
 
-      // Then get the current round number for this statement
+      // Get the current round number for this statement
       const { data: existingRounds, error: roundsError } = await supabase
         .from('Rounds')
         .select('round_number')

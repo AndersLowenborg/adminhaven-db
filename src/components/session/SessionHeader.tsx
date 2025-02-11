@@ -16,8 +16,8 @@ interface SessionHeaderProps {
   currentRound: number;
   onUpdateName: (name: string) => void;
   onStatusChange: () => void;
-  onStartRound: () => void;     // Changed to match expected signature
-  onEndRound: () => void;       // Changed to match expected signature
+  onStartRound: () => void;
+  onEndRound: () => void;
   onAllowJoinsChange: (allow: boolean) => void;
   onTestModeChange: (enabled: boolean) => void;
   onTestParticipantsCountChange: (count: number) => void;
@@ -86,7 +86,7 @@ export const SessionHeader = ({
           </span>
           {canStartSession && (
             <Button 
-              onClick={onStartRound}  // Removed the sessionId argument
+              onClick={onStartRound}
               className="ml-2"
             >
               Start Session
