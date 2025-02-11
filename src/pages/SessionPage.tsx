@@ -167,7 +167,8 @@ const SessionPage = () => {
         .from('Sessions')
         .update({ 
           status: 'round_in_progress',
-          allow_joins: false
+          allow_joins: false,
+          current_round: (session?.current_round || 0) + 1
         } as Partial<Session>)
         .eq('id', sessionId);
 
