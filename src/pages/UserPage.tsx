@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +28,7 @@ const UserPage = () => {
       if (!sessionId) throw new Error('Session ID is required');
       console.log('Fetching session details for user page:', sessionId);
       const { data, error } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .select('*')
         .eq('id', sessionId)
         .single();
@@ -47,7 +46,7 @@ const UserPage = () => {
     queryFn: async () => {
       if (!sessionId) throw new Error('Session ID is required');
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
@@ -81,20 +80,20 @@ const UserPage = () => {
 
   // Fetch user's answers to check progress
   const { data: userAnswers } = useQuery({
-    queryKey: ['userAnswers', sessionId, statements?.[currentStatementIndex]?.id],
+    queryKey: ['userAnswers', sessionId],
     queryFn: async () => {
-      if (!sessionId || !userData?.id || !statements?.[currentStatementIndex]?.id) return null;
+      if (!sessionId || !userData?.id) return null;
       const { data, error } = await supabase
-        .from('Answers')
+        .from('ANSWER')
         .select('*')
-        .eq('statement_id', statements[currentStatementIndex].id)
-        .eq('session_user_id', userData.id)
+        .eq('respondant_id', userData.id)
+        .eq('round_id', sessionId)
         .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!sessionId && !!userData?.id && !!statements?.[currentStatementIndex]?.id,
+    enabled: !!sessionId && !!userData?.id,
   });
 
   // Set up real-time subscription for session status changes

@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,7 +51,7 @@ const PresenterPage = () => {
     queryKey: ['presenter-session', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .select('*')
         .eq('id', sessionId)
         .single();
@@ -68,33 +67,29 @@ const PresenterPage = () => {
     queryKey: ['statements', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .eq('session_id', sessionId);
 
       if (error) throw error;
       console.log('Fetched statements:', data);
-      return data as Statement[];
+      return data;
     },
     enabled: !!sessionId,
   });
 
-  // Fetch answers for statements
+  // Fetch answers independently
   const { data: answers } = useQuery({
     queryKey: ['presenter-answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Answers')
-        .select(`
-          *,
-          statement:Statements(content)
-        `)
-        .eq('statement.session_id', sessionId);
+        .from('ANSWER')
+        .select('*')
+        .eq('round_id', sessionId);
 
       if (error) throw error;
       console.log('Fetched answers:', data);
-      return data as Answer[];
+      return data;
     },
     enabled: !!sessionId,
   });
@@ -113,7 +108,7 @@ const PresenterPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'Statements',
+          table: 'STATEMENT',
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
@@ -131,7 +126,7 @@ const PresenterPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'Answers',
+          table: 'ANSWER',
           filter: `statement.session_id=eq.${sessionId}`,
         },
         (payload) => {

@@ -21,13 +21,13 @@ type ParticipantsListProps = {
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
   const queryClient = useQueryClient();
 
-  // Fetch answers for the current session
+  // Fetch answers independently
   const { data: participantAnswers } = useQuery({
     queryKey: ['participant-answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ANSWER')
-        .select('id, respondant_id')
+        .select('*')
         .eq('round_id', sessionId);
 
       if (error) throw error;

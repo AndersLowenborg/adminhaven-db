@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const handleSubmit = async () => {
     if (isSubmitting) return;
     
-    // Check if statement is not active
     if (statement.status !== 'STARTED') {
       return;
     }
@@ -71,7 +69,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
     setIsSubmitting(true);
     try {
-      // First, get the session_user_id
       const { data: userData, error: userError } = await supabase
         .from('SESSION_USERS')
         .select('id')
@@ -81,7 +78,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       if (userError) throw userError;
 
-      // Submit answer without statement relationship
       const { error } = await supabase
         .from('ANSWER')
         .insert({
@@ -89,7 +85,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
           confidence_level: confidenceLevel,
           respondant_type: 'SESSION_USER',
           respondant_id: userData.id,
-          round_id: null
+          round_id: sessionId
         });
 
       if (error) throw error;
