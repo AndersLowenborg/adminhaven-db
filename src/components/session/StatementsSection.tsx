@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Square, Timer } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,23 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-interface Statement {
-  id: number;
-  content: string;
-  background?: string;
-  status: string;
-  created_at: string;
-  timer_seconds?: number;
-  timer_started_at?: string;
-  timer_status?: string;
-  show_results?: boolean;
-}
+import { Statement } from '@/types/statement';
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -46,15 +30,11 @@ interface StatementsSectionProps {
   onCancelAdd: () => void;
   onSubmitStatement: (e: React.FormEvent) => void;
   onDeleteStatement: (id: number) => void;
-  onUpdateStatement: (id: number, content: string, background?: string) => void;
-  onToggleStatementStatus: (id: number, currentStatus: string) => void;
-  onToggleShowResults: (id: number, currentShowResults: boolean) => void;
+  onUpdateStatement: (id: number, content: string, description?: string) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
   newBackground?: string;
   onNewBackgroundChange?: (value: string) => void;
-  onStartTimer: (id: number, seconds: number) => void;
-  onStopTimer: (id: number) => void;
   sessionStatus: string;
 }
 
@@ -68,26 +48,21 @@ export const StatementsSection = ({
   onSubmitStatement,
   onDeleteStatement,
   onUpdateStatement,
-  onToggleStatementStatus,
-  onToggleShowResults,
   isAddingStatementPending,
   isDeletingStatementPending,
   newBackground,
   onNewBackgroundChange,
-  onStartTimer,
-  onStopTimer,
   sessionStatus,
 }: StatementsSectionProps) => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editedContent, setEditedContent] = React.useState("");
   const [editedBackground, setEditedBackground] = React.useState("");
   const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState<number>(300);
 
   const handleEditClick = (statement: Statement) => {
     setEditingId(statement.id);
-    setEditedContent(statement.content);
-    setEditedBackground(statement.background || "");
+    setEditedContent(statement.statement || "");
+    setEditedBackground(statement.description || "");
   };
 
   const handleSaveEdit = (id: number) => {
@@ -109,12 +84,6 @@ export const StatementsSection = ({
     onDeleteStatement(id);
     setStatementToDelete(null);
   };
-
-  const handleStartTimer = (id: number) => {
-    onStartTimer(id, timerSeconds);
-  };
-
-  const isSessionActive = sessionStatus === 'started';
 
   return (
     <div className="space-y-6">
@@ -161,7 +130,6 @@ export const StatementsSection = ({
           <TableRow>
             <TableHead>Statement</TableHead>
             <TableHead>Background</TableHead>
-            <TableHead>Timer</TableHead>
             <TableHead className="w-[250px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -192,52 +160,11 @@ export const StatementsSection = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-[#403E43]">{statement.content}</div>
+                  <div className="text-[#403E43]">{statement.statement}</div>
                 )}
               </TableCell>
               <TableCell className="text-[#8E9196]">
-                {editingId !== statement.id && statement.background}
-              </TableCell>
-              <TableCell>
-                {statement.timer_status === 'running' ? (
-                  <div className="flex items-center gap-2">
-                    <Timer className="h-4 w-4" />
-                    <span className="text-[#403E43]">Timer running</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onStopTimer(statement.id)}
-                    >
-                      Stop Timer
-                    </Button>
-                  </div>
-                ) : (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Timer className="h-4 w-4 mr-2" />
-                        Set Timer
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-[#403E43]">Set Timer Duration</h4>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            value={timerSeconds}
-                            onChange={(e) => setTimerSeconds(parseInt(e.target.value))}
-                            min="1"
-                            placeholder="Seconds"
-                          />
-                          <Button onClick={() => handleStartTimer(statement.id)}>
-                            Start
-                          </Button>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
+                {editingId !== statement.id && statement.description}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -249,21 +176,6 @@ export const StatementsSection = ({
                         onClick={() => handleEditClick(statement)}
                       >
                         Edit
-                      </Button>
-                      <Button
-                        variant={statement.status === 'active' ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => onToggleStatementStatus(statement.id, statement.status)}
-                        disabled={!isSessionActive}
-                      >
-                        {statement.status === 'active' ? 'Stop Round' : 'Start Round'}
-                      </Button>
-                      <Button
-                        variant={statement.show_results ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => onToggleShowResults(statement.id, !!statement.show_results)}
-                      >
-                        {statement.show_results ? 'Hide Results' : 'Show Results'}
                       </Button>
                       <Button
                         variant="destructive"
@@ -281,7 +193,7 @@ export const StatementsSection = ({
           ))}
           {!statements?.length && (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-[#8E9196]">
+              <TableCell colSpan={3} className="text-center text-[#8E9196]">
                 No statements found. Add one to get started.
               </TableCell>
             </TableRow>
@@ -295,7 +207,6 @@ export const StatementsSection = ({
             <DialogTitle>Delete Statement</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this statement? This action cannot be undone.
-              All associated responses will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
