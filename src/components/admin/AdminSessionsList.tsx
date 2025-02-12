@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,7 @@ export const AdminSessionsList = () => {
       const { data: sessions, error: sessionsError } = await supabase
         .from('Sessions')
         .select('*')
-        .eq('created_by', session.user.id)
+        .eq('auth_user_id', session.user.id)  // Updated to use auth_user_id
         .order('created_at', { ascending: false });
 
       if (sessionsError) {
@@ -77,13 +78,12 @@ export const AdminSessionsList = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'SessionUsers'
         },
         (payload) => {
           console.log('Session users change detected:', payload);
-          // Invalidate the query to refetch the updated data
           queryClient.invalidateQueries({ queryKey: ['admin-sessions', session.user.id] });
         }
       )
