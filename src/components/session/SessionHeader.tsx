@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Session } from '@/types/session';
+import { PublishSession } from './PublishSession';
 
 interface SessionHeaderProps {
   name: string;
@@ -70,6 +71,12 @@ export const SessionHeader = ({
           <span className="px-2 py-1 text-sm rounded bg-gray-100">
             Status: {status}
           </span>
+          <PublishSession
+            sessionId={sessionId}
+            status={status as any}
+            hasStatements={hasStatements}
+            onPublish={onStatusChange}
+          />
           {canStartSession && (
             <Button 
               onClick={onStartRound}

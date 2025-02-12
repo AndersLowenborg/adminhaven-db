@@ -54,10 +54,6 @@ export const PublishSession = ({
     }
   };
 
-  if (!hasStatements) {
-    return null;
-  }
-
   return (
     <Button 
       onClick={handleTogglePublish}
