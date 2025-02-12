@@ -26,19 +26,20 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
     queryKey: ['participant-answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Answers')
+        .from('ANSWER')
         .select(`
           id,
-          respondent_id,
-          statement:Statements(
+          respondant_id,
+          statement_id,
+          statement:STATEMENT(
             id,
             status,
             session_id
           )
         `)
         .eq('statement.session_id', sessionId)
-        .eq('statement.status', 'active')
-        .eq('respondent_type', 'user');
+        .eq('statement.status', 'STARTED')
+        .eq('respondant_type', 'SESSION_USER');
 
       if (error) throw error;
       console.log('Fetched participant answers:', data);
@@ -47,7 +48,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
     enabled: !!sessionId,
   });
 
-  // Subscribe to changes in both SessionUsers and Answers tables
+  // Subscribe to changes in both SESSION_USERS and ANSWER tables
   useEffect(() => {
     if (!sessionId) return;
 
@@ -61,7 +62,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
         {
           event: '*',
           schema: 'public',
-          table: 'SessionUsers',
+          table: 'SESSION_USERS',
           filter: `session_id=eq.${sessionId}`
         },
         (payload) => {
@@ -79,7 +80,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
         {
           event: '*',
           schema: 'public',
-          table: 'Answers',
+          table: 'ANSWER',
           filter: `statement.session_id=eq.${sessionId}`
         },
         (payload) => {
@@ -108,7 +109,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           <div className="flex flex-wrap gap-2">
             {participants.map((participant) => {
               const hasAnswered = participantAnswers?.some(
-                answer => answer.respondent_id === participant.id && answer.statement?.status === 'active'
+                answer => answer.respondant_id === participant.id
               );
 
               return (

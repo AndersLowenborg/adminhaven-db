@@ -13,3 +13,7 @@ export interface Session {
   started_at: string | null;
   ended_at: string | null;
 }
+
+export interface SessionWithUsers extends Session {
+  users: Array<{ id: number; name: string }>;
+}

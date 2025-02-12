@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SessionStatus } from '@/types/session';
 
 export const useCreateSession = () => {
   const { session } = useSessionContext();
@@ -27,15 +28,13 @@ export const useCreateSession = () => {
       
       const { data: newSession, error: createError } = await supabase
         .from('SESSION')
-        .insert([
-          {
-            name: 'New Session',
-            status: 'UNPUBLISHED',
-            auth_user_id: session.user.id,
-            allow_joins: true,
-            current_round: 0
-          },
-        ])
+        .insert({
+          name: 'New Session',
+          status: 'UNPUBLISHED' as SessionStatus,
+          auth_user_id: session.user.id,
+          allow_joins: true,
+          current_round: 0
+        })
         .select()
         .single();
 
