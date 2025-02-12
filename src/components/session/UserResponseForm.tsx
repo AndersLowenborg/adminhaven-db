@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,10 +71,10 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
     setIsSubmitting(true);
     try {
-      // First, get the session_user_id and check if it's a test participant
+      // First, get the session_user_id
       const { data: userData, error: userError } = await supabase
         .from('SessionUsers')
-        .select('id, is_test_participant')
+        .select('id')
         .eq('session_id', sessionId)
         .eq('name', storedName)
         .single();
@@ -93,7 +92,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
             owner_type: 'user',
             owner_id: userData.id,
             statement_id: statement.id,
-            is_test_answer: userData.is_test_participant,
             status: 'submitted'
           }
         ]);

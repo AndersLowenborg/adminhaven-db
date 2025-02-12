@@ -10,7 +10,6 @@ export interface Answer {
   owner_id: number;
   statement_id: number | null;
   round_id: number | null;
-  is_test_answer: boolean;
   status: string;
   created_at: string;
 }

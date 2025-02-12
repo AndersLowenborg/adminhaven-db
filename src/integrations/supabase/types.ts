@@ -16,7 +16,6 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: number
-          is_test_answer: boolean | null
           owner_id: number
           owner_type: string
           round_id: number | null
@@ -31,7 +30,6 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: never
-          is_test_answer?: boolean | null
           owner_id: number
           owner_type: string
           round_id?: number | null
@@ -46,7 +44,6 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           id?: never
-          is_test_answer?: boolean | null
           owner_id?: number
           owner_type?: string
           round_id?: number | null
@@ -258,8 +255,6 @@ export type Database = {
           id: number
           name: string | null
           status: string | null
-          test_mode: boolean | null
-          test_participants_count: number | null
         }
         Insert: {
           allow_joins?: boolean | null
@@ -269,8 +264,6 @@ export type Database = {
           id?: number
           name?: string | null
           status?: string | null
-          test_mode?: boolean | null
-          test_participants_count?: number | null
         }
         Update: {
           allow_joins?: boolean | null
@@ -280,8 +273,6 @@ export type Database = {
           id?: number
           name?: string | null
           status?: string | null
-          test_mode?: boolean | null
-          test_participants_count?: number | null
         }
         Relationships: []
       }
@@ -289,21 +280,18 @@ export type Database = {
         Row: {
           created_at: string | null
           id: number
-          is_test_participant: boolean | null
           name: string
           session_id: number | null
         }
         Insert: {
           created_at?: string | null
           id?: number
-          is_test_participant?: boolean | null
           name: string
           session_id?: number | null
         }
         Update: {
           created_at?: string | null
           id?: number
-          is_test_participant?: boolean | null
           name?: string
           session_id?: number | null
         }
@@ -383,13 +371,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      submit_test_answers: {
-        Args: {
-          p_statement_id: number
-          p_session_id: number
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       group_status: "active" | "merged" | "completed"

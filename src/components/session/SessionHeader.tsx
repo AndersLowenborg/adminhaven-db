@@ -10,8 +10,6 @@ interface SessionHeaderProps {
   sessionId: number;
   hasStatements: boolean;
   participantCount: number;
-  testMode: boolean;
-  testParticipantsCount: number;
   allowJoins: boolean;
   currentRound: number;
   onUpdateName: (name: string) => void;
@@ -19,8 +17,6 @@ interface SessionHeaderProps {
   onStartRound: () => void;
   onEndRound: () => void;
   onAllowJoinsChange: (allow: boolean) => void;
-  onTestModeChange: (enabled: boolean) => void;
-  onTestParticipantsCountChange: (count: number) => void;
 }
 
 export const SessionHeader = ({
@@ -29,8 +25,6 @@ export const SessionHeader = ({
   sessionId,
   hasStatements,
   participantCount,
-  testMode,
-  testParticipantsCount,
   allowJoins,
   currentRound,
   onUpdateName,
@@ -38,8 +32,6 @@ export const SessionHeader = ({
   onStartRound,
   onEndRound,
   onAllowJoinsChange,
-  onTestModeChange,
-  onTestParticipantsCountChange,
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedName, setEditedName] = React.useState(name);
@@ -108,25 +100,6 @@ export const SessionHeader = ({
           >
             {allowJoins ? 'Close Joins' : 'Allow Joins'}
           </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant={testMode ? "default" : "outline"}
-            onClick={() => onTestModeChange(!testMode)}
-          >
-            {testMode ? 'Disable Test Mode' : 'Enable Test Mode'}
-          </Button>
-          {testMode && (
-            <Input
-              type="number"
-              min="1"
-              max="100"
-              value={testParticipantsCount}
-              onChange={(e) => onTestParticipantsCountChange(parseInt(e.target.value, 10))}
-              className="w-20"
-            />
-          )}
         </div>
       </div>
     </div>
