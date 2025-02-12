@@ -10,7 +10,6 @@ interface SessionHeaderProps {
   sessionId: number;
   hasStatements: boolean;
   participantCount: number;
-  currentRound: number;
   onUpdateName: (name: string) => void;
   onStatusChange: () => void;
   onStartRound: () => void;
@@ -23,7 +22,6 @@ export const SessionHeader = ({
   sessionId,
   hasStatements,
   participantCount,
-  currentRound,
   onUpdateName,
   onStatusChange,
   onStartRound,

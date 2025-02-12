@@ -7,7 +7,6 @@ export interface Session {
   name: string | null;
   description: string | null;
   status: SessionStatus;
-  current_round: number;
   created_at: string;
   started_at: string | null;
   ended_at: string | null;

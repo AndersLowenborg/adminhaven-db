@@ -31,8 +31,7 @@ export const useCreateSession = () => {
         .insert({
           name: 'New Session',
           status: 'UNPUBLISHED' as SessionStatus,
-          auth_user_id: session.user.id,
-          current_round: 0
+          auth_user_id: session.user.id
         })
         .select()
         .single();
