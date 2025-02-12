@@ -9,250 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      answers: {
-        Row: {
-          agreement_level: number | null
-          confidence_level: number | null
-          content: string
-          created_at: string | null
-          id: number
-          session_user_id: number | null
-          statement_id: number | null
-          status: string | null
-        }
-        Insert: {
-          agreement_level?: number | null
-          confidence_level?: number | null
-          content: string
-          created_at?: string | null
-          id?: never
-          session_user_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-        }
-        Update: {
-          agreement_level?: number | null
-          confidence_level?: number | null
-          content?: string
-          created_at?: string | null
-          id?: never
-          session_user_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answers_session_user_id_fkey"
-            columns: ["session_user_id"]
-            isOneToOne: false
-            referencedRelation: "sessionusers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "answers_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "statements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       Answers: {
         Row: {
           agreement_level: number | null
           confidence_level: number | null
-          content: string
+          content: string | null
           created_at: string | null
           id: number
           is_test_answer: boolean | null
-          session_user_id: number | null
+          owner_id: number
+          owner_type: string
+          round_id: number | null
           statement_id: number | null
           status: string | null
-        }
-        Insert: {
-          agreement_level?: number | null
-          confidence_level?: number | null
-          content: string
-          created_at?: string | null
-          id?: number
-          is_test_answer?: boolean | null
-          session_user_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-        }
-        Update: {
-          agreement_level?: number | null
-          confidence_level?: number | null
-          content?: string
-          created_at?: string | null
-          id?: number
-          is_test_answer?: boolean | null
-          session_user_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "Answers_session_user_id_fkey"
-            columns: ["session_user_id"]
-            isOneToOne: false
-            referencedRelation: "SessionUsers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Answers_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "Statements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      groupanswers: {
-        Row: {
-          agreement_level: number | null
-          created_at: string | null
-          group_id: number | null
-          id: number
-          round_id: number | null
-          statement_id: number | null
           uncertainty_comment: string | null
           uncertainty_level: number | null
         }
         Insert: {
           agreement_level?: number | null
+          confidence_level?: number | null
+          content?: string | null
           created_at?: string | null
-          group_id?: number | null
           id?: never
+          is_test_answer?: boolean | null
+          owner_id: number
+          owner_type: string
           round_id?: number | null
           statement_id?: number | null
+          status?: string | null
           uncertainty_comment?: string | null
           uncertainty_level?: number | null
         }
         Update: {
           agreement_level?: number | null
+          confidence_level?: number | null
+          content?: string | null
           created_at?: string | null
-          group_id?: number | null
           id?: never
+          is_test_answer?: boolean | null
+          owner_id?: number
+          owner_type?: string
           round_id?: number | null
           statement_id?: number | null
+          status?: string | null
           uncertainty_comment?: string | null
           uncertainty_level?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "groupanswers_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groupanswers_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "rounds"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groupanswers_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "statements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      GroupAnswers: {
-        Row: {
-          agreement_level: number | null
-          created_at: string | null
-          group_id: number | null
-          id: number
-          is_test_answer: boolean | null
-          round_id: number | null
-          statement_id: number | null
-          uncertainty_comment: string | null
-          uncertainty_level: number | null
-        }
-        Insert: {
-          agreement_level?: number | null
-          created_at?: string | null
-          group_id?: number | null
-          id?: never
-          is_test_answer?: boolean | null
-          round_id?: number | null
-          statement_id?: number | null
-          uncertainty_comment?: string | null
-          uncertainty_level?: number | null
-        }
-        Update: {
-          agreement_level?: number | null
-          created_at?: string | null
-          group_id?: number | null
-          id?: never
-          is_test_answer?: boolean | null
-          round_id?: number | null
-          statement_id?: number | null
-          uncertainty_comment?: string | null
-          uncertainty_level?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "GroupAnswers_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "Groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "GroupAnswers_round_id_fkey"
+            foreignKeyName: "Answers_round_id_fkey"
             columns: ["round_id"]
             isOneToOne: false
             referencedRelation: "Rounds"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "GroupAnswers_statement_id_fkey"
+            foreignKeyName: "Answers_statement_id_fkey1"
             columns: ["statement_id"]
             isOneToOne: false
             referencedRelation: "Statements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      groupmembers: {
-        Row: {
-          created_at: string | null
-          group_id: number | null
-          id: number
-          session_user_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          group_id?: number | null
-          id?: never
-          session_user_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          group_id?: number | null
-          id?: never
-          session_user_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "groupmembers_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groupmembers_session_user_id_fkey"
-            columns: ["session_user_id"]
-            isOneToOne: false
-            referencedRelation: "sessionusers"
             referencedColumns: ["id"]
           },
         ]
@@ -278,6 +93,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "Groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_session_user_id_fkey"
+            columns: ["session_user_id"]
+            isOneToOne: false
+            referencedRelation: "SessionUsers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "GroupMembers_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
@@ -289,68 +118,6 @@ export type Database = {
             columns: ["session_user_id"]
             isOneToOne: false
             referencedRelation: "SessionUsers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      groups: {
-        Row: {
-          created_at: string | null
-          id: number
-          leader_id: number | null
-          merged_into_group_id: number | null
-          round_id: number | null
-          session_id: number | null
-          status: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: never
-          leader_id?: number | null
-          merged_into_group_id?: number | null
-          round_id?: number | null
-          session_id?: number | null
-          status?: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: never
-          leader_id?: number | null
-          merged_into_group_id?: number | null
-          round_id?: number | null
-          session_id?: number | null
-          status?: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "groups_leader_id_fkey"
-            columns: ["leader_id"]
-            isOneToOne: false
-            referencedRelation: "sessionusers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groups_merged_into_group_id_fkey"
-            columns: ["merged_into_group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groups_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "rounds"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "groups_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -409,51 +176,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "Groups_session_id_fkey"
+            foreignKeyName: "groups_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "Sessions"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      rounds: {
-        Row: {
-          created_at: string | null
-          ended_at: string | null
-          id: number
-          round_number: number
-          session_id: number | null
-          started_at: string | null
-          status: string | null
-          time_limit: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          ended_at?: string | null
-          id?: never
-          round_number: number
-          session_id?: number | null
-          started_at?: string | null
-          status?: string | null
-          time_limit?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          ended_at?: string | null
-          id?: never
-          round_number?: number
-          session_id?: number | null
-          started_at?: string | null
-          status?: string | null
-          time_limit?: number | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "rounds_session_id_fkey"
+            foreignKeyName: "Groups_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "sessions"
+            referencedRelation: "Sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -494,6 +227,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rounds_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "Statements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "Rounds_statement_id_fkey"
             columns: ["statement_id"]
             isOneToOne: false
@@ -501,39 +248,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      sessions: {
-        Row: {
-          allow_joins: boolean | null
-          created_at: string
-          created_by: string | null
-          id: number
-          name: string | null
-          status: string | null
-          test_mode: boolean | null
-          test_participants_count: number | null
-        }
-        Insert: {
-          allow_joins?: boolean | null
-          created_at?: string
-          created_by?: string | null
-          id?: never
-          name?: string | null
-          status?: string | null
-          test_mode?: boolean | null
-          test_participants_count?: number | null
-        }
-        Update: {
-          allow_joins?: boolean | null
-          created_at?: string
-          created_by?: string | null
-          id?: never
-          name?: string | null
-          status?: string | null
-          test_mode?: boolean | null
-          test_participants_count?: number | null
-        }
-        Relationships: []
       }
       Sessions: {
         Row: {
@@ -571,38 +285,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sessionusers: {
-        Row: {
-          created_at: string | null
-          id: number
-          is_test_participant: boolean | null
-          name: string
-          session_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: never
-          is_test_participant?: boolean | null
-          name: string
-          session_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: never
-          is_test_participant?: boolean | null
-          name?: string
-          session_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sessionusers_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       SessionUsers: {
         Row: {
           created_at: string | null
@@ -627,57 +309,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "SessionUsers_session_id_fkey"
+            foreignKeyName: "session_users_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "Sessions"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      statements: {
-        Row: {
-          background: string | null
-          content: string
-          created_at: string | null
-          id: number
-          session_id: number | null
-          show_results: boolean | null
-          status: string | null
-          timer_seconds: number | null
-          timer_started_at: string | null
-          timer_status: string | null
-        }
-        Insert: {
-          background?: string | null
-          content: string
-          created_at?: string | null
-          id?: never
-          session_id?: number | null
-          show_results?: boolean | null
-          status?: string | null
-          timer_seconds?: number | null
-          timer_started_at?: string | null
-          timer_status?: string | null
-        }
-        Update: {
-          background?: string | null
-          content?: string
-          created_at?: string | null
-          id?: never
-          session_id?: number | null
-          show_results?: boolean | null
-          status?: string | null
-          timer_seconds?: number | null
-          timer_started_at?: string | null
-          timer_status?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: "statements_session_id_fkey"
+            foreignKeyName: "SessionUsers_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "sessions"
+            referencedRelation: "Sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -720,6 +362,13 @@ export type Database = {
           timer_status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "statements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Statements_session_id_fkey"
             columns: ["session_id"]

@@ -29,7 +29,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
         .from('Answers')
         .select(`
           id,
-          session_user_id,
+          owner_id,
           statement:Statements(
             id,
             status,
@@ -37,7 +37,8 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           )
         `)
         .eq('statement.session_id', sessionId)
-        .eq('statement.status', 'active');
+        .eq('statement.status', 'active')
+        .eq('owner_type', 'user');
 
       if (error) throw error;
       console.log('Fetched participant answers:', data);
@@ -107,7 +108,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           <div className="flex flex-wrap gap-2">
             {participants.map((participant) => {
               const hasAnswered = participantAnswers?.some(
-                answer => answer.session_user_id === participant.id && answer.statement?.status === 'active'
+                answer => answer.owner_id === participant.id && answer.statement?.status === 'active'
               );
 
               return (

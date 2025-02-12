@@ -82,17 +82,19 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       if (userError) throw userError;
 
-      // Then submit the answer with the session_user_id and is_test_answer flag
+      // Submit answer using the new schema
       const { error } = await supabase
         .from('Answers')
         .insert([
           {
-            statement_id: statement.id,
-            session_user_id: userData.id,
+            content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
             agreement_level: agreementLevel,
             confidence_level: confidenceLevel,
-            content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
-            is_test_answer: userData.is_test_participant
+            owner_type: 'user',
+            owner_id: userData.id,
+            statement_id: statement.id,
+            is_test_answer: userData.is_test_participant,
+            status: 'submitted'
           }
         ]);
 
@@ -167,4 +169,3 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
     </Card>
   );
 };
-
