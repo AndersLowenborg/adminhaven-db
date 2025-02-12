@@ -2,6 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
+import { Participant } from '@/types/participant';
 
 export const useParticipants = (sessionId: number) => {
   const queryClient = useQueryClient();
@@ -11,14 +12,14 @@ export const useParticipants = (sessionId: number) => {
     queryFn: async () => {
       console.log('Fetching participants for session:', sessionId);
       const { data, error } = await supabase
-        .from('SessionUsers')
+        .from('SESSION_USERS')
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       console.log('Participants data:', data);
-      return data || [];
+      return data as Participant[];
     },
     enabled: !!sessionId,
   });
@@ -35,7 +36,7 @@ export const useParticipants = (sessionId: number) => {
         {
           event: '*',
           schema: 'public',
-          table: 'SessionUsers',
+          table: 'SESSION_USERS',
           filter: `session_id=eq.${sessionId}`
         },
         (payload) => {

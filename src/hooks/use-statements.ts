@@ -2,36 +2,38 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
+import { Statement, StatementStatus } from '@/types/statement';
 
 export const useStatements = (sessionId: number) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: statements, isLoading: isLoadingStatements } = useQuery({
+  const { data: statements, isLoadingStatements } = useQuery({
     queryKey: ['statements', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as Statement[];
     },
     enabled: !!sessionId,
   });
 
   const addStatementMutation = useMutation({
-    mutationFn: async ({ content, background }: { content: string; background?: string }) => {
+    mutationFn: async ({ content, description }: { content: string; description?: string }) => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .insert([
           {
             content,
-            background,
+            description,
             session_id: sessionId,
-            status: 'inactive'
+            status: 'UNPUBLISHED' as StatementStatus,
+            show_results: false
           }
         ])
         .select()
@@ -58,10 +60,10 @@ export const useStatements = (sessionId: number) => {
   });
 
   const updateStatementMutation = useMutation({
-    mutationFn: async ({ id, content, background }: { id: number; content: string; background?: string }) => {
+    mutationFn: async ({ id, content, description }: { id: number; content: string; description?: string }) => {
       const { data, error } = await supabase
-        .from('Statements')
-        .update({ content, background })
+        .from('STATEMENT')
+        .update({ content, description })
         .eq('id', id)
         .select()
         .single();
@@ -87,10 +89,10 @@ export const useStatements = (sessionId: number) => {
   });
 
   const toggleStatementStatusMutation = useMutation({
-    mutationFn: async ({ id, currentStatus }: { id: number; currentStatus: string }) => {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    mutationFn: async ({ id, currentStatus }: { id: number; currentStatus: StatementStatus }) => {
+      const newStatus = currentStatus === 'STARTED' ? 'UNPUBLISHED' : 'STARTED';
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .update({ status: newStatus })
         .eq('id', id)
         .select()
@@ -103,7 +105,7 @@ export const useStatements = (sessionId: number) => {
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",
-        description: `Statement ${data.status === 'active' ? 'activated' : 'deactivated'} successfully`,
+        description: `Statement ${data.status === 'STARTED' ? 'activated' : 'deactivated'} successfully`,
       });
     },
     onError: (error) => {
@@ -119,7 +121,7 @@ export const useStatements = (sessionId: number) => {
   const toggleShowResultsMutation = useMutation({
     mutationFn: async ({ id, currentShowResults }: { id: number; currentShowResults: boolean }) => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .update({ show_results: !currentShowResults })
         .eq('id', id)
         .select()
@@ -148,7 +150,7 @@ export const useStatements = (sessionId: number) => {
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .delete()
         .eq('id', statementId);
 
@@ -174,7 +176,7 @@ export const useStatements = (sessionId: number) => {
   const startTimerMutation = useMutation({
     mutationFn: async ({ id, seconds }: { id: number; seconds: number }) => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .update({ 
           timer_seconds: seconds,
           timer_started_at: new Date().toISOString(),
@@ -207,7 +209,7 @@ export const useStatements = (sessionId: number) => {
   const stopTimerMutation = useMutation({
     mutationFn: async (id: number) => {
       const { data, error } = await supabase
-        .from('Statements')
+        .from('STATEMENT')
         .update({ 
           timer_status: 'stopped'
         })
