@@ -48,7 +48,6 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     try {
       console.log('Attempting to delete session:', sessionId);
       
-      // With CASCADE deletion, we can now directly delete the session
       const { error: deleteSessionError } = await supabase
         .from('Sessions')
         .delete()
@@ -61,7 +60,6 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
       console.log('Successfully deleted session:', sessionId);
       
-      // Invalidate the sessions query to refresh the list
       queryClient.invalidateQueries({ 
         queryKey: ['admin-sessions', authSession?.user?.id] 
       });
@@ -79,6 +77,21 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
       });
     } finally {
       setSessionToDelete(null);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'NOT_STARTED':
+        return 'secondary';
+      case 'PUBLISHED':
+        return 'blue';
+      case 'IN_PROGRESS':
+        return 'green';
+      case 'ENDED':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -104,8 +117,8 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
               >
                 <TableCell className="font-medium">{session.name}</TableCell>
                 <TableCell>
-                  <Badge variant={session.status === 'unpublished' ? 'secondary' : 'default'}>
-                    {session.status}
+                  <Badge variant={getStatusColor(session.status)}>
+                    {session.status.replace(/_/g, ' ')}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -174,4 +187,3 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     </>
   );
 };
-

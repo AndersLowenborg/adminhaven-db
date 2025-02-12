@@ -16,8 +16,8 @@ export type Database = {
           content: string | null
           created_at: string | null
           id: number
-          owner_id: number
-          owner_type: string
+          respondent_id: number
+          respondent_type: string
           round_id: number | null
           statement_id: number | null
           status: string | null
@@ -29,9 +29,9 @@ export type Database = {
           confidence_level?: number | null
           content?: string | null
           created_at?: string | null
-          id?: never
-          owner_id: number
-          owner_type: string
+          id?: number
+          respondent_id: number
+          respondent_type: string
           round_id?: number | null
           statement_id?: number | null
           status?: string | null
@@ -43,9 +43,9 @@ export type Database = {
           confidence_level?: number | null
           content?: string | null
           created_at?: string | null
-          id?: never
-          owner_id?: number
-          owner_type?: string
+          id?: number
+          respondent_id?: number
+          respondent_type?: string
           round_id?: number | null
           statement_id?: number | null
           status?: string | null
@@ -61,7 +61,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "Answers_statement_id_fkey1"
+            foreignKeyName: "Answers_statement_id_fkey"
             columns: ["statement_id"]
             isOneToOne: false
             referencedRelation: "Statements"
@@ -79,30 +79,16 @@ export type Database = {
         Insert: {
           created_at?: string | null
           group_id?: number | null
-          id?: never
+          id?: number
           session_user_id?: number | null
         }
         Update: {
           created_at?: string | null
           group_id?: number | null
-          id?: never
+          id?: number
           session_user_id?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "group_members_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "Groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_members_session_user_id_fkey"
-            columns: ["session_user_id"]
-            isOneToOne: false
-            referencedRelation: "SessionUsers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "GroupMembers_group_id_fkey"
             columns: ["group_id"]
@@ -132,7 +118,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          id?: never
+          id?: number
           leader_id?: number | null
           merged_into_group_id?: number | null
           round_id?: number | null
@@ -142,7 +128,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          id?: never
+          id?: number
           leader_id?: number | null
           merged_into_group_id?: number | null
           round_id?: number | null
@@ -173,17 +159,46 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "groups_session_id_fkey"
+            foreignKeyName: "Groups_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "Sessions"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      RoundGroups: {
+        Row: {
+          created_at: string | null
+          group_id: number | null
+          id: number
+          round_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: number | null
+          id?: number
+          round_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: number | null
+          id?: number
+          round_id?: number | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "Groups_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "RoundGroups_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "Sessions"
+            referencedRelation: "Groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "RoundGroups_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "Rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -193,6 +208,8 @@ export type Database = {
           created_at: string | null
           ended_at: string | null
           id: number
+          respondent_id: number | null
+          respondent_type: string | null
           round_number: number
           session_id: number | null
           started_at: string | null
@@ -203,7 +220,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           ended_at?: string | null
-          id?: never
+          id?: number
+          respondent_id?: number | null
+          respondent_type?: string | null
           round_number: number
           session_id?: number | null
           started_at?: string | null
@@ -214,7 +233,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           ended_at?: string | null
-          id?: never
+          id?: number
+          respondent_id?: number | null
+          respondent_type?: string | null
           round_number?: number
           session_id?: number | null
           started_at?: string | null
@@ -224,17 +245,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "rounds_session_id_fkey"
+            foreignKeyName: "Rounds_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rounds_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "Statements"
             referencedColumns: ["id"]
           },
           {
@@ -251,28 +265,34 @@ export type Database = {
           allow_joins: boolean | null
           created_at: string
           created_by: string | null
-          current_round: number | null
+          description: string | null
+          ended_at: string | null
           id: number
           name: string | null
-          status: string | null
+          started_at: string | null
+          status: string
         }
         Insert: {
           allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
-          current_round?: number | null
+          description?: string | null
+          ended_at?: string | null
           id?: number
           name?: string | null
-          status?: string | null
+          started_at?: string | null
+          status?: string
         }
         Update: {
           allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
-          current_round?: number | null
+          description?: string | null
+          ended_at?: string | null
           id?: number
           name?: string | null
-          status?: string | null
+          started_at?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -296,13 +316,6 @@ export type Database = {
           session_id?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "session_users_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "SessionUsers_session_id_fkey"
             columns: ["session_id"]
@@ -351,13 +364,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "statements_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "Statements_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -374,7 +380,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      group_status: "active" | "merged" | "completed"
+      group_status: "ACTIVE" | "MERGED" | "COMPLETED"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSessionContext } from '@supabase/auth-helpers-react';
@@ -29,7 +30,7 @@ export const useCreateSession = () => {
         .insert([
           {
             name: 'New Session',
-            status: 'unpublished',
+            status: 'NOT_STARTED',
             created_by: session.user.id,
           },
         ])
