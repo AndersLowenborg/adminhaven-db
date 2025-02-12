@@ -4,9 +4,9 @@ export interface Answer {
   statement_id: number;
   respondant_id: number;
   respondant_type: 'SESSION_USER' | 'GROUP';
-  agreement_level: number;
-  confidence_level: number;
-  comment?: string;
-  created_at: string;
-  round_id?: number;
+  agreement_level: number | null;
+  confidence_level: number | null;
+  comment: string | null;
+  created_at: string | null;
+  round_id: number | null;
 }

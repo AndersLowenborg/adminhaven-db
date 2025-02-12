@@ -18,22 +18,7 @@ export const useStatements = (sessionId: number) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      
-      // Map the database fields to our Statement interface
-      const mappedStatements = data?.map(item => ({
-        id: item.id,
-        session_id: item.session_id,
-        content: item.statement || '',
-        description: item.description,
-        status: item.status as StatementStatus,
-        show_results: false,
-        created_at: item.created_at || new Date().toISOString(),
-        timer_seconds: item.timer_seconds,
-        timer_started_at: item.timer_started_at,
-        timer_status: item.timer_status
-      })) || [];
-
-      return mappedStatements as Statement[];
+      return data as Statement[];
     },
     enabled: !!sessionId,
   });
@@ -133,35 +118,6 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
-  const toggleShowResultsMutation = useMutation({
-    mutationFn: async ({ id, currentShowResults }: { id: number; currentShowResults: boolean }) => {
-      const { data, error } = await supabase
-        .from('STATEMENT')
-        .update({ show_results: !currentShowResults })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: `Results ${data.show_results ? 'shown' : 'hidden'} successfully`,
-      });
-    },
-    onError: (error) => {
-      console.error('Error toggling show results:', error);
-      toast({
-        title: "Error",
-        description: "Failed to toggle results visibility",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
@@ -188,80 +144,13 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
-  const startTimerMutation = useMutation({
-    mutationFn: async ({ id, seconds }: { id: number; seconds: number }) => {
-      const { data, error } = await supabase
-        .from('STATEMENT')
-        .update({ 
-          timer_seconds: seconds,
-          timer_started_at: new Date().toISOString(),
-          timer_status: 'running'
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: "Timer started successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error starting timer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start timer",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const stopTimerMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const { data, error } = await supabase
-        .from('STATEMENT')
-        .update({ 
-          timer_status: 'stopped'
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: "Timer stopped successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error stopping timer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to stop timer",
-        variant: "destructive",
-      });
-    },
-  });
-
   return {
     statements,
     isLoadingStatements,
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
     toggleStatementStatus: toggleStatementStatusMutation.mutate,
-    toggleShowResults: toggleShowResultsMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
-    startTimer: startTimerMutation.mutate,
-    stopTimer: stopTimerMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,
   };
