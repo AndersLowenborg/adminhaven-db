@@ -32,6 +32,7 @@ export const useCreateSession = () => {
             name: 'New Session',
             status: 'NOT_STARTED',
             created_by: session.user.id,
+            allow_joins: true
           },
         ])
         .select()

@@ -1,9 +1,9 @@
 
 export interface Answer {
   id: number;
-  created_at: string;
+  created_at: string | null;
   content: string | null;
-  respondent_type: 'user' | 'group';
+  respondent_type: string | null;
   respondent_id: number;
   statement_id: number | null;
   round_id: number | null;
@@ -11,5 +11,5 @@ export interface Answer {
   confidence_level: number | null;
   uncertainty_level: number | null;
   uncertainty_comment: string | null;
-  status: 'pending' | 'submitted' | 'final';
+  status: string | null;
 }

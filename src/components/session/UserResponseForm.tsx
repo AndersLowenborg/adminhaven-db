@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,20 +82,18 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       if (userError) throw userError;
 
-      // Submit answer using the new schema
+      // Submit answer using the schema
       const { error } = await supabase
         .from('Answers')
-        .insert([
-          {
-            content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
-            agreement_level: agreementLevel,
-            confidence_level: confidenceLevel,
-            owner_type: 'user',
-            owner_id: userData.id,
-            statement_id: statement.id,
-            status: 'submitted'
-          }
-        ]);
+        .insert({
+          content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
+          agreement_level: agreementLevel,
+          confidence_level: confidenceLevel,
+          respondent_type: 'user',
+          respondent_id: userData.id,
+          statement_id: statement.id,
+          status: 'submitted'
+        });
 
       if (error) throw error;
       

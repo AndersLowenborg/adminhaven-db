@@ -12,257 +12,133 @@ export type Database = {
       Answers: {
         Row: {
           agreement_level: number | null
+          comment: string | null
           confidence_level: number | null
-          content: string | null
           created_at: string | null
           id: number
           respondent_id: number
-          respondent_type: string
+          respondent_type: Database["public"]["Enums"]["respondant_type"] | null
           round_id: number | null
-          statement_id: number | null
-          status: string | null
-          uncertainty_comment: string | null
-          uncertainty_level: number | null
         }
         Insert: {
           agreement_level?: number | null
+          comment?: string | null
           confidence_level?: number | null
-          content?: string | null
           created_at?: string | null
           id?: number
           respondent_id: number
-          respondent_type: string
+          respondent_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
           round_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-          uncertainty_comment?: string | null
-          uncertainty_level?: number | null
         }
         Update: {
           agreement_level?: number | null
+          comment?: string | null
           confidence_level?: number | null
-          content?: string | null
           created_at?: string | null
           id?: number
           respondent_id?: number
-          respondent_type?: string
+          respondent_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
           round_id?: number | null
-          statement_id?: number | null
-          status?: string | null
-          uncertainty_comment?: string | null
-          uncertainty_level?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "Answers_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "Rounds"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Answers_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "Statements"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       GroupMembers: {
         Row: {
-          created_at: string | null
-          group_id: number | null
           id: number
-          session_user_id: number | null
+          member_id: number | null
+          member_type: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id: number | null
         }
         Insert: {
-          created_at?: string | null
-          group_id?: number | null
           id?: number
-          session_user_id?: number | null
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id?: number | null
         }
         Update: {
-          created_at?: string | null
-          group_id?: number | null
           id?: number
-          session_user_id?: number | null
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "GroupMembers_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "Groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "GroupMembers_session_user_id_fkey"
-            columns: ["session_user_id"]
-            isOneToOne: false
-            referencedRelation: "SessionUsers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       Groups: {
         Row: {
-          created_at: string | null
           id: number
           leader_id: number | null
-          merged_into_group_id: number | null
-          round_id: number | null
-          session_id: number | null
-          status: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment: string | null
         }
         Insert: {
-          created_at?: string | null
           id?: number
           leader_id?: number | null
-          merged_into_group_id?: number | null
-          round_id?: number | null
-          session_id?: number | null
-          status?: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment?: string | null
         }
         Update: {
-          created_at?: string | null
           id?: number
           leader_id?: number | null
-          merged_into_group_id?: number | null
-          round_id?: number | null
-          session_id?: number | null
-          status?: Database["public"]["Enums"]["group_status"] | null
-          uncertainty_comment?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "Groups_leader_id_fkey"
-            columns: ["leader_id"]
-            isOneToOne: false
-            referencedRelation: "SessionUsers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Groups_merged_into_group_id_fkey"
-            columns: ["merged_into_group_id"]
-            isOneToOne: false
-            referencedRelation: "Groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Groups_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "Rounds"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Groups_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       RoundGroups: {
         Row: {
-          created_at: string | null
           group_id: number | null
           id: number
           round_id: number | null
         }
         Insert: {
-          created_at?: string | null
           group_id?: number | null
           id?: number
           round_id?: number | null
         }
         Update: {
-          created_at?: string | null
           group_id?: number | null
           id?: number
           round_id?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "RoundGroups_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "Groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "RoundGroups_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "Rounds"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       Rounds: {
         Row: {
-          created_at: string | null
           ended_at: string | null
           id: number
           respondent_id: number | null
-          respondent_type: string | null
-          round_number: number
-          session_id: number | null
+          respondent_type: Database["public"]["Enums"]["respondant_type"] | null
+          round_number: number | null
           started_at: string | null
           statement_id: number | null
           status: string | null
-          time_limit: number | null
         }
         Insert: {
-          created_at?: string | null
           ended_at?: string | null
           id?: number
           respondent_id?: number | null
-          respondent_type?: string | null
-          round_number: number
-          session_id?: number | null
+          respondent_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_number?: number | null
           started_at?: string | null
           statement_id?: number | null
           status?: string | null
-          time_limit?: number | null
         }
         Update: {
-          created_at?: string | null
           ended_at?: string | null
           id?: number
           respondent_id?: number | null
-          respondent_type?: string | null
-          round_number?: number
-          session_id?: number | null
+          respondent_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_number?: number | null
           started_at?: string | null
           statement_id?: number | null
           status?: string | null
-          time_limit?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "Rounds_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Rounds_statement_id_fkey"
-            columns: ["statement_id"]
-            isOneToOne: false
-            referencedRelation: "Statements"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       Sessions: {
         Row: {
-          allow_joins: boolean | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -270,10 +146,9 @@ export type Database = {
           id: number
           name: string | null
           started_at: string | null
-          status: string
+          status: string | null
         }
         Insert: {
-          allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -281,10 +156,9 @@ export type Database = {
           id?: number
           name?: string | null
           started_at?: string | null
-          status?: string
+          status?: string | null
         }
         Update: {
-          allow_joins?: boolean | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -292,85 +166,48 @@ export type Database = {
           id?: number
           name?: string | null
           started_at?: string | null
-          status?: string
+          status?: string | null
         }
         Relationships: []
       }
       SessionUsers: {
         Row: {
-          created_at: string | null
           id: number
           name: string
           session_id: number | null
         }
         Insert: {
-          created_at?: string | null
           id?: number
           name: string
           session_id?: number | null
         }
         Update: {
-          created_at?: string | null
           id?: number
           name?: string
           session_id?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "SessionUsers_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       Statements: {
         Row: {
           background: string | null
-          content: string
-          created_at: string | null
           id: number
           session_id: number | null
-          show_results: boolean | null
-          status: string | null
-          timer_seconds: number | null
-          timer_started_at: string | null
-          timer_status: string | null
+          statement: string
         }
         Insert: {
           background?: string | null
-          content: string
-          created_at?: string | null
           id?: number
           session_id?: number | null
-          show_results?: boolean | null
-          status?: string | null
-          timer_seconds?: number | null
-          timer_started_at?: string | null
-          timer_status?: string | null
+          statement: string
         }
         Update: {
           background?: string | null
-          content?: string
-          created_at?: string | null
           id?: number
           session_id?: number | null
-          show_results?: boolean | null
-          status?: string | null
-          timer_seconds?: number | null
-          timer_started_at?: string | null
-          timer_status?: string | null
+          statement?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "Statements_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "Sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -380,7 +217,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      group_status: "ACTIVE" | "MERGED" | "COMPLETED"
+      respondant_type: "SESSION_USER" | "GROUP"
+      round_status: "NOT_STARTED" | "STARTED" | "COMPLETED"
+      session_status: "UNPUBLISHED" | "PUBLISHED" | "STARTED" | "ENDED"
     }
     CompositeTypes: {
       [_ in never]: never
