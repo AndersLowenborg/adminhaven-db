@@ -20,6 +20,7 @@ export type Database = {
     Enums: {
       respondant_type: "SESSION_USER" | "GROUP"
       round_status: "NOT_STARTED" | "STARTED" | "COMPLETED"
+      session_status: "UNPUBLISHED" | "PUBLISHED" | "STARTED" | "ENDED"
     }
     CompositeTypes: {
       [_ in never]: never
