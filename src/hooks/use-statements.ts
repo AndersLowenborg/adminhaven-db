@@ -8,7 +8,7 @@ export const useStatements = (sessionId: number) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: statements, isLoadingStatements } = useQuery({
+  const { data: statements, isLoading: isLoadingStatements } = useQuery({
     queryKey: ['statements', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -18,7 +18,22 @@ export const useStatements = (sessionId: number) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data as Statement[];
+      
+      // Map the database fields to our Statement interface
+      const mappedStatements = data?.map(item => ({
+        id: item.id,
+        session_id: item.session_id,
+        content: item.statement || '',
+        description: item.description,
+        status: item.status as StatementStatus,
+        show_results: false,
+        created_at: item.created_at || new Date().toISOString(),
+        timer_seconds: item.timer_seconds,
+        timer_started_at: item.timer_started_at,
+        timer_status: item.timer_status
+      })) || [];
+
+      return mappedStatements as Statement[];
     },
     enabled: !!sessionId,
   });
@@ -27,15 +42,12 @@ export const useStatements = (sessionId: number) => {
     mutationFn: async ({ content, description }: { content: string; description?: string }) => {
       const { data, error } = await supabase
         .from('STATEMENT')
-        .insert([
-          {
-            content,
-            description,
-            session_id: sessionId,
-            status: 'UNPUBLISHED' as StatementStatus,
-            show_results: false
-          }
-        ])
+        .insert({
+          statement: content,
+          description,
+          session_id: sessionId,
+          status: 'UNPUBLISHED' as StatementStatus
+        })
         .select()
         .single();
 
@@ -63,7 +75,10 @@ export const useStatements = (sessionId: number) => {
     mutationFn: async ({ id, content, description }: { id: number; content: string; description?: string }) => {
       const { data, error } = await supabase
         .from('STATEMENT')
-        .update({ content, description })
+        .update({ 
+          statement: content,
+          description 
+        })
         .eq('id', id)
         .select()
         .single();
