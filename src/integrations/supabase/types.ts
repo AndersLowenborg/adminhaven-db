@@ -9,7 +9,206 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ANSWER: {
+        Row: {
+          agreement_level: number | null
+          comment: string | null
+          confidence_level: number | null
+          created_at: string | null
+          id: number
+          respondant_id: number | null
+          respondant_type: Database["public"]["Enums"]["respondant_type"] | null
+          round_id: number | null
+        }
+        Insert: {
+          agreement_level?: number | null
+          comment?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          id: number
+          respondant_id?: number | null
+          respondant_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_id?: number | null
+        }
+        Update: {
+          agreement_level?: number | null
+          comment?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          id?: number
+          respondant_id?: number | null
+          respondant_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_id?: number | null
+        }
+        Relationships: []
+      }
+      GROUP: {
+        Row: {
+          id: number
+          leader: number | null
+        }
+        Insert: {
+          id: number
+          leader?: number | null
+        }
+        Update: {
+          id?: number
+          leader?: number | null
+        }
+        Relationships: []
+      }
+      GROUP_MEMBERS: {
+        Row: {
+          id: number
+          member_id: number | null
+          member_type: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id: number | null
+        }
+        Insert: {
+          id: number
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id?: number | null
+        }
+        Update: {
+          id?: number
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_group_id?: number | null
+        }
+        Relationships: []
+      }
+      ROUND: {
+        Row: {
+          ended_at: string | null
+          id: number
+          respondant_id: number | null
+          respondant_type: Database["public"]["Enums"]["respondant_type"] | null
+          round_number: number | null
+          started_at: string | null
+          statement_id: number | null
+          status: Database["public"]["Enums"]["round_status"] | null
+        }
+        Insert: {
+          ended_at?: string | null
+          id: number
+          respondant_id?: number | null
+          respondant_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_number?: number | null
+          started_at?: string | null
+          statement_id?: number | null
+          status?: Database["public"]["Enums"]["round_status"] | null
+        }
+        Update: {
+          ended_at?: string | null
+          id?: number
+          respondant_id?: number | null
+          respondant_type?:
+            | Database["public"]["Enums"]["respondant_type"]
+            | null
+          round_number?: number | null
+          started_at?: string | null
+          statement_id?: number | null
+          status?: Database["public"]["Enums"]["round_status"] | null
+        }
+        Relationships: []
+      }
+      ROUND_GROUPS: {
+        Row: {
+          group_id: number | null
+          id: number
+          round_id: number | null
+        }
+        Insert: {
+          group_id?: number | null
+          id: number
+          round_id?: number | null
+        }
+        Update: {
+          group_id?: number | null
+          id?: number
+          round_id?: number | null
+        }
+        Relationships: []
+      }
+      SESSION: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          description: string | null
+          ended_at: string | null
+          id: number
+          name: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["session_status"] | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id: number
+          name?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: number
+          name?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+        }
+        Relationships: []
+      }
+      SESSION_USERS: {
+        Row: {
+          id: number
+          name: string | null
+          session_id: number | null
+        }
+        Insert: {
+          id: number
+          name?: string | null
+          session_id?: number | null
+        }
+        Update: {
+          id?: number
+          name?: string | null
+          session_id?: number | null
+        }
+        Relationships: []
+      }
+      STATEMENT: {
+        Row: {
+          description: string | null
+          id: number
+          session_id: number | null
+          statement: string | null
+        }
+        Insert: {
+          description?: string | null
+          id: number
+          session_id?: number | null
+          statement?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          session_id?: number | null
+          statement?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
