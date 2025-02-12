@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
-import { Statement, StatementStatus } from '@/types/statement';
+import { Statement } from '@/types/statement';
 
 export const useStatements = (sessionId: number) => {
   const { toast } = useToast();
@@ -31,7 +31,6 @@ export const useStatements = (sessionId: number) => {
           statement: content,
           description,
           session_id: sessionId,
-          status: 'UNPUBLISHED'
         })
         .select()
         .single();
@@ -88,36 +87,6 @@ export const useStatements = (sessionId: number) => {
     },
   });
 
-  const toggleStatementStatusMutation = useMutation({
-    mutationFn: async ({ id, currentStatus }: { id: number; currentStatus: StatementStatus }) => {
-      const newStatus = currentStatus === 'STARTED' ? 'UNPUBLISHED' : 'STARTED';
-      const { data, error } = await supabase
-        .from('STATEMENT')
-        .update({ status: newStatus })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: `Statement ${data.status === 'STARTED' ? 'activated' : 'deactivated'} successfully`,
-      });
-    },
-    onError: (error) => {
-      console.error('Error toggling statement status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update statement status",
-        variant: "destructive",
-      });
-    },
-  });
-
   const deleteStatementMutation = useMutation({
     mutationFn: async (statementId: number) => {
       const { error } = await supabase
@@ -149,7 +118,6 @@ export const useStatements = (sessionId: number) => {
     isLoadingStatements,
     addStatement: addStatementMutation.mutate,
     updateStatement: updateStatementMutation.mutate,
-    toggleStatementStatus: toggleStatementStatusMutation.mutate,
     deleteStatement: deleteStatementMutation.mutate,
     isAddingStatement: addStatementMutation.isPending,
     isDeletingStatement: deleteStatementMutation.isPending,
