@@ -81,7 +81,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       if (userError) throw userError;
 
-      // Submit answer using the schema
+      // Submit answer without statement relationship
       const { error } = await supabase
         .from('ANSWER')
         .insert({
@@ -89,7 +89,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
           confidence_level: confidenceLevel,
           respondant_type: 'SESSION_USER',
           respondant_id: userData.id,
-          statement_id: statement.id,
           round_id: null
         });
 

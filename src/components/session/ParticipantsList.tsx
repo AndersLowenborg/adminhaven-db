@@ -21,25 +21,14 @@ type ParticipantsListProps = {
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
   const queryClient = useQueryClient();
 
-  // Fetch answers for the current session to track who has answered
+  // Fetch answers for the current session
   const { data: participantAnswers } = useQuery({
     queryKey: ['participant-answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ANSWER')
-        .select(`
-          id,
-          respondant_id,
-          statement_id,
-          statement:STATEMENT(
-            id,
-            status,
-            session_id
-          )
-        `)
-        .eq('statement.session_id', sessionId)
-        .eq('statement.status', 'STARTED')
-        .eq('respondant_type', 'SESSION_USER');
+        .select('id, respondant_id')
+        .eq('round_id', sessionId);
 
       if (error) throw error;
       console.log('Fetched participant answers:', data);
@@ -54,7 +43,6 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
 
     console.log('Setting up real-time subscription for participants in session:', sessionId);
     
-    // Channel for participant updates
     const participantsChannel = supabase
       .channel(`participants-${sessionId}`)
       .on(
@@ -72,7 +60,6 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
       )
       .subscribe();
 
-    // Channel for answer updates
     const answersChannel = supabase
       .channel(`answers-${sessionId}`)
       .on(
@@ -81,7 +68,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
           event: '*',
           schema: 'public',
           table: 'ANSWER',
-          filter: `statement.session_id=eq.${sessionId}`
+          filter: `round_id=eq.${sessionId}`
         },
         (payload) => {
           console.log('Answers change detected:', payload);

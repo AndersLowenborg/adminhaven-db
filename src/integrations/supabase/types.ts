@@ -197,7 +197,7 @@ export type Database = {
         }
         Insert: {
           description?: string | null
-          id: number
+          id?: number
           session_id?: number | null
           statement?: string | null
         }
