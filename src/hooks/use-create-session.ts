@@ -32,7 +32,6 @@ export const useCreateSession = () => {
           name: 'New Session',
           status: 'UNPUBLISHED' as SessionStatus,
           auth_user_id: session.user.id,
-          allow_joins: true,
           current_round: 0
         })
         .select()
