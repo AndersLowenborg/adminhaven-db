@@ -153,7 +153,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           ended_at?: string | null
-          id: number
+          id?: number
           name?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"] | null
