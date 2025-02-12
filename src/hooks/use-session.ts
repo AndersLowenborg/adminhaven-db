@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
-import { Session } from '@/types/session';
+import { Session, SessionStatus } from '@/types/session';
 
 export const useSession = (sessionId: number) => {
   const { toast } = useToast();
@@ -13,7 +13,7 @@ export const useSession = (sessionId: number) => {
     queryFn: async () => {
       console.log('Fetching session details for ID:', sessionId);
       const { data, error } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .select('*')
         .eq('id', sessionId)
         .single();
@@ -28,7 +28,7 @@ export const useSession = (sessionId: number) => {
   const updateSessionMutation = useMutation({
     mutationFn: async (newName: string) => {
       const { data, error } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .update({ name: newName } as Partial<Session>)
         .eq('id', sessionId)
         .select()

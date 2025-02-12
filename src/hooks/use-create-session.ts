@@ -26,13 +26,14 @@ export const useCreateSession = () => {
       console.log('Creating new session for user:', session.user.id);
       
       const { data: newSession, error: createError } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .insert([
           {
             name: 'New Session',
-            status: 'NOT_STARTED',
-            created_by: session.user.id,
-            allow_joins: true
+            status: 'UNPUBLISHED',
+            auth_user_id: session.user.id,
+            allow_joins: true,
+            current_round: 0
           },
         ])
         .select()
