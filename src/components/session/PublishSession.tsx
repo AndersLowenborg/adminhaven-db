@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SessionStatus } from '@/types/session';
 
 interface PublishSessionProps {
   sessionId: number;
-  status: string;
+  status: SessionStatus;
   hasStatements: boolean;
   onPublish: () => void;
 }
@@ -24,11 +26,11 @@ export const PublishSession = ({
       setIsLoading(true);
       console.log('Toggling session publish state:', sessionId);
       
-      const newStatus = status === 'published' ? 'unpublished' : 'published';
+      const newStatus = status === 'PUBLISHED' ? 'UNPUBLISHED' : 'PUBLISHED';
       console.log('Setting new status to:', newStatus);
 
       const { error } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .update({ status: newStatus })
         .eq('id', sessionId);
 
@@ -36,7 +38,7 @@ export const PublishSession = ({
 
       toast({
         title: "Success",
-        description: `Session ${newStatus} successfully`,
+        description: `Session ${newStatus.toLowerCase()} successfully`,
       });
       
       onPublish();
@@ -44,7 +46,7 @@ export const PublishSession = ({
       console.error('Error updating session status:', error);
       toast({
         title: "Error",
-        description: `Failed to ${status === 'published' ? 'unpublish' : 'publish'} session`,
+        description: `Failed to ${status === 'PUBLISHED' ? 'unpublish' : 'publish'} session`,
         variant: "destructive",
       });
     } finally {
@@ -63,10 +65,10 @@ export const PublishSession = ({
       className="ml-4"
     >
       {isLoading 
-        ? status === 'published' 
+        ? status === 'PUBLISHED' 
           ? "Unpublishing..." 
           : "Publishing..." 
-        : status === 'published'
+        : status === 'PUBLISHED'
           ? "Unpublish Session"
           : "Publish Session"
       }

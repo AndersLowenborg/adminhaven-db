@@ -6,6 +6,10 @@ import { SessionsTable } from '@/components/admin/SessionsTable';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
+interface SessionWithUsers extends Session {
+  users: Array<{ id: number; name: string }>;
+}
+
 export const AdminSessionsList = () => {
   const { session } = useSessionContext();
   const { toast } = useToast();
@@ -63,7 +67,7 @@ export const AdminSessionsList = () => {
       );
 
       console.log('Final sessions with users:', sessionsWithUsers);
-      return sessionsWithUsers;
+      return sessionsWithUsers as SessionWithUsers[];
     },
     enabled: !!session?.user?.id,
   });
