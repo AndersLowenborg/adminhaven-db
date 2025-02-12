@@ -10,13 +10,11 @@ interface SessionHeaderProps {
   sessionId: number;
   hasStatements: boolean;
   participantCount: number;
-  allowJoins: boolean;
   currentRound: number;
   onUpdateName: (name: string) => void;
   onStatusChange: () => void;
   onStartRound: () => void;
   onEndRound: () => void;
-  onAllowJoinsChange: (allow: boolean) => void;
 }
 
 export const SessionHeader = ({
@@ -25,13 +23,11 @@ export const SessionHeader = ({
   sessionId,
   hasStatements,
   participantCount,
-  allowJoins,
   currentRound,
   onUpdateName,
   onStatusChange,
   onStartRound,
   onEndRound,
-  onAllowJoinsChange,
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedName, setEditedName] = React.useState(name);
@@ -41,8 +37,8 @@ export const SessionHeader = ({
     setIsEditing(false);
   };
 
-  const isSessionActive = status === 'published';
-  const canStartSession = status === 'published' && participantCount > 1 && hasStatements;
+  const isSessionActive = status === 'PUBLISHED';
+  const canStartSession = status === 'PUBLISHED' && participantCount > 1 && hasStatements;
 
   return (
     <div className="space-y-4">
@@ -84,22 +80,11 @@ export const SessionHeader = ({
               Start Session
             </Button>
           )}
-          {!canStartSession && status === 'published' && (
+          {!canStartSession && status === 'PUBLISHED' && (
             <span className="text-sm text-muted-foreground">
               (Need at least 2 participants and statements to start)
             </span>
           )}
-        </div>
-      </div>
-
-      <div className="flex gap-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={allowJoins ? "default" : "outline"}
-            onClick={() => onAllowJoinsChange(!allowJoins)}
-          >
-            {allowJoins ? 'Close Joins' : 'Allow Joins'}
-          </Button>
         </div>
       </div>
     </div>
