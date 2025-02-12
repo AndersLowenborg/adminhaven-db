@@ -22,9 +22,9 @@ export const AdminSessionsList = () => {
       console.log('Starting to fetch sessions for user:', session.user.id);
       
       const { data: sessions, error: sessionsError } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .select('*')
-        .eq('auth_user_id', session.user.id)  // Updated to use auth_user_id
+        .eq('auth_user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (sessionsError) {
@@ -44,7 +44,7 @@ export const AdminSessionsList = () => {
           console.log('Fetching users for session:', session.id);
           
           const { data: users, error: usersError } = await supabase
-            .from('SessionUsers')
+            .from('SESSION_USERS')
             .select('*')
             .eq('session_id', session.id);
 
@@ -80,7 +80,7 @@ export const AdminSessionsList = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'SessionUsers'
+          table: 'SESSION_USERS'
         },
         (payload) => {
           console.log('Session users change detected:', payload);
