@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -43,22 +42,19 @@ const SessionPage = () => {
     queryKey: ['answers', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Answers')
-        .select(`
-          *,
-          statement:Statements(content)
-        `)
-        .eq('statement.session_id', sessionId);
+        .from('ANSWER')
+        .select('*')
+        .eq('round_id', sessionId);
 
       if (error) throw error;
       
       // Transform the answers into a map of statement_id -> answers[]
       const answersMap: Record<number, any[]> = {};
       data.forEach((answer) => {
-        if (!answersMap[answer.statement_id]) {
-          answersMap[answer.statement_id] = [];
+        if (!answersMap[answer.round_id]) {
+          answersMap[answer.round_id] = [];
         }
-        answersMap[answer.statement_id].push({
+        answersMap[answer.round_id].push({
           agreement_level: answer.agreement_level,
           confidence_level: answer.confidence_level,
         });
@@ -69,13 +65,11 @@ const SessionPage = () => {
     enabled: !!sessionId,
   });
 
-  // Set up real-time subscriptions
   useEffect(() => {
     if (!sessionId) return;
 
     console.log('Setting up real-time subscriptions for session:', sessionId);
     
-    // Channel for session updates
     const sessionChannel = supabase
       .channel(`session-updates-${sessionId}`)
       .on(
@@ -93,7 +87,6 @@ const SessionPage = () => {
       )
       .subscribe();
 
-    // Channel for statements updates
     const statementsChannel = supabase
       .channel(`statements-updates-${sessionId}`)
       .on(
@@ -111,7 +104,6 @@ const SessionPage = () => {
       )
       .subscribe();
 
-    // Add subscription for answers
     const answersChannel = supabase
       .channel(`session-answers-${sessionId}`)
       .on(
@@ -167,7 +159,6 @@ const SessionPage = () => {
     try {
       console.log('Starting round for statement:', statementId);
       
-      // First update the session status to 'started' if it's not already
       if (session?.status === 'published') {
         console.log('Session status is published, updating to started');
         const { error: sessionError } = await supabase
@@ -182,7 +173,6 @@ const SessionPage = () => {
         if (sessionError) throw sessionError;
       }
 
-      // Get the current round number for this statement
       const { data: existingRounds, error: roundsError } = await supabase
         .from('Rounds')
         .select('round_number')
@@ -196,7 +186,6 @@ const SessionPage = () => {
         ? existingRounds[0].round_number + 1 
         : 1;
 
-      // Create a new round for this statement
       const { error: roundError } = await supabase
         .from('Rounds')
         .insert({
@@ -208,7 +197,6 @@ const SessionPage = () => {
 
       if (roundError) throw roundError;
 
-      // Update the statement status to active
       const { error: statementError } = await supabase
         .from('Statements')
         .update({ status: 'active' })
@@ -221,7 +209,6 @@ const SessionPage = () => {
         description: "Round started successfully",
       });
       
-      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
     } catch (error) {
@@ -238,7 +225,6 @@ const SessionPage = () => {
     try {
       console.log('Ending round for statement:', statementId);
       
-      // Update the current round status to ended
       const { error: roundError } = await supabase
         .from('Rounds')
         .update({ 
@@ -250,7 +236,6 @@ const SessionPage = () => {
 
       if (roundError) throw roundError;
 
-      // Update the statement status back to inactive
       const { error: statementError } = await supabase
         .from('Statements')
         .update({ status: 'inactive' })
@@ -310,7 +295,6 @@ const SessionPage = () => {
 
   const handleHeaderStartRound = () => {
     console.log('handleHeaderStartRound clicked - Statements:', statements);
-    // Choose the first inactive statement to start
     const firstInactiveStatement = statements?.find(s => s.status === 'inactive');
     console.log('First inactive statement found:', firstInactiveStatement);
     if (firstInactiveStatement) {
@@ -321,7 +305,6 @@ const SessionPage = () => {
   };
 
   const handleHeaderEndRound = () => {
-    // Find the active statement and end its round
     const activeStatement = statements?.find(s => s.status === 'active');
     if (activeStatement) {
       handleEndRound(activeStatement.id);

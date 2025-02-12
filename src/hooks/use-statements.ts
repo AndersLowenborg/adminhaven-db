@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -14,8 +13,7 @@ export const useStatements = (sessionId: number) => {
       const { data, error } = await supabase
         .from('STATEMENT')
         .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .eq('session_id', sessionId);
 
       if (error) throw error;
       return data as Statement[];

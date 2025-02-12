@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
@@ -14,8 +13,7 @@ export const useParticipants = (sessionId: number) => {
       const { data, error } = await supabase
         .from('SESSION_USERS')
         .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .eq('session_id', sessionId);
 
       if (error) throw error;
       console.log('Participants data:', data);
