@@ -15,5 +15,5 @@ export interface Session {
 }
 
 export interface SessionWithUsers extends Session {
-  users: Array<{ id: number; name: string }>;
+  users: Array<{ id: number; name: string | null }>;
 }

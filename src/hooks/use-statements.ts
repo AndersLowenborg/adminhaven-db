@@ -31,7 +31,7 @@ export const useStatements = (sessionId: number) => {
           statement: content,
           description,
           session_id: sessionId,
-          status: 'UNPUBLISHED' as StatementStatus
+          status: 'UNPUBLISHED'
         })
         .select()
         .single();
