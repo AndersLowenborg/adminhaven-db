@@ -24,10 +24,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Session } from '@/types/session';
+import { SessionWithUsers } from '@/types/session';
 
 interface SessionsTableProps {
-  sessions: Session[];
+  sessions: SessionWithUsers[];
 }
 
 export const SessionsTable = ({ sessions }: SessionsTableProps) => {

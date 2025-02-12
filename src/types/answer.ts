@@ -8,4 +8,5 @@ export interface Answer {
   respondant_id: number | null;
   respondant_type: 'SESSION_USER' | 'GROUP' | null;
   round_id: number | null;
+  statement_id?: number;
 }

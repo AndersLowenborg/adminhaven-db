@@ -5,10 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SessionsTable } from '@/components/admin/SessionsTable';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
-
-interface SessionWithUsers extends Session {
-  users: Array<{ id: number; name: string }>;
-}
+import { Session, SessionWithUsers } from '@/types/session';
 
 export const AdminSessionsList = () => {
   const { session } = useSessionContext();

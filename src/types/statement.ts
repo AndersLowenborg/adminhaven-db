@@ -8,4 +8,8 @@ export interface Statement {
   description: string | null;
   status: StatementStatus | null;
   created_at: string | null;
+  timer_seconds?: number;
+  timer_started_at?: string;
+  timer_status?: 'running' | 'stopped';
+  show_results?: boolean;
 }
