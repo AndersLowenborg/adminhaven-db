@@ -24,14 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface Session {
-  id: number;
-  name: string;
-  status: string;
-  created_at: string;
-  users: Array<{ id: number; name: string }>;
-}
+import { Session } from '@/types/session';
 
 interface SessionsTableProps {
   sessions: Session[];
@@ -49,7 +42,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
       console.log('Attempting to delete session:', sessionId);
       
       const { error: deleteSessionError } = await supabase
-        .from('Sessions')
+        .from('SESSION')
         .delete()
         .eq('id', sessionId);
 
@@ -82,12 +75,12 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'NOT_STARTED':
+      case 'UNPUBLISHED':
         return 'secondary';
       case 'PUBLISHED':
-        return 'blue';
-      case 'IN_PROGRESS':
-        return 'green';
+        return 'default';
+      case 'STARTED':
+        return 'default';
       case 'ENDED':
         return 'destructive';
       default:

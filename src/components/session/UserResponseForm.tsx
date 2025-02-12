@@ -27,7 +27,6 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription for statement updates
   useEffect(() => {
     if (!statement.id) return;
 
@@ -38,7 +37,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         {
           event: '*',
           schema: 'public',
-          table: 'Statements',
+          table: 'STATEMENT',
           filter: `id=eq.${statement.id}`,
         },
         (payload) => {
@@ -57,7 +56,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
     if (isSubmitting) return;
     
     // Check if statement is not active
-    if (statement.status !== 'active') {
+    if (statement.status !== 'STARTED') {
       return;
     }
 
@@ -74,7 +73,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
     try {
       // First, get the session_user_id
       const { data: userData, error: userError } = await supabase
-        .from('SessionUsers')
+        .from('SESSION_USERS')
         .select('id')
         .eq('session_id', sessionId)
         .eq('name', storedName)
@@ -84,15 +83,14 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       // Submit answer using the schema
       const { error } = await supabase
-        .from('Answers')
+        .from('ANSWER')
         .insert({
-          content: `Agreement: ${agreementLevel}/10, Confidence: ${confidenceLevel}/10`,
           agreement_level: agreementLevel,
           confidence_level: confidenceLevel,
-          respondent_type: 'user',
-          respondent_id: userData.id,
+          respondant_type: 'SESSION_USER',
+          respondant_id: userData.id,
           statement_id: statement.id,
-          status: 'submitted'
+          round_id: null
         });
 
       if (error) throw error;
@@ -133,7 +131,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status !== 'active'}
+              disabled={isSubmitting || statement.status !== 'STARTED'}
             />
           </div>
           
@@ -148,7 +146,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status !== 'active'}
+              disabled={isSubmitting || statement.status !== 'STARTED'}
             />
           </div>
         </div>
@@ -156,10 +154,10 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting || statement.status !== 'active'}
+          disabled={isSubmitting || statement.status !== 'STARTED'}
         >
           {isSubmitting ? "Submitting..." : 
-           statement.status !== 'active' ? "Waiting for admin to activate statement" : 
+           statement.status !== 'STARTED' ? "Waiting for admin to activate statement" : 
            "Submit Response"}
         </Button>
       </CardContent>
