@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +51,7 @@ export const useRounds = (sessionId: number) => {
       const { error: statementError } = await supabase
         .from('STATEMENT')
         .update({ 
-          status: 'ACTIVE'
+          statement: 'ACTIVE'
         })
         .eq('id', statementId);
 

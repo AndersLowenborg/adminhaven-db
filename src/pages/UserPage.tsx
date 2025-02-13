@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,7 @@ import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
 import { WaitingPage } from '@/components/session/WaitingPage';
 import { useEffect, useState } from 'react';
+import { Statement } from '@/types/statement';
 
 const UserPage = () => {
   const { id: sessionIdString } = useParams();
@@ -53,7 +53,7 @@ const UserPage = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as Statement[];
     },
     enabled: !!sessionId && session?.status === 'STARTED',
   });
@@ -186,6 +186,16 @@ const UserPage = () => {
     }
   };
 
+  // Map the Statement type to what UserResponseForm expects
+  const mapStatementToFormProps = (statement: Statement) => ({
+    id: statement.id,
+    content: statement.statement || '',
+    status: statement.status || 'INACTIVE',
+    timer_seconds: statement.timer_seconds,
+    timer_started_at: statement.timer_started_at,
+    timer_status: statement.timer_status
+  });
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
@@ -208,7 +218,7 @@ const UserPage = () => {
                 Statement {currentStatementIndex + 1} of {statements.length}
               </p>
               <UserResponseForm 
-                statement={statements[currentStatementIndex]}
+                statement={mapStatementToFormProps(statements[currentStatementIndex])}
                 onSubmit={handleResponseSubmit}
               />
             </>
