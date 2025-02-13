@@ -49,15 +49,6 @@ export const useRounds = (sessionId: number) => {
 
       if (roundError) throw roundError;
 
-      const { error: statementError } = await supabase
-        .from('STATEMENT')
-        .update({ 
-          status: 'ACTIVE'
-        })
-        .eq('id', statementId);
-
-      if (statementError) throw statementError;
-
       return { success: true };
     },
     onSuccess: () => {
@@ -92,15 +83,6 @@ export const useRounds = (sessionId: number) => {
         .eq('status', 'STARTED');
 
       if (roundError) throw roundError;
-
-      const { error: statementError } = await supabase
-        .from('STATEMENT')
-        .update({ 
-          status: 'INACTIVE'
-        })
-        .eq('id', statementId);
-
-      if (statementError) throw statementError;
 
       return { success: true };
     },
