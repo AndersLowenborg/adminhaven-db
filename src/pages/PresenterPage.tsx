@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,25 +19,13 @@ const COLORS = [
 
 type Answer = {
   id: number;
-  content: string;
-  created_at: string;
-  statement_id: number;
-  agreement_level: number;
-  confidence_level: number;
-  statement: {
-    content: string;
-  };
-};
-
-type Statement = {
-  id: number;
-  content: string;
-  created_at: string;
-  status: string;
-  timer_seconds?: number;
-  timer_started_at?: string;
-  timer_status?: string;
-  show_results?: boolean;
+  agreement_level: number | null;
+  confidence_level: number | null;
+  comment: string | null;
+  created_at: string | null;
+  respondant_id: number | null;
+  respondant_type: 'SESSION_USER' | 'GROUP' | null;
+  round_id: number | null;
 };
 
 const PresenterPage = () => {
@@ -100,7 +89,7 @@ const PresenterPage = () => {
 
     console.log('Setting up real-time subscriptions for presenter view:', sessionId);
     
-    // Channel for statements updates (including show_results and timer changes)
+    // Channel for statements updates
     const statementsChannel = supabase
       .channel(`presenter-statements-${sessionId}`)
       .on(
@@ -127,7 +116,7 @@ const PresenterPage = () => {
           event: '*',
           schema: 'public',
           table: 'ANSWER',
-          filter: `statement.session_id=eq.${sessionId}`,
+          filter: `round_id=eq.${sessionId}`,
         },
         (payload) => {
           console.log('Answers update received:', payload);
@@ -144,7 +133,7 @@ const PresenterPage = () => {
   }, [sessionId, queryClient]);
 
   const getAnswersForStatement = (statementId: number) => {
-    return answers?.filter(answer => answer.statement_id === statementId) || [];
+    return answers?.filter(answer => answer.round_id === statementId) || [];
   };
 
   const prepareChartData = (statementAnswers: Answer[]) => {
@@ -173,8 +162,6 @@ const PresenterPage = () => {
     );
   }
 
-  const statementsToShow = statements?.filter(statement => statement.show_results) || [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto p-8">
@@ -196,27 +183,17 @@ const PresenterPage = () => {
             />
           </Card>
         )}
-
-        {statements?.filter(s => s.status === 'active').map(statement => (
-          <Card key={statement.id} className="mb-8 p-6 shadow-sm">
-            <StatementTimer
-              timerSeconds={statement.timer_seconds}
-              timerStartedAt={statement.timer_started_at}
-              timerStatus={statement.timer_status}
-            />
-          </Card>
-        ))}
         
-        {statementsToShow.length > 0 ? (
+        {statements && statements.length > 0 ? (
           <div className="space-y-6 mb-8">
             <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
-            {statementsToShow.map(statement => {
+            {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement.id);
               const chartData = prepareChartData(statementAnswers);
               
               return (
                 <Card key={statement.id} className="p-6 shadow-sm">
-                  <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.content}</h3>
+                  <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
                   {chartData.length > 0 ? (
                     <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -277,8 +254,7 @@ const PresenterPage = () => {
           </div>
         ) : (
           <Card className="mb-8 p-6 shadow-sm text-center">
-            <p className="text-[#8E9196]">No statements with results to show.</p>
-            <p className="text-sm text-[#8E9196] mt-2">Click "Show Results" on a statement to see participant responses here.</p>
+            <p className="text-[#8E9196]">No statements to show.</p>
           </Card>
         )}
         
