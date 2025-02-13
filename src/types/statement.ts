@@ -4,4 +4,5 @@ export interface Statement {
   session_id: number | null;
   statement: string | null;
   description: string | null;
+  status: 'ACTIVE' | 'INACTIVE' | null;
 }

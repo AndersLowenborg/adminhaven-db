@@ -30,6 +30,7 @@ export const useStatements = (sessionId: number) => {
           statement: content,
           description,
           session_id: sessionId,
+          status: 'INACTIVE'
         })
         .select()
         .single();
