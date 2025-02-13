@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,13 +38,23 @@ const PresenterPage = () => {
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
     queryFn: async () => {
+      console.log('Fetching session data for presenter page, ID:', sessionId);
       const { data, error } = await supabase
         .from('SESSION')
         .select('*')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching session:', error);
+        throw error;
+      }
+      
+      console.log('Session data retrieved:', data);
+      if (!data) {
+        throw new Error('Session not found');
+      }
+      
       return data;
     },
     enabled: !!sessionId,
