@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +57,22 @@ const UserPage = () => {
       return data as Statement[];
     },
     enabled: !!sessionId && session?.status === 'STARTED',
+  });
+
+  // Fetch active rounds to determine statement status
+  const { data: activeRounds } = useQuery({
+    queryKey: ['active-rounds', sessionId],
+    queryFn: async () => {
+      if (!sessionId) throw new Error('Session ID is required');
+      const { data, error } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('status', 'STARTED');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
   });
 
   // Fetch user information using the stored name
@@ -186,15 +203,18 @@ const UserPage = () => {
     }
   };
 
-  // Map the Statement type to what UserResponseForm expects
-  const mapStatementToFormProps = (statement: Statement) => ({
-    id: statement.id,
-    content: statement.statement || '',
-    status: statement.status || 'INACTIVE',
-    timer_seconds: statement.timer_seconds,
-    timer_started_at: statement.timer_started_at,
-    timer_status: statement.timer_status
-  });
+  // Map the Statement type to what UserResponseForm expects, checking active rounds
+  const mapStatementToFormProps = (statement: Statement) => {
+    const isActive = activeRounds?.some(round => 
+      round.statement_id === statement.id && round.status === 'STARTED'
+    );
+
+    return {
+      id: statement.id,
+      content: statement.statement || '',
+      status: isActive ? 'STARTED' : 'NOT_STARTED'
+    };
+  };
 
   return (
     <div className="container mx-auto p-8">
