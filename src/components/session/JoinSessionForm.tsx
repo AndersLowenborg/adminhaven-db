@@ -36,7 +36,11 @@ export const JoinSessionForm = () => {
       console.log('Attempting to join session:', { sessionId: id, name });
       const { error } = await supabase
         .from('SESSION_USERS')
-        .insert([{ session_id: parseInt(id), name: name.trim() }]);
+        .insert({
+          id: Date.now(), // Generate a unique ID
+          session_id: parseInt(id),
+          name: name.trim()
+        });
 
       if (error) throw error;
 
