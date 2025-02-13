@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -77,7 +78,7 @@ const SessionPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'Sessions',
+          table: 'SESSION',
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
@@ -94,7 +95,7 @@ const SessionPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'Statements',
+          table: 'STATEMENT',
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
@@ -111,7 +112,7 @@ const SessionPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'Answers',
+          table: 'ANSWER',
           filter: `statement.session_id=eq.${sessionId}`,
         },
         (payload) => {
@@ -129,44 +130,17 @@ const SessionPage = () => {
     };
   }, [sessionId, queryClient]);
 
-  const handleAllowJoinsChange = async (allow: boolean) => {
-    try {
-      console.log('Updating allow joins:', allow);
-      const { error } = await supabase
-        .from('Sessions')
-        .update({ allow_joins: allow } as Partial<Session>)
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: allow ? "Session opened to new joins" : "Session closed to new joins",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-    } catch (error) {
-      console.error('Error updating allow joins:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update join settings",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleStartRound = async (statementId: number) => {
     try {
       console.log('Starting round for statement:', statementId);
       
-      if (session?.status === 'published') {
+      if (session?.status === 'PUBLISHED') {
         console.log('Session status is published, updating to started');
         const { error: sessionError } = await supabase
-          .from('Sessions')
+          .from('SESSION')
           .update({ 
-            status: 'started',
-            current_round: (session?.current_round || 0) + 1,
-            allow_joins: false 
+            status: 'STARTED',
+            current_round: (session?.current_round || 0) + 1
           } as Partial<Session>)
           .eq('id', sessionId);
 
@@ -174,7 +148,7 @@ const SessionPage = () => {
       }
 
       const { data: existingRounds, error: roundsError } = await supabase
-        .from('Rounds')
+        .from('ROUND')
         .select('round_number')
         .eq('statement_id', statementId)
         .order('round_number', { ascending: false })
@@ -187,19 +161,19 @@ const SessionPage = () => {
         : 1;
 
       const { error: roundError } = await supabase
-        .from('Rounds')
+        .from('ROUND')
         .insert({
           statement_id: statementId,
           round_number: nextRoundNumber,
-          status: 'in_progress',
+          status: 'STARTED',
           started_at: new Date().toISOString()
         });
 
       if (roundError) throw roundError;
 
       const { error: statementError } = await supabase
-        .from('Statements')
-        .update({ status: 'active' })
+        .from('STATEMENT')
+        .update({ status: 'ACTIVE' })
         .eq('id', statementId);
 
       if (statementError) throw statementError;
@@ -226,19 +200,19 @@ const SessionPage = () => {
       console.log('Ending round for statement:', statementId);
       
       const { error: roundError } = await supabase
-        .from('Rounds')
+        .from('ROUND')
         .update({ 
-          status: 'ended',
+          status: 'ENDED',
           ended_at: new Date().toISOString()
         })
         .eq('statement_id', statementId)
-        .eq('status', 'in_progress');
+        .eq('status', 'STARTED');
 
       if (roundError) throw roundError;
 
       const { error: statementError } = await supabase
-        .from('Statements')
-        .update({ status: 'inactive' })
+        .from('STATEMENT')
+        .update({ status: 'INACTIVE' })
         .eq('id', statementId);
 
       if (statementError) throw statementError;
@@ -264,15 +238,15 @@ const SessionPage = () => {
     if (!newStatement.trim()) return;
     addStatement({ 
       content: newStatement,
-      background: newBackground.trim() || undefined 
+      description: newBackground.trim() || undefined 
     });
     setNewStatement('');
     setNewBackground('');
     setIsAddingStatement(false);
   };
 
-  const handleUpdateStatement = (id: number, content: string, background?: string) => {
-    updateStatementMutation({ id, content, background });
+  const handleUpdateStatement = (id: number, content: string, description?: string) => {
+    updateStatementMutation({ id, content, description });
   };
 
   const handleToggleStatementStatus = (id: number, currentStatus: string) => {
@@ -295,7 +269,7 @@ const SessionPage = () => {
 
   const handleHeaderStartRound = () => {
     console.log('handleHeaderStartRound clicked - Statements:', statements);
-    const firstInactiveStatement = statements?.find(s => s.status === 'inactive');
+    const firstInactiveStatement = statements?.find(s => s.status === 'INACTIVE');
     console.log('First inactive statement found:', firstInactiveStatement);
     if (firstInactiveStatement) {
       handleStartRound(firstInactiveStatement.id);
@@ -305,7 +279,7 @@ const SessionPage = () => {
   };
 
   const handleHeaderEndRound = () => {
-    const activeStatement = statements?.find(s => s.status === 'active');
+    const activeStatement = statements?.find(s => s.status === 'ACTIVE');
     if (activeStatement) {
       handleEndRound(activeStatement.id);
     }
@@ -345,13 +319,10 @@ const SessionPage = () => {
           sessionId={sessionId}
           hasStatements={statements?.length > 0}
           participantCount={participants?.length || 0}
-          allowJoins={session?.allow_joins || false}
-          currentRound={session?.current_round || 0}
           onUpdateName={updateSession}
           onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
           onStartRound={handleHeaderStartRound}
           onEndRound={handleHeaderEndRound}
-          onAllowJoinsChange={handleAllowJoinsChange}
         />
       </div>
 
