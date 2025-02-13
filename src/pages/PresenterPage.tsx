@@ -178,7 +178,7 @@ const PresenterPage = () => {
           <Card className="mb-8 p-6 shadow-sm">
             <ParticipantsList 
               participants={participants || []} 
-              sessionId={sessionId.toString()}
+              sessionId={sessionId}
               queryKey={['participants', sessionId]}
             />
           </Card>
