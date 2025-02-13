@@ -14,7 +14,7 @@ type Participant = {
 
 type ParticipantsListProps = {
   participants: Participant[];
-  sessionId: string;
+  sessionId: number;
   queryKey: (string | number)[];
 };
 
