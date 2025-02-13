@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +55,7 @@ const UserPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!sessionId && session?.status === 'round_in_progress',
+    enabled: !!sessionId && session?.status === 'STARTED',
   });
 
   // Fetch user information using the stored name
@@ -65,7 +66,7 @@ const UserPage = () => {
       console.log('Fetching user data with name:', storedName);
       
       const { data, error } = await supabase
-        .from('SessionUsers')
+        .from('SESSION_USERS')
         .select('*')
         .eq('session_id', sessionId)
         .eq('name', storedName)
@@ -109,7 +110,7 @@ const UserPage = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'Sessions',
+          table: 'SESSION',
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
@@ -123,7 +124,7 @@ const UserPage = () => {
       )
       .subscribe();
 
-    // Set up real-time subscription for SessionUsers changes
+    // Set up real-time subscription for SESSION_USERS changes
     const userChannel = supabase
       .channel(`session-users-${sessionId}`)
       .on(
@@ -131,11 +132,11 @@ const UserPage = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'SessionUsers',
+          table: 'SESSION_USERS',
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          console.log('SessionUsers changed:', payload);
+          console.log('SESSION_USERS changed:', payload);
           queryClient.invalidateQueries({ queryKey: ['user', sessionId, storedName] });
         }
       )
@@ -171,7 +172,7 @@ const UserPage = () => {
     );
   }
 
-  if (session.status === 'unpublished') {
+  if (session.status === 'UNPUBLISHED') {
     return (
       <div className="container mx-auto p-8">
         <p className="text-center text-yellow-500">This session is not currently active</p>
@@ -188,7 +189,7 @@ const UserPage = () => {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        {session.status === 'round_in_progress' ? session.name : `Join Session: ${session.name}`}
+        {session.status === 'STARTED' ? session.name : `Join Session: ${session.name}`}
       </h1>
 
       {userData?.name && (
@@ -197,9 +198,9 @@ const UserPage = () => {
         </p>
       )}
       
-      {session.status === 'published' && <JoinSessionForm />}
+      {session.status === 'PUBLISHED' && <JoinSessionForm />}
       
-      {session.status === 'round_in_progress' && statements && statements.length > 0 && (
+      {session.status === 'STARTED' && statements && statements.length > 0 && (
         <div className="mt-8">
           {!userAnswers ? (
             <>
