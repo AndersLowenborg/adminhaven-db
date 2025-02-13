@@ -29,8 +29,7 @@ export const useStatements = (sessionId: number) => {
         .insert({
           statement: content,
           description,
-          session_id: sessionId,
-          status: 'INACTIVE'
+          session_id: sessionId
         })
         .select()
         .single();
