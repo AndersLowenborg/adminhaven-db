@@ -38,6 +38,21 @@ const SessionPage = () => {
   // Set up real-time subscriptions
   useSessionSubscriptions(sessionId);
 
+  // Fetch active rounds to determine statement status
+  const { data: activeRounds } = useQuery({
+    queryKey: ['active-rounds', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('status', 'STARTED');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+
   const { data: answers } = useQuery({
     queryKey: ['answers', sessionId],
     queryFn: async () => {
@@ -82,7 +97,12 @@ const SessionPage = () => {
 
   const handleHeaderStartRound = () => {
     console.log('handleHeaderStartRound clicked - Statements:', statements);
-    const firstInactiveStatement = statements?.find(s => s.status === 'INACTIVE');
+    // Find first statement that doesn't have an active round
+    const firstInactiveStatement = statements?.find(statement => 
+      !activeRounds?.some(round => 
+        round.statement_id === statement.id && round.status === 'STARTED'
+      )
+    );
     console.log('First inactive statement found:', firstInactiveStatement);
     if (firstInactiveStatement) {
       startRound({ statementId: firstInactiveStatement.id, session });
@@ -92,7 +112,12 @@ const SessionPage = () => {
   };
 
   const handleHeaderEndRound = () => {
-    const activeStatement = statements?.find(s => s.status === 'ACTIVE');
+    // Find statement with active round
+    const activeStatement = statements?.find(statement => 
+      activeRounds?.some(round => 
+        round.statement_id === statement.id && round.status === 'STARTED'
+      )
+    );
     if (activeStatement) {
       endRound(activeStatement.id);
     }
