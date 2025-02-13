@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Session } from '@/types/session';
 import { PublishSession } from './PublishSession';
+import { Link } from 'react-router-dom';
+import { Copy, ExternalLink } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 interface SessionHeaderProps {
   name: string;
@@ -30,10 +33,28 @@ export const SessionHeader = ({
 }: SessionHeaderProps) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedName, setEditedName] = React.useState(name);
+  const { toast } = useToast();
+  const presenterUrl = `${window.location.origin}/presenter/${sessionId}`;
 
   const handleNameSubmit = () => {
     onUpdateName(editedName);
     setIsEditing(false);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(presenterUrl);
+      toast({
+        title: "Success",
+        description: "Presenter link copied to clipboard",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
+        variant: "destructive",
+      });
+    }
   };
 
   const isSessionActive = status === 'PUBLISHED';
@@ -65,6 +86,28 @@ export const SessionHeader = ({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {status === 'PUBLISHED' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
+              <span className="text-sm text-muted-foreground">Presenter URL:</span>
+              <Link 
+                to={`/presenter/${sessionId}`}
+                className="text-sm hover:underline flex items-center gap-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {presenterUrl}
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyLink}
+                className="ml-2"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <span className="px-2 py-1 text-sm rounded bg-gray-100">
             {participantCount} participant{participantCount !== 1 ? 's' : ''}
           </span>
