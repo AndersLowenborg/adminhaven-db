@@ -25,7 +25,7 @@ export type Database = {
           comment?: string | null
           confidence_level?: number | null
           created_at?: string | null
-          id: number
+          id?: number
           respondant_id?: number | null
           respondant_type?:
             | Database["public"]["Enums"]["respondant_type"]
@@ -52,7 +52,7 @@ export type Database = {
           leader: number | null
         }
         Insert: {
-          id: number
+          id?: number
           leader?: number | null
         }
         Update: {
@@ -69,7 +69,7 @@ export type Database = {
           parent_group_id: number | null
         }
         Insert: {
-          id: number
+          id?: number
           member_id?: number | null
           member_type?: Database["public"]["Enums"]["respondant_type"] | null
           parent_group_id?: number | null
@@ -127,7 +127,7 @@ export type Database = {
         }
         Insert: {
           group_id?: number | null
-          id: number
+          id?: number
           round_id?: number | null
         }
         Update: {
@@ -177,7 +177,7 @@ export type Database = {
           session_id: number | null
         }
         Insert: {
-          id: number
+          id?: number
           name?: string | null
           session_id?: number | null
         }
