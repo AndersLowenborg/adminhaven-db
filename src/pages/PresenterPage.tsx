@@ -99,10 +99,29 @@ const PresenterPage = () => {
   const { data: rounds } = useQuery({
     queryKey: ['rounds', sessionId],
     queryFn: async () => {
+      console.log('Fetching rounds for session:', sessionId);
+      
+      // First get all statements for this session
+      const { data: statements, error: statementsError } = await supabase
+        .from('STATEMENT')
+        .select('id')
+        .eq('session_id', sessionId);
+
+      if (statementsError) throw statementsError;
+      
+      if (!statements || statements.length === 0) {
+        console.log('No statements found for session');
+        return [];
+      }
+
+      const statementIds = statements.map(s => s.id);
+      console.log('Statement IDs:', statementIds);
+
+      // Then get all rounds for these statements
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
-        .eq('statement_id', sessionId)
+        .in('statement_id', statementIds)
         .eq('status', 'STARTED');
 
       if (error) throw error;
@@ -201,12 +220,19 @@ const PresenterPage = () => {
       return [];
     }
 
-    console.log(`Checking answers for statement ${statement.id}`);
-    console.log('All answers:', answers);
-    console.log('Active round:', session.has_active_round);
-    
-    // Simply return all answers since they're already filtered by the active round
-    return answers;
+    // Get the active round for this statement
+    const activeRound = rounds?.find(r => 
+      r.statement_id === statement.id && 
+      r.id === session.has_active_round
+    );
+
+    if (!activeRound) {
+      console.log(`No active round found for statement ${statement.id}`);
+      return [];
+    }
+
+    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
+    return answers.filter(answer => answer.round_id === activeRound.id);
   };
 
   if (isSessionLoading) {
