@@ -21,25 +21,46 @@ type ParticipantsListProps = {
 export const ParticipantsList = ({ participants, sessionId, queryKey }: ParticipantsListProps) => {
   const queryClient = useQueryClient();
 
-  // Fetch answers independently
-  const { data: participantAnswers } = useQuery({
-    queryKey: ['participant-answers', sessionId],
+  // First get the active round ID from the session
+  const { data: session } = useQuery({
+    queryKey: ['session', sessionId],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+
+  // Then fetch answers for the active round
+  const { data: participantAnswers } = useQuery({
+    queryKey: ['participant-answers', sessionId, session?.has_active_round],
+    queryFn: async () => {
+      if (!session?.has_active_round) {
+        console.log('No active round for participant answers');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('ANSWER')
         .select('*')
-        .eq('round_id', sessionId);
+        .eq('round_id', session.has_active_round);
 
       if (error) throw error;
       console.log('Fetched participant answers:', data);
       return data || [];
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && !!session?.has_active_round,
   });
 
   // Subscribe to changes in both SESSION_USERS and ANSWER tables
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !session?.has_active_round) return;
 
     console.log('Setting up real-time subscription for participants in session:', sessionId);
     
@@ -61,18 +82,20 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
       .subscribe();
 
     const answersChannel = supabase
-      .channel(`answers-${sessionId}`)
+      .channel(`answers-${session.has_active_round}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'ANSWER',
-          filter: `round_id=eq.${sessionId}`
+          filter: `round_id=eq.${session.has_active_round}`
         },
         (payload) => {
           console.log('Answers change detected:', payload);
-          queryClient.invalidateQueries({ queryKey: ['participant-answers', sessionId] });
+          queryClient.invalidateQueries({ 
+            queryKey: ['participant-answers', sessionId, session.has_active_round]
+          });
         }
       )
       .subscribe();
@@ -82,7 +105,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
       supabase.removeChannel(participantsChannel);
       supabase.removeChannel(answersChannel);
     };
-  }, [sessionId, queryKey, queryClient]);
+  }, [sessionId, session?.has_active_round, queryKey, queryClient]);
 
   return (
     <Card className="mb-6">
