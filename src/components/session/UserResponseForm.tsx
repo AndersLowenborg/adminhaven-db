@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from '@/integrations/supabase/client';
 import { WaitingPage } from './WaitingPage';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserResponseFormProps {
   statement: {
@@ -22,6 +23,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!statement.id) return;
@@ -66,6 +68,17 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
     setIsSubmitting(true);
     try {
+      // Get the active round for this statement
+      const { data: activeRound, error: roundError } = await supabase
+        .from('ROUND')
+        .select('id')
+        .eq('statement_id', statement.id)
+        .eq('status', 'STARTED')
+        .single();
+
+      if (roundError) throw roundError;
+
+      // Get the user's session_user record
       const { data: userData, error: userError } = await supabase
         .from('SESSION_USERS')
         .select('id')
@@ -75,22 +88,33 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
       if (userError) throw userError;
 
-      const { error } = await supabase
+      // Submit the answer
+      const { error: answerError } = await supabase
         .from('ANSWER')
         .insert({
           agreement_level: agreementLevel,
           confidence_level: confidenceLevel,
           respondant_type: 'SESSION_USER',
           respondant_id: userData.id,
-          round_id: sessionId
+          round_id: activeRound.id
         });
 
-      if (error) throw error;
+      if (answerError) throw answerError;
+      
+      toast({
+        title: "Success",
+        description: "Your response has been submitted",
+      });
       
       setIsSubmitted(true);
       onSubmit();
     } catch (error) {
       console.error('Error submitting response:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit your response",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
