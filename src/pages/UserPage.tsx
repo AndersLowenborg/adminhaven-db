@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
 import { WaitingPage } from '@/components/session/WaitingPage';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Statement } from '@/types/statement';
 
 const UserPage = () => {
@@ -16,12 +16,6 @@ const UserPage = () => {
   // Get user's localStorage name to fetch the correct user data
   const storedName = localStorage.getItem(`session_${sessionId}_name`);
   console.log('Stored name from localStorage:', storedName);
-
-  // Get the stored statement index from localStorage or default to 0
-  const storedIndex = localStorage.getItem(`session_${sessionId}_statement_index`);
-  const [currentStatementIndex, setCurrentStatementIndex] = useState(
-    storedIndex ? parseInt(storedIndex) : 0
-  );
 
   // Fetch session details to verify it's published
   const { data: session, isLoading: isLoadingSession } = useQuery({
@@ -148,7 +142,8 @@ const UserPage = () => {
           console.log('Session status changed:', payload);
           queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
           queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['user', sessionId, storedName] });
+          queryClient.invalidateQueries({ queryKey: ['active-statement', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['userAnswers', sessionId] });
         }
       )
       .subscribe();
@@ -158,13 +153,6 @@ const UserPage = () => {
       supabase.removeChannel(channel);
     };
   }, [sessionId, queryClient, storedName]);
-
-  // Save current statement index to localStorage when it changes
-  useEffect(() => {
-    if (sessionId) {
-      localStorage.setItem(`session_${sessionId}_statement_index`, currentStatementIndex.toString());
-    }
-  }, [sessionId, currentStatementIndex]);
 
   if (isLoadingSession) {
     return (
@@ -190,12 +178,6 @@ const UserPage = () => {
     );
   }
 
-  const handleResponseSubmit = () => {
-    if (statements && currentStatementIndex < statements.length - 1) {
-      setCurrentStatementIndex(prev => prev + 1);
-    }
-  };
-
   // Map the Statement type to what UserResponseForm expects
   const mapStatementToFormProps = (statement: Statement) => {
     return {
@@ -217,15 +199,25 @@ const UserPage = () => {
         </p>
       )}
       
-      {session.status === 'PUBLISHED' && <JoinSessionForm />}
+      {/* Show join form if session is published but user hasn't joined */}
+      {session.status === 'PUBLISHED' && !userData && <JoinSessionForm />}
       
-      {session.status === 'STARTED' && statements && statements.length > 0 && (
+      {/* Show statement form or waiting page based on session state */}
+      {session.status === 'STARTED' && (
         <div className="mt-8">
-          {activeStatement && session.has_active_round ? (
+          {!userData ? (
+            <div className="text-center text-red-500">
+              You need to join the session first
+            </div>
+          ) : activeStatement ? (
             !userAnswers ? (
               <UserResponseForm 
                 statement={mapStatementToFormProps(activeStatement)}
-                onSubmit={handleResponseSubmit}
+                onSubmit={() => {
+                  queryClient.invalidateQueries({ 
+                    queryKey: ['userAnswers', sessionId, userData.id, session.has_active_round] 
+                  });
+                }}
               />
             ) : (
               <WaitingPage />
