@@ -1,31 +1,18 @@
 
-import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Statement } from "@/types/statement";
+import { UseMutateFunction } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Statement } from '@/types/statement';
 
 interface StatementsSectionProps {
   statements: Statement[];
   isAddingStatement: boolean;
   newStatement: string;
+  newBackground: string;
   onNewStatementChange: (value: string) => void;
+  onNewBackgroundChange: (value: string) => void;
   onAddClick: () => void;
   onCancelAdd: () => void;
   onSubmitStatement: (e: React.FormEvent) => void;
@@ -33,16 +20,19 @@ interface StatementsSectionProps {
   onUpdateStatement: (id: number, content: string, description?: string) => void;
   isAddingStatementPending: boolean;
   isDeletingStatementPending: boolean;
-  newBackground?: string;
-  onNewBackgroundChange?: (value: string) => void;
   sessionStatus: string;
+  onStartRound: (statementId: number) => void;
+  onEndRound: (statementId: number) => void;
+  activeRounds?: { statement_id: number; status: string }[];
 }
 
-export const StatementsSection = ({
+export const StatementsSection: React.FC<StatementsSectionProps> = ({
   statements,
   isAddingStatement,
   newStatement,
+  newBackground,
   onNewStatementChange,
+  onNewBackgroundChange,
   onAddClick,
   onCancelAdd,
   onSubmitStatement,
@@ -50,182 +40,112 @@ export const StatementsSection = ({
   onUpdateStatement,
   isAddingStatementPending,
   isDeletingStatementPending,
-  newBackground,
-  onNewBackgroundChange,
   sessionStatus,
-}: StatementsSectionProps) => {
-  const [editingId, setEditingId] = React.useState<number | null>(null);
-  const [editedContent, setEditedContent] = React.useState("");
-  const [editedBackground, setEditedBackground] = React.useState("");
-  const [statementToDelete, setStatementToDelete] = React.useState<number | null>(null);
-
-  const handleEditClick = (statement: Statement) => {
-    setEditingId(statement.id);
-    setEditedContent(statement.statement || "");
-    setEditedBackground(statement.description || "");
-  };
-
-  const handleSaveEdit = (id: number) => {
-    if (editedContent.trim()) {
-      onUpdateStatement(id, editedContent.trim(), editedBackground.trim() || undefined);
-      setEditingId(null);
-      setEditedContent("");
-      setEditedBackground("");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditedContent("");
-    setEditedBackground("");
-  };
-
-  const handleDelete = (id: number) => {
-    onDeleteStatement(id);
-    setStatementToDelete(null);
-  };
-
+  onStartRound,
+  onEndRound,
+  activeRounds = []
+}) => {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-[#403E43]">Statements</h2>
-        <Button onClick={onAddClick} disabled={isAddingStatement}>
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Statements</h2>
+        <Button 
+          onClick={onAddClick}
+          disabled={sessionStatus !== 'STARTED'}
+        >
           Add Statement
         </Button>
       </div>
 
       {isAddingStatement && (
-        <form onSubmit={onSubmitStatement} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-[#403E43]">Statement</label>
-            <Input
-              value={newStatement}
-              onChange={(e) => onNewStatementChange(e.target.value)}
-              placeholder="Enter statement content"
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-[#403E43]">Background/Context (Optional)</label>
-            <Textarea
-              value={newBackground}
-              onChange={(e) => onNewBackgroundChange?.(e.target.value)}
-              placeholder="Enter background or context for this statement"
-              className="w-full"
-            />
-          </div>
-          <div className="flex gap-4">
-            <Button type="submit" disabled={isAddingStatementPending}>
-              {isAddingStatementPending ? "Adding..." : "Add"}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancelAdd}>
-              Cancel
-            </Button>
-          </div>
+        <form onSubmit={onSubmitStatement} className="mb-4">
+          <Card className="p-4">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="statement" className="block text-sm font-medium mb-1">
+                  Statement
+                </label>
+                <Input
+                  id="statement"
+                  value={newStatement}
+                  onChange={(e) => onNewStatementChange(e.target.value)}
+                  placeholder="Enter statement"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="background" className="block text-sm font-medium mb-1">
+                  Background (optional)
+                </label>
+                <Textarea
+                  id="background"
+                  value={newBackground}
+                  onChange={(e) => onNewBackgroundChange(e.target.value)}
+                  placeholder="Enter background information"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isAddingStatementPending}>
+                  Save
+                </Button>
+                <Button type="button" variant="outline" onClick={onCancelAdd}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
         </form>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Statement</TableHead>
-            <TableHead>Background</TableHead>
-            <TableHead className="w-[250px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {statements?.map((statement) => (
-            <TableRow key={statement.id}>
-              <TableCell>
-                {editingId === statement.id ? (
-                  <div className="space-y-4">
-                    <Input
-                      value={editedContent}
-                      onChange={(e) => setEditedContent(e.target.value)}
-                      className="w-full"
-                    />
-                    <Textarea
-                      value={editedBackground}
-                      onChange={(e) => setEditedBackground(e.target.value)}
-                      placeholder="Enter background or context"
-                      className="w-full"
-                    />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleSaveEdit(statement.id)}>
-                        Save
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[#403E43]">{statement.statement}</div>
-                )}
-              </TableCell>
-              <TableCell className="text-[#8E9196]">
-                {editingId !== statement.id && statement.description}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {editingId !== statement.id && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(statement)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setStatementToDelete(statement.id)}
-                        disabled={isDeletingStatementPending}
-                      >
-                        Delete
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {!statements?.length && (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center text-[#8E9196]">
-                No statements found. Add one to get started.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+      <div className="grid gap-4">
+        <div className="grid grid-cols-[1fr,1fr,auto] gap-4 px-4 py-2 bg-muted rounded-lg">
+          <div>Statement</div>
+          <div>Background</div>
+          <div>Actions</div>
+        </div>
+        
+        {statements.map((statement) => {
+          const hasActiveRound = activeRounds.some(
+            round => round.statement_id === statement.id && round.status === 'STARTED'
+          );
 
-      <Dialog open={!!statementToDelete} onOpenChange={() => setStatementToDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Statement</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this statement? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setStatementToDelete(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => statementToDelete && handleDelete(statementToDelete)}
-              disabled={isDeletingStatementPending}
-            >
-              {isDeletingStatementPending ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          return (
+            <Card key={statement.id} className="p-4 grid grid-cols-[1fr,1fr,auto] gap-4">
+              <div>{statement.statement}</div>
+              <div>{statement.description || '-'}</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => onStartRound(statement.id)}
+                  disabled={hasActiveRound || sessionStatus !== 'STARTED'}
+                  variant="secondary"
+                >
+                  Start Round
+                </Button>
+                <Button
+                  onClick={() => onEndRound(statement.id)}
+                  disabled={!hasActiveRound}
+                  variant="secondary"
+                >
+                  End Round
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => onDeleteStatement(statement.id)}
+                  disabled={isDeletingStatementPending}
+                >
+                  Delete
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };

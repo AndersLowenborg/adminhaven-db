@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -51,32 +50,6 @@ const SessionPage = () => {
     enabled: !!sessionId,
   });
 
-  const { data: answers } = useQuery({
-    queryKey: ['answers', sessionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ANSWER')
-        .select('*')
-        .eq('round_id', sessionId);
-
-      if (error) throw error;
-      
-      const answersMap: Record<number, any[]> = {};
-      data.forEach((answer) => {
-        if (!answersMap[answer.round_id]) {
-          answersMap[answer.round_id] = [];
-        }
-        answersMap[answer.round_id].push({
-          agreement_level: answer.agreement_level,
-          confidence_level: answer.confidence_level,
-        });
-      });
-      
-      return answersMap;
-    },
-    enabled: !!sessionId,
-  });
-
   const handleAddStatement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStatement.trim()) return;
@@ -93,32 +66,12 @@ const SessionPage = () => {
     updateStatementMutation({ id, content, description });
   };
 
-  const handleHeaderStartRound = () => {
-    console.log('handleHeaderStartRound clicked - Statements:', statements);
-    // Find first statement that doesn't have an active round
-    const firstInactiveStatement = statements?.find(statement => 
-      !activeRounds?.some(round => 
-        round.statement_id === statement.id && round.status === 'STARTED'
-      )
-    );
-    console.log('First inactive statement found:', firstInactiveStatement);
-    if (firstInactiveStatement) {
-      startRound({ statementId: firstInactiveStatement.id, session });
-    } else {
-      console.log('No inactive statements found');
-    }
+  const handleStartRound = (statementId: number) => {
+    startRound({ statementId, session });
   };
 
-  const handleHeaderEndRound = () => {
-    // Find statement with active round
-    const activeStatement = statements?.find(statement => 
-      activeRounds?.some(round => 
-        round.statement_id === statement.id && round.status === 'STARTED'
-      )
-    );
-    if (activeStatement) {
-      endRound(activeStatement.id);
-    }
+  const handleEndRound = (statementId: number) => {
+    endRound(statementId);
   };
 
   if (!sessionId) {
@@ -139,12 +92,8 @@ const SessionPage = () => {
         name={session?.name || ''} 
         status={session?.status || ''}
         sessionId={sessionId}
-        hasStatements={statements?.length > 0}
-        participantCount={participants?.length || 0}
         onUpdateName={updateSession}
         onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
-        onStartRound={handleHeaderStartRound}
-        onEndRound={handleHeaderEndRound}
       />
 
       <ParticipantsList 
@@ -175,6 +124,9 @@ const SessionPage = () => {
           isAddingStatementPending={isAddingStatementPending}
           isDeletingStatementPending={isDeletingStatementPending}
           sessionStatus={session?.status || ''}
+          onStartRound={handleStartRound}
+          onEndRound={handleEndRound}
+          activeRounds={activeRounds}
         />
       )}
     </div>

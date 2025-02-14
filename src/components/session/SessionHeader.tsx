@@ -9,24 +9,16 @@ interface SessionHeaderProps {
   name: string;
   status: string;
   sessionId: number;
-  hasStatements: boolean;
-  participantCount: number;
   onUpdateName: UseMutateFunction<Session, Error, string, unknown>;
   onStatusChange: () => void;
-  onStartRound: () => void;
-  onEndRound: () => void;
 }
 
 export const SessionHeader: React.FC<SessionHeaderProps> = ({
   name,
   status,
   sessionId,
-  hasStatements,
-  participantCount,
   onUpdateName,
   onStatusChange,
-  onStartRound,
-  onEndRound
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -62,21 +54,6 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           }}
         >
           Open Presenter View
-        </Button>
-      </div>
-
-      <div className="flex items-center gap-4 mb-4">
-        <Button
-          onClick={onStartRound}
-          disabled={!hasStatements || status !== 'STARTED' || participantCount === 0}
-        >
-          Start Round
-        </Button>
-        <Button
-          onClick={onEndRound}
-          disabled={status !== 'STARTED'}
-        >
-          End Round
         </Button>
       </div>
     </div>
