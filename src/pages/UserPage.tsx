@@ -82,7 +82,7 @@ const UserPage = () => {
         .from('ROUND')
         .select('*')
         .eq('id', session.has_active_round)
-        .single();
+        .maybeSingle();
 
       if (roundError) {
         console.error('Round fetch error:', roundError);
@@ -105,7 +105,7 @@ const UserPage = () => {
           .from('STATEMENT')
           .select('id, statement, description, session_id')
           .eq('id', roundData.statement_id)
-          .single();
+          .maybeSingle();
 
         if (statementError) {
           console.error('Statement fetch error:', statementError);
@@ -134,7 +134,7 @@ const UserPage = () => {
       }
     },
     enabled: !!sessionId && !!session?.has_active_round,
-    retry: false // Disable retries so we can see the error clearly
+    retry: false
   });
 
   // 4. Fetch user's answer for current round
@@ -151,7 +151,7 @@ const UserPage = () => {
         .select('*')
         .eq('respondant_id', userData.id)
         .eq('round_id', session.has_active_round)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows returned" error
       console.log('User answer:', data);
