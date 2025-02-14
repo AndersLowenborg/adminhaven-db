@@ -6,6 +6,7 @@ import { Session } from "@/types/session";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Participant } from "@/types/participant";
 
 interface SessionHeaderProps {
   name: string;
@@ -13,6 +14,7 @@ interface SessionHeaderProps {
   sessionId: number;
   onUpdateName: UseMutateFunction<Session, Error, string, unknown>;
   onStatusChange: () => void;
+  participants: Participant[];
 }
 
 export const SessionHeader: React.FC<SessionHeaderProps> = ({
@@ -21,6 +23,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   sessionId,
   onUpdateName,
   onStatusChange,
+  participants,
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -51,6 +54,31 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
     }
   };
 
+  const handleUnpublish = async () => {
+    try {
+      const { error } = await supabase
+        .from('SESSION')
+        .update({ status: 'UNPUBLISHED' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Session unpublished successfully",
+      });
+      
+      onStatusChange();
+    } catch (error) {
+      console.error('Error unpublishing session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unpublish session",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleStart = async () => {
     try {
       const { error } = await supabase
@@ -75,6 +103,33 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
       });
     }
   };
+
+  const handleEnd = async () => {
+    try {
+      const { error } = await supabase
+        .from('SESSION')
+        .update({ status: 'ENDED' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Session ended successfully",
+      });
+      
+      onStatusChange();
+    } catch (error) {
+      console.error('Error ending session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to end session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const hasEnoughParticipants = participants.length >= 2;
 
   return (
     <div>
@@ -109,11 +164,26 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             Publish Session
           </Button>
           <Button
-            onClick={handleStart}
+            onClick={handleUnpublish}
             variant="default"
             disabled={status !== 'PUBLISHED'}
           >
+            Unpublish Session
+          </Button>
+          <Button
+            onClick={handleStart}
+            variant="default"
+            disabled={status !== 'PUBLISHED' || !hasEnoughParticipants}
+            title={!hasEnoughParticipants ? "Need at least 2 participants to start" : ""}
+          >
             Start Session
+          </Button>
+          <Button
+            onClick={handleEnd}
+            variant="default"
+            disabled={status !== 'STARTED'}
+          >
+            End Session
           </Button>
           <Button
             variant="outline"

@@ -94,6 +94,7 @@ const SessionPage = () => {
         sessionId={sessionId}
         onUpdateName={updateSession}
         onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
+        participants={participants || []}
       />
 
       <ParticipantsList 
