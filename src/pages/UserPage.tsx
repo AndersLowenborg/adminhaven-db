@@ -187,6 +187,50 @@ const UserPage = () => {
     };
   };
 
+  const renderContent = () => {
+    if (session.status === 'PUBLISHED' && !userData) {
+      return <JoinSessionForm />;
+    }
+
+    if (session.status === 'STARTED') {
+      if (!userData) {
+        return (
+          <div className="text-center text-red-500">
+            You need to join the session first
+          </div>
+        );
+      }
+
+      // If there's no active round, show a message
+      if (!session.has_active_round) {
+        return (
+          <div className="text-center text-gray-600">
+            Waiting for the administrator to start a round...
+          </div>
+        );
+      }
+
+      // If there's an active round and statement, show the form or waiting page
+      if (activeStatement) {
+        if (!userAnswers) {
+          return (
+            <UserResponseForm 
+              statement={mapStatementToFormProps(activeStatement)}
+              onSubmit={() => {
+                queryClient.invalidateQueries({ 
+                  queryKey: ['userAnswers', sessionId, userData.id, session.has_active_round] 
+                });
+              }}
+            />
+          );
+        }
+        return <WaitingPage />;
+      }
+    }
+
+    return null;
+  };
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
@@ -199,34 +243,9 @@ const UserPage = () => {
         </p>
       )}
       
-      {/* Show join form if session is published but user hasn't joined */}
-      {session.status === 'PUBLISHED' && !userData && <JoinSessionForm />}
-      
-      {/* Show statement form or waiting page based on session state */}
-      {session.status === 'STARTED' && (
-        <div className="mt-8">
-          {!userData ? (
-            <div className="text-center text-red-500">
-              You need to join the session first
-            </div>
-          ) : activeStatement ? (
-            !userAnswers ? (
-              <UserResponseForm 
-                statement={mapStatementToFormProps(activeStatement)}
-                onSubmit={() => {
-                  queryClient.invalidateQueries({ 
-                    queryKey: ['userAnswers', sessionId, userData.id, session.has_active_round] 
-                  });
-                }}
-              />
-            ) : (
-              <WaitingPage />
-            )
-          ) : (
-            <WaitingPage />
-          )}
-        </div>
-      )}
+      <div className="mt-8">
+        {renderContent()}
+      </div>
     </div>
   );
 };
