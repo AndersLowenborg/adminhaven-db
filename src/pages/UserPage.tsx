@@ -64,17 +64,22 @@ const UserPage = () => {
     queryKey: ['active-rounds', sessionId],
     queryFn: async () => {
       if (!sessionId) throw new Error('Session ID is required');
+      console.log('Fetching active rounds with statement ID:', statements?.[currentStatementIndex]?.id);
+      
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
         .eq('status', 'STARTED')
-        .eq('statement_id', statements?.[currentStatementIndex]?.id); // Add filter for current statement
+        .eq('statement_id', statements?.[currentStatementIndex]?.id || 0); // Ensure we always have a valid value
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching active rounds:', error);
+        throw error;
+      }
       console.log('Active rounds:', data);
       return data;
     },
-    enabled: !!sessionId && session?.status === 'STARTED' && !!statements,
+    enabled: !!sessionId && session?.status === 'STARTED' && !!statements?.length,
     refetchInterval: 1000, // Poll every second for active rounds
   });
 
