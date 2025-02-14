@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
 import { useStatements } from '@/hooks/use-statements';
 import { useParticipants } from '@/hooks/use-participants';
@@ -9,10 +9,8 @@ import { useSessionSubscriptions } from '@/hooks/use-session-subscriptions';
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 
 const SessionPage = () => {
   const { id: sessionIdString } = useParams();
@@ -20,7 +18,6 @@ const SessionPage = () => {
   const [newStatement, setNewStatement] = useState('');
   const [newBackground, setNewBackground] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
-  const queryClient = useQueryClient();
 
   const { session, isLoadingSession, updateSession } = useSession(sessionId);
   const { 
@@ -137,32 +134,7 @@ const SessionPage = () => {
 
   return (
     <div className="container mx-auto p-8">
-      <div className="mb-4">
-        <Button
-          variant="ghost"
-          asChild
-          className="mb-4"
-        >
-          <Link to="/admin" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Admin
-          </Link>
-        </Button>
-      </div>
-
-      <div className="mb-8">
-        <SessionHeader 
-          name={session?.name || ''} 
-          status={session?.status || ''}
-          sessionId={sessionId}
-          hasStatements={statements?.length > 0}
-          participantCount={participants?.length || 0}
-          onUpdateName={updateSession}
-          onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
-          onStartRound={handleHeaderStartRound}
-          onEndRound={handleHeaderEndRound}
-        />
-      </div>
+      <SessionHeader />
 
       <ParticipantsList 
         participants={participants || []} 
