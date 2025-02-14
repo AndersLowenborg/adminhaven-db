@@ -76,15 +76,10 @@ const UserPage = () => {
 
       console.log('Fetching round data for session.has_active_round:', session.has_active_round);
 
-      // First get the round data with its statement
+      // First get the round data
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
-        .select(`
-          *,
-          statement:statement_id (
-            *
-          )
-        `)
+        .select('*')
         .eq('id', session.has_active_round)
         .single();
 
@@ -93,17 +88,31 @@ const UserPage = () => {
         throw roundError;
       }
       
-      console.log('Round data with statement:', roundData);
+      console.log('Round data:', roundData);
       
       if (!roundData) {
         console.log('No round data found');
         return null;
       }
 
+      // Then get the statement data
+      const { data: statementData, error: statementError } = await supabase
+        .from('STATEMENT')
+        .select('*')
+        .eq('id', roundData.statement_id)
+        .single();
+
+      if (statementError) {
+        console.error('Statement fetch error:', statementError);
+        throw statementError;
+      }
+
+      console.log('Statement data:', statementData);
+
       // Return the data in the expected format
       return {
         ...roundData,
-        statement: roundData.statement
+        statement: statementData
       };
     },
     enabled: !!sessionId && !!session?.has_active_round,
