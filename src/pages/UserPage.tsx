@@ -58,28 +58,34 @@ const UserPage = () => {
     enabled: !!sessionId && session?.status === 'STARTED',
   });
 
-  // Fetch active rounds to determine statement status
-  const { data: activeRounds } = useQuery({
-    queryKey: ['active-rounds', sessionId],
+  // Fetch active statement using session.has_active_round
+  const { data: activeStatement } = useQuery({
+    queryKey: ['active-statement', sessionId, session?.has_active_round],
     queryFn: async () => {
-      if (!sessionId) throw new Error('Session ID is required');
-      console.log('Fetching active rounds with statement ID:', statements?.[currentStatementIndex]?.id);
+      if (!sessionId || !session?.has_active_round) return null;
       
-      const { data, error } = await supabase
+      console.log('Fetching active statement for round:', session.has_active_round);
+      
+      const { data: round, error: roundError } = await supabase
         .from('ROUND')
-        .select('*')
-        .eq('status', 'STARTED')
-        .eq('statement_id', statements?.[currentStatementIndex]?.id || 0);
+        .select('statement_id')
+        .eq('id', session.has_active_round)
+        .single();
 
-      if (error) {
-        console.error('Error fetching active rounds:', error);
-        throw error;
-      }
-      console.log('Active rounds:', data);
-      return data;
+      if (roundError) throw roundError;
+
+      if (!round?.statement_id) return null;
+
+      const { data: statement, error: statementError } = await supabase
+        .from('STATEMENT')
+        .select('*')
+        .eq('id', round.statement_id)
+        .single();
+
+      if (statementError) throw statementError;
+      return statement;
     },
-    enabled: !!sessionId && session?.status === 'STARTED' && !!statements?.length,
-    refetchInterval: 1000, // Poll every second for active rounds
+    enabled: !!sessionId && !!session?.has_active_round,
   });
 
   // Fetch user information using the stored name
@@ -105,25 +111,21 @@ const UserPage = () => {
 
   // Fetch user's answers to check progress
   const { data: userAnswers } = useQuery({
-    queryKey: ['userAnswers', sessionId, userData?.id],
+    queryKey: ['userAnswers', sessionId, userData?.id, session?.has_active_round],
     queryFn: async () => {
-      if (!sessionId || !userData?.id) return null;
+      if (!sessionId || !userData?.id || !session?.has_active_round) return null;
       
-      // Get active round
-      const activeRound = activeRounds?.[0];
-      if (!activeRound) return null;
-
       const { data, error } = await supabase
         .from('ANSWER')
         .select('*')
         .eq('respondant_id', userData.id)
-        .eq('round_id', activeRound.id)
+        .eq('round_id', session.has_active_round)
         .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!sessionId && !!userData?.id && !!activeRounds?.length,
+    enabled: !!sessionId && !!userData?.id && !!session?.has_active_round,
   });
 
   // Set up real-time subscription for session status changes
@@ -151,30 +153,11 @@ const UserPage = () => {
       )
       .subscribe();
 
-    // Set up subscription for ROUND changes
-    const roundChannel = supabase
-      .channel(`round-changes-${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ROUND',
-        },
-        (payload) => {
-          console.log('Round changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['userAnswers', sessionId, userData?.id] });
-        }
-      )
-      .subscribe();
-
     return () => {
       console.log('Cleaning up subscriptions');
       supabase.removeChannel(channel);
-      supabase.removeChannel(roundChannel);
     };
-  }, [sessionId, queryClient, storedName, userData?.id]);
+  }, [sessionId, queryClient, storedName]);
 
   // Save current statement index to localStorage when it changes
   useEffect(() => {
@@ -213,20 +196,12 @@ const UserPage = () => {
     }
   };
 
-  // Find the statement with an active round
-  const activeRound = activeRounds?.[0];
-  const activeStatement = activeRound && statements?.find(s => s.id === activeRound.statement_id);
-
   // Map the Statement type to what UserResponseForm expects
   const mapStatementToFormProps = (statement: Statement) => {
-    const isActive = activeRounds?.some(round => 
-      round.statement_id === statement.id && round.status === 'STARTED'
-    );
-
     return {
       id: statement.id,
       content: statement.statement || '',
-      status: isActive ? 'STARTED' : 'NOT_STARTED'
+      status: session.has_active_round ? 'STARTED' : 'NOT_STARTED'
     };
   };
 
@@ -246,7 +221,7 @@ const UserPage = () => {
       
       {session.status === 'STARTED' && statements && statements.length > 0 && (
         <div className="mt-8">
-          {activeStatement ? (
+          {activeStatement && session.has_active_round ? (
             !userAnswers ? (
               <UserResponseForm 
                 statement={mapStatementToFormProps(activeStatement)}
