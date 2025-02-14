@@ -73,7 +73,10 @@ const UserPage = () => {
       // First get the round with its statement
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
-        .select('*, statement:statement_id(*)')
+        .select(`
+          *,
+          statement:STATEMENT!statement_id(*)
+        `)
         .eq('id', session.has_active_round)
         .single();
 
