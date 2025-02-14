@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -134,7 +133,17 @@ const SessionPage = () => {
 
   return (
     <div className="container mx-auto p-8">
-      <SessionHeader />
+      <SessionHeader 
+        name={session?.name || ''} 
+        status={session?.status || ''}
+        sessionId={sessionId}
+        hasStatements={statements?.length > 0}
+        participantCount={participants?.length || 0}
+        onUpdateName={updateSession}
+        onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
+        onStartRound={handleHeaderStartRound}
+        onEndRound={handleHeaderEndRound}
+      />
 
       <ParticipantsList 
         participants={participants || []} 
