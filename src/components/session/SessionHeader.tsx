@@ -101,22 +101,20 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           <h1 className="text-2xl font-bold text-[#403E43]">Session Management</h1>
         </div>
         <div className="flex items-center gap-4">
-          {status === 'UNPUBLISHED' && (
-            <Button
-              onClick={handlePublish}
-              variant="default"
-            >
-              Publish Session
-            </Button>
-          )}
-          {status === 'PUBLISHED' && (
-            <Button
-              onClick={handleStart}
-              variant="default"
-            >
-              Start Session
-            </Button>
-          )}
+          <Button
+            onClick={handlePublish}
+            variant="default"
+            disabled={status !== 'UNPUBLISHED'}
+          >
+            Publish Session
+          </Button>
+          <Button
+            onClick={handleStart}
+            variant="default"
+            disabled={status !== 'PUBLISHED'}
+          >
+            Start Session
+          </Button>
           <Button
             variant="outline"
             onClick={() => {
