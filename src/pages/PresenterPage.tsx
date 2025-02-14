@@ -223,7 +223,8 @@ const PresenterPage = () => {
     // Get the active round for this statement
     const activeRound = rounds?.find(r => 
       r.statement_id === statement.id && 
-      r.id === session.has_active_round
+      r.id === session.has_active_round &&
+      r.status === 'STARTED'  // Add status check here
     );
 
     if (!activeRound) {
