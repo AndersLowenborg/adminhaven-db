@@ -65,7 +65,8 @@ const UserPage = () => {
   // 3. Fetch current round and statement if session is started
   const {
     data: currentRound,
-    isLoading: isLoadingRound
+    isLoading: isLoadingRound,
+    error: roundError
   } = useQuery({
     queryKey: ['active-round', sessionId, session?.has_active_round],
     queryFn: async () => {
@@ -95,27 +96,45 @@ const UserPage = () => {
         return null;
       }
 
-      // Then get the statement data
-      const { data: statementData, error: statementError } = await supabase
-        .from('STATEMENT')
-        .select('*')
-        .eq('id', roundData.statement_id)
-        .single();
+      // Log the statement ID we're about to query
+      console.log('Fetching statement with ID:', roundData.statement_id);
 
-      if (statementError) {
-        console.error('Statement fetch error:', statementError);
-        throw statementError;
+      try {
+        // Then get the statement data
+        const { data: statementData, error: statementError } = await supabase
+          .from('STATEMENT')
+          .select('id, statement, description, session_id')
+          .eq('id', roundData.statement_id)
+          .single();
+
+        if (statementError) {
+          console.error('Statement fetch error:', statementError);
+          throw statementError;
+        }
+
+        console.log('Statement data:', statementData);
+
+        if (!statementData) {
+          console.log('No statement found for ID:', roundData.statement_id);
+          return null;
+        }
+
+        // Return the data in the expected format
+        return {
+          ...roundData,
+          statement: statementData
+        };
+      } catch (error) {
+        console.error('Detailed statement fetch error:', {
+          error,
+          roundData,
+          statementId: roundData.statement_id
+        });
+        throw error;
       }
-
-      console.log('Statement data:', statementData);
-
-      // Return the data in the expected format
-      return {
-        ...roundData,
-        statement: statementData
-      };
     },
     enabled: !!sessionId && !!session?.has_active_round,
+    retry: false // Disable retries so we can see the error clearly
   });
 
   // 4. Fetch user's answer for current round
