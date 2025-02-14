@@ -53,7 +53,7 @@ const UserPage = () => {
   });
 
   // Fetch active statement using session.has_active_round
-  const { data: activeStatement } = useQuery({
+  const { data: activeStatement, isLoading: isLoadingActiveStatement } = useQuery({
     queryKey: ['active-statement', sessionId, session?.has_active_round],
     queryFn: async () => {
       if (!sessionId || !session?.has_active_round) return null;
@@ -62,13 +62,13 @@ const UserPage = () => {
       
       const { data: round, error: roundError } = await supabase
         .from('ROUND')
-        .select('statement_id')
+        .select('statement_id, status')
         .eq('id', session.has_active_round)
         .single();
 
       if (roundError) throw roundError;
 
-      if (!round?.statement_id) return null;
+      if (!round?.statement_id || round.status !== 'STARTED') return null;
 
       const { data: statement, error: statementError } = await supabase
         .from('STATEMENT')
@@ -77,6 +77,7 @@ const UserPage = () => {
         .single();
 
       if (statementError) throw statementError;
+      console.log('Active statement found:', statement);
       return statement;
     },
     enabled: !!sessionId && !!session?.has_active_round,
@@ -122,13 +123,14 @@ const UserPage = () => {
     enabled: !!sessionId && !!userData?.id && !!session?.has_active_round,
   });
 
-  // Set up real-time subscription for session status changes
+  // Set up real-time subscriptions
   useEffect(() => {
     if (!sessionId) return;
 
-    console.log('Setting up real-time subscription for session status:', sessionId);
+    console.log('Setting up real-time subscriptions for session:', sessionId);
     
-    const channel = supabase
+    // Session changes subscription
+    const sessionChannel = supabase
       .channel(`session-status-${sessionId}`)
       .on(
         'postgres_changes',
@@ -141,7 +143,23 @@ const UserPage = () => {
         (payload) => {
           console.log('Session status changed:', payload);
           queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
+        }
+      )
+      .subscribe();
+
+    // Round changes subscription
+    const roundChannel = supabase
+      .channel(`round-updates-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ROUND',
+          filter: `id=eq.${session?.has_active_round}`,
+        },
+        (payload) => {
+          console.log('Round updated:', payload);
           queryClient.invalidateQueries({ queryKey: ['active-statement', sessionId] });
           queryClient.invalidateQueries({ queryKey: ['userAnswers', sessionId] });
         }
@@ -150,11 +168,12 @@ const UserPage = () => {
 
     return () => {
       console.log('Cleaning up subscriptions');
-      supabase.removeChannel(channel);
+      supabase.removeChannel(sessionChannel);
+      supabase.removeChannel(roundChannel);
     };
-  }, [sessionId, queryClient, storedName]);
+  }, [sessionId, queryClient, session?.has_active_round]);
 
-  if (isLoadingSession) {
+  if (isLoadingSession || isLoadingActiveStatement) {
     return (
       <div className="container mx-auto p-8">
         <p className="text-center">Loading session...</p>
@@ -212,6 +231,7 @@ const UserPage = () => {
 
       // If there's an active round and statement, show the form or waiting page
       if (activeStatement) {
+        console.log('Rendering active statement form:', activeStatement);
         if (!userAnswers) {
           return (
             <UserResponseForm 
@@ -225,6 +245,12 @@ const UserPage = () => {
           );
         }
         return <WaitingPage />;
+      } else {
+        return (
+          <div className="text-center text-gray-600">
+            Waiting for the next statement...
+          </div>
+        );
       }
     }
 
