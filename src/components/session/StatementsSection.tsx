@@ -8,6 +8,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useStatementVisibility } from "@/hooks/use-statement-visibility";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -27,6 +28,7 @@ interface StatementsSectionProps {
   onStartRound: (statementId: number) => void;
   onEndRound: (statementId: number) => void;
   activeRounds?: { statement_id: number; status: string; round_number: number }[];
+  sessionId: number;
 }
 
 export const StatementsSection: React.FC<StatementsSectionProps> = ({
@@ -46,10 +48,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   sessionStatus,
   onStartRound,
   onEndRound,
-  activeRounds = []
+  activeRounds = [],
+  sessionId
 }) => {
   const { toast } = useToast();
-  const [showingResultsFor, setShowingResultsFor] = useState<number[]>([]);
+  const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
 
   // Helper function to determine if statements can be deleted
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
@@ -62,17 +65,12 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   };
 
   const handleToggleResults = (statementId: number) => {
-    const isCurrentlyShowing = showingResultsFor.includes(statementId);
+    toggleVisibility(statementId);
     
-    if (isCurrentlyShowing) {
-      setShowingResultsFor(prev => prev.filter(id => id !== statementId));
-    } else {
-      setShowingResultsFor(prev => [...prev, statementId]);
-    }
-
+    const isCurrentlyShowing = visibleResults.includes(statementId);
     toast({
       title: "Success",
-      description: `Results ${isCurrentlyShowing ? 'hidden' : 'shown'} for this statement`,
+      description: `Results ${!isCurrentlyShowing ? 'shown' : 'hidden'} for this statement`,
     });
   };
 
@@ -145,7 +143,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
             ? activeRounds.find(round => round.statement_id === statement.id && round.status === 'STARTED')?.round_number 
             : getLastRoundNumber(statement.id) + 1;
 
-          const isShowingResults = showingResultsFor.includes(statement.id);
+          const isShowingResults = visibleResults.includes(statement.id);
 
           return (
             <Card key={statement.id} className="p-4 grid grid-cols-[1fr,1fr,auto] gap-4">

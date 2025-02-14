@@ -129,6 +129,7 @@ const SessionPage = () => {
           onStartRound={handleStartRound}
           onEndRound={handleEndRound}
           activeRounds={activeRounds}
+          sessionId={sessionId}
         />
       )}
     </div>
