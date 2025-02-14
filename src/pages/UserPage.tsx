@@ -85,10 +85,13 @@ const UserPage = () => {
         .from('STATEMENT')
         .select('*')
         .eq('id', roundData.statement_id)
-        .single();
+        .maybeSingle();
 
       if (statementError) throw statementError;
-      if (!statementData) return null;
+      if (!statementData) {
+        console.log('No statement found for round:', roundData.statement_id);
+        return null;
+      }
 
       // Combine the data
       return {
