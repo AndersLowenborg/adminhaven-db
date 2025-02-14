@@ -4,6 +4,11 @@ import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -44,8 +49,10 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   onEndRound,
   activeRounds = []
 }) => {
+  const { toast } = useToast();
+  const [showingResultsFor, setShowingResultsFor] = useState<number[]>([]);
+
   // Helper function to determine if statements can be deleted
-  // We only allow deletion when the session is unpublished
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   // Get the last completed round number for a statement
@@ -53,6 +60,37 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     const statementRounds = activeRounds.filter(round => round.statement_id === statementId);
     if (statementRounds.length === 0) return 0;
     return Math.max(...statementRounds.map(r => r.round_number));
+  };
+
+  const handleToggleResults = async (statementId: number) => {
+    try {
+      const isCurrentlyShowing = showingResultsFor.includes(statementId);
+      
+      if (isCurrentlyShowing) {
+        setShowingResultsFor(prev => prev.filter(id => id !== statementId));
+      } else {
+        setShowingResultsFor(prev => [...prev, statementId]);
+      }
+
+      const { error } = await supabase
+        .from('STATEMENT')
+        .update({ show_results: !isCurrentlyShowing })
+        .eq('id', statementId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Results ${isCurrentlyShowing ? 'hidden' : 'shown'} for this statement`,
+      });
+    } catch (error) {
+      console.error('Error toggling results:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle results visibility",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -124,19 +162,31 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
             ? activeRounds.find(round => round.statement_id === statement.id && round.status === 'STARTED')?.round_number 
             : getLastRoundNumber(statement.id) + 1;
 
+          const isShowingResults = showingResultsFor.includes(statement.id);
+
           return (
             <Card key={statement.id} className="p-4 grid grid-cols-[1fr,1fr,auto] gap-4">
               <div>{statement.statement}</div>
               <div>{statement.description || '-'}</div>
               <div className="flex items-center gap-2">
                 {hasActiveRound ? (
-                  <Button
-                    onClick={() => onEndRound(statement.id)}
-                    variant="secondary"
-                    className="whitespace-nowrap"
-                  >
-                    End Round {currentRoundNumber}
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => onEndRound(statement.id)}
+                      variant="secondary"
+                      className="whitespace-nowrap"
+                    >
+                      End Round {currentRoundNumber}
+                    </Button>
+                    <Toggle
+                      pressed={isShowingResults}
+                      onPressedChange={() => handleToggleResults(statement.id)}
+                      className="ml-2"
+                      aria-label="Toggle results visibility"
+                    >
+                      {isShowingResults ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
+                    </Toggle>
+                  </>
                 ) : (
                   <Button
                     onClick={() => onStartRound(statement.id)}
