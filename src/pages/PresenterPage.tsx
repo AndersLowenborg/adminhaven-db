@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -221,7 +222,7 @@ const PresenterPage = () => {
       <div className="container mx-auto p-8">
         <div className="flex items-center gap-4 mb-8">
           <img 
-            src="/lovable-uploads/7f867208-6c5c-4b53-aad8-f74c1fab9c89.png" 
+            src="/lovable-uploads/853e4d3d-589f-4424-8dd4-42d013e54554.png" 
             alt="Grousion Logo" 
             className="h-12 w-auto"
           />
