@@ -24,6 +24,7 @@ export const useRounds = (sessionId: number) => {
         if (sessionError) throw sessionError;
       }
 
+      // Get the last round number for this statement
       const { data: existingRounds, error: roundsError } = await supabase
         .from('ROUND')
         .select('round_number')
@@ -39,8 +40,7 @@ export const useRounds = (sessionId: number) => {
 
       const { error: roundError } = await supabase
         .from('ROUND')
-        .upsert({
-          id: Date.now(), // Generate a temporary ID
+        .insert({
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'STARTED',
@@ -52,6 +52,7 @@ export const useRounds = (sessionId: number) => {
       return { success: true };
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
@@ -87,6 +88,7 @@ export const useRounds = (sessionId: number) => {
       return { success: true };
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",

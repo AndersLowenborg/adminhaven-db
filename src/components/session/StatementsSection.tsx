@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
-import { UseMutateFunction } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +22,7 @@ interface StatementsSectionProps {
   sessionStatus: string;
   onStartRound: (statementId: number) => void;
   onEndRound: (statementId: number) => void;
-  activeRounds?: { statement_id: number; status: string }[];
+  activeRounds?: { statement_id: number; status: string; round_number: number }[];
 }
 
 export const StatementsSection: React.FC<StatementsSectionProps> = ({
@@ -48,6 +47,13 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   // Helper function to determine if statements can be deleted
   // We only allow deletion when the session is unpublished
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
+
+  // Get the last completed round number for a statement
+  const getLastRoundNumber = (statementId: number) => {
+    const statementRounds = activeRounds.filter(round => round.statement_id === statementId);
+    if (statementRounds.length === 0) return 0;
+    return Math.max(...statementRounds.map(r => r.round_number));
+  };
 
   return (
     <div className="mt-8">
@@ -113,29 +119,35 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const hasActiveRound = activeRounds.some(
             round => round.statement_id === statement.id && round.status === 'STARTED'
           );
+          
+          const currentRoundNumber = hasActiveRound 
+            ? activeRounds.find(round => round.statement_id === statement.id && round.status === 'STARTED')?.round_number 
+            : getLastRoundNumber(statement.id) + 1;
 
           return (
             <Card key={statement.id} className="p-4 grid grid-cols-[1fr,1fr,auto] gap-4">
               <div>{statement.statement}</div>
               <div>{statement.description || '-'}</div>
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => onStartRound(statement.id)}
-                  disabled={hasActiveRound || sessionStatus !== 'STARTED'}
-                  variant="secondary"
-                  title={sessionStatus !== 'STARTED' ? "Session must be started to begin rounds" : 
-                         hasActiveRound ? "Round already in progress" : ""}
-                >
-                  Start Round
-                </Button>
-                <Button
-                  onClick={() => onEndRound(statement.id)}
-                  disabled={!hasActiveRound}
-                  variant="secondary"
-                  title={!hasActiveRound ? "No active round to end" : ""}
-                >
-                  End Round
-                </Button>
+                {hasActiveRound ? (
+                  <Button
+                    onClick={() => onEndRound(statement.id)}
+                    variant="secondary"
+                    className="whitespace-nowrap"
+                  >
+                    End Round {currentRoundNumber}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => onStartRound(statement.id)}
+                    disabled={sessionStatus !== 'STARTED'}
+                    variant="secondary"
+                    className="whitespace-nowrap"
+                    title={sessionStatus !== 'STARTED' ? "Session must be started to begin rounds" : ""}
+                  >
+                    Start Round {currentRoundNumber}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
