@@ -10,8 +10,10 @@ export interface Session {
   created_at: string | null;
   started_at: string | null;
   ended_at: string | null;
+  has_active_round: number | null;
 }
 
 export interface SessionWithUsers extends Session {
   users: Array<{ id: number; name: string | null }>;
 }
+

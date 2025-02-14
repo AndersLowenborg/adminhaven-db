@@ -143,6 +143,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           ended_at: string | null
+          has_active_round: number | null
           id: number
           name: string | null
           started_at: string | null
@@ -153,6 +154,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           ended_at?: string | null
+          has_active_round?: number | null
           id?: number
           name?: string | null
           started_at?: string | null
@@ -163,6 +165,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           ended_at?: string | null
+          has_active_round?: number | null
           id?: number
           name?: string | null
           started_at?: string | null
