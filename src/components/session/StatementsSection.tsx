@@ -45,13 +45,17 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   onEndRound,
   activeRounds = []
 }) => {
+  // Helper function to determine if a statement can be edited or deleted
+  const canModifyStatements = sessionStatus === 'UNPUBLISHED';
+
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Statements</h2>
         <Button 
           onClick={onAddClick}
-          disabled={sessionStatus !== 'STARTED'}
+          disabled={!canModifyStatements || isAddingStatement}
+          title={!canModifyStatements ? "Can only add statements when session is unpublished" : ""}
         >
           Add Statement
         </Button>
@@ -118,6 +122,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   onClick={() => onStartRound(statement.id)}
                   disabled={hasActiveRound || sessionStatus !== 'STARTED'}
                   variant="secondary"
+                  title={sessionStatus !== 'STARTED' ? "Session must be started to begin rounds" : 
+                         hasActiveRound ? "Round already in progress" : ""}
                 >
                   Start Round
                 </Button>
@@ -125,19 +131,23 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   onClick={() => onEndRound(statement.id)}
                   disabled={!hasActiveRound}
                   variant="secondary"
+                  title={!hasActiveRound ? "No active round to end" : ""}
                 >
                   End Round
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+                  disabled={!canModifyStatements}
+                  title={!canModifyStatements ? "Can only edit statements when session is unpublished" : ""}
                 >
                   Edit
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={() => onDeleteStatement(statement.id)}
-                  disabled={isDeletingStatementPending}
+                  disabled={!canModifyStatements || isDeletingStatementPending}
+                  title={!canModifyStatements ? "Can only delete statements when session is unpublished" : ""}
                 >
                   Delete
                 </Button>
