@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,13 +37,11 @@ const PresenterPage = () => {
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
 
-  // Fetch session data
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
     queryFn: async () => {
       console.log('Fetching session data for presenter page, ID:', sessionId);
       
-      // First try to get the raw count to verify the session exists
       const { count, error: countError } = await supabase
         .from('SESSION')
         .select('*', { count: 'exact', head: true })
@@ -84,7 +81,6 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch statements for the session
   const { data: statements } = useQuery({
     queryKey: ['statements', sessionId],
     queryFn: async () => {
@@ -100,7 +96,6 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Fetch answers independently
   const { data: answers } = useQuery({
     queryKey: ['presenter-answers', sessionId],
     queryFn: async () => {
@@ -116,13 +111,11 @@ const PresenterPage = () => {
     enabled: !!sessionId,
   });
 
-  // Set up real-time subscriptions
   useEffect(() => {
     if (!sessionId) return;
 
     console.log('Setting up real-time subscriptions for presenter view:', sessionId);
     
-    // Channel for statements updates
     const statementsChannel = supabase
       .channel(`presenter-statements-${sessionId}`)
       .on(
@@ -140,7 +133,6 @@ const PresenterPage = () => {
       )
       .subscribe();
 
-    // Channel for answers updates
     const answersChannel = supabase
       .channel(`presenter-answers-${sessionId}`)
       .on(
@@ -222,9 +214,9 @@ const PresenterPage = () => {
       <div className="container mx-auto p-8">
         <div className="flex items-center gap-4 mb-8">
           <img 
-            src="/lovable-uploads/853e4d3d-589f-4424-8dd4-42d013e54554.png" 
+            src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
             alt="Grousion Logo" 
-            className="h-12 w-auto"
+            className="w-48 h-auto"
           />
           <h1 className="text-3xl font-bold text-[#403E43]">Presenter Dashboard</h1>
         </div>
