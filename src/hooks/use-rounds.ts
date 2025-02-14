@@ -54,6 +54,16 @@ export const useRounds = (sessionId: number) => {
 
       if (roundError) throw roundError;
 
+      // Update the session with the active round ID
+      const { error: updateSessionError } = await supabase
+        .from('SESSION')
+        .update({ 
+          has_active_round: newRound.id 
+        })
+        .eq('id', sessionId);
+
+      if (updateSessionError) throw updateSessionError;
+
       return { success: true, round: newRound };
     },
     onSuccess: () => {
@@ -79,6 +89,7 @@ export const useRounds = (sessionId: number) => {
     mutationFn: async (statementId: number) => {
       console.log('Ending round for statement:', statementId);
       
+      // End the round
       const { error: roundError } = await supabase
         .from('ROUND')
         .update({ 
@@ -89,6 +100,16 @@ export const useRounds = (sessionId: number) => {
         .eq('status', 'STARTED');
 
       if (roundError) throw roundError;
+
+      // Clear the active round from the session
+      const { error: sessionError } = await supabase
+        .from('SESSION')
+        .update({ 
+          has_active_round: null 
+        })
+        .eq('id', sessionId);
+
+      if (sessionError) throw sessionError;
 
       return { success: true };
     },
