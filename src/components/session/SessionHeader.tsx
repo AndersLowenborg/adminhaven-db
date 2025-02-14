@@ -29,101 +29,53 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const handlePublish = async () => {
+  const handlePublishToggle = async () => {
     try {
+      const newStatus = status === 'PUBLISHED' ? 'UNPUBLISHED' : 'PUBLISHED';
       const { error } = await supabase
         .from('SESSION')
-        .update({ status: 'PUBLISHED' })
+        .update({ status: newStatus })
         .eq('id', sessionId);
 
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: "Session published successfully",
+        description: `Session ${newStatus.toLowerCase()} successfully`,
       });
       
       onStatusChange();
     } catch (error) {
-      console.error('Error publishing session:', error);
+      console.error('Error toggling session publish state:', error);
       toast({
         title: "Error",
-        description: "Failed to publish session",
+        description: `Failed to ${status === 'PUBLISHED' ? 'unpublish' : 'publish'} session`,
         variant: "destructive",
       });
     }
   };
 
-  const handleUnpublish = async () => {
+  const handleSessionStateToggle = async () => {
     try {
+      const newStatus = status === 'STARTED' ? 'ENDED' : 'STARTED';
       const { error } = await supabase
         .from('SESSION')
-        .update({ status: 'UNPUBLISHED' })
+        .update({ status: newStatus })
         .eq('id', sessionId);
 
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: "Session unpublished successfully",
+        description: `Session ${newStatus.toLowerCase()} successfully`,
       });
       
       onStatusChange();
     } catch (error) {
-      console.error('Error unpublishing session:', error);
+      console.error('Error toggling session state:', error);
       toast({
         title: "Error",
-        description: "Failed to unpublish session",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStart = async () => {
-    try {
-      const { error } = await supabase
-        .from('SESSION')
-        .update({ status: 'STARTED' })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Session started successfully",
-      });
-      
-      onStatusChange();
-    } catch (error) {
-      console.error('Error starting session:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start session",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEnd = async () => {
-    try {
-      const { error } = await supabase
-        .from('SESSION')
-        .update({ status: 'ENDED' })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Session ended successfully",
-      });
-      
-      onStatusChange();
-    } catch (error) {
-      console.error('Error ending session:', error);
-      toast({
-        title: "Error",
-        description: "Failed to end session",
+        description: `Failed to ${status === 'STARTED' ? 'end' : 'start'} session`,
         variant: "destructive",
       });
     }
@@ -157,33 +109,26 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
         </div>
         <div className="flex items-center gap-4">
           <Button
-            onClick={handlePublish}
+            onClick={handlePublishToggle}
             variant="default"
-            disabled={status !== 'UNPUBLISHED'}
+            disabled={status === 'STARTED' || status === 'ENDED'}
           >
-            Publish Session
+            {status === 'PUBLISHED' ? 'Unpublish Session' : 'Publish Session'}
           </Button>
           <Button
-            onClick={handleUnpublish}
+            onClick={handleSessionStateToggle}
             variant="default"
-            disabled={status !== 'PUBLISHED'}
+            disabled={
+              (status !== 'PUBLISHED' && status !== 'STARTED') || 
+              (status === 'PUBLISHED' && !hasEnoughParticipants)
+            }
+            title={
+              status === 'PUBLISHED' && !hasEnoughParticipants 
+                ? "Need at least 2 participants to start" 
+                : ""
+            }
           >
-            Unpublish Session
-          </Button>
-          <Button
-            onClick={handleStart}
-            variant="default"
-            disabled={status !== 'PUBLISHED' || !hasEnoughParticipants}
-            title={!hasEnoughParticipants ? "Need at least 2 participants to start" : ""}
-          >
-            Start Session
-          </Button>
-          <Button
-            onClick={handleEnd}
-            variant="default"
-            disabled={status !== 'STARTED'}
-          >
-            End Session
+            {status === 'STARTED' ? 'End Session' : 'Start Session'}
           </Button>
           <Button
             variant="outline"
