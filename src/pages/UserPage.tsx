@@ -70,23 +70,30 @@ const UserPage = () => {
     queryFn: async () => {
       if (!sessionId || !session?.has_active_round) return null;
 
-      // First get the round with its statement
+      // First get the round data
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
-        .select(`
-          *,
-          statement:STATEMENT!statement_id(*)
-        `)
+        .select('*')
         .eq('id', session.has_active_round)
         .single();
 
       if (roundError) throw roundError;
       if (!roundData) return null;
 
-      // Transform the data to match our expected format
+      // Then get the statement data
+      const { data: statementData, error: statementError } = await supabase
+        .from('STATEMENT')
+        .select('*')
+        .eq('id', roundData.statement_id)
+        .single();
+
+      if (statementError) throw statementError;
+      if (!statementData) return null;
+
+      // Combine the data
       return {
         ...roundData,
-        statement: roundData.statement as Statement
+        statement: statementData
       };
     },
     enabled: !!sessionId && !!session?.has_active_round,
