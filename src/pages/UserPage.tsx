@@ -1,28 +1,32 @@
 
 import { useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
 import { WaitingPage } from '@/components/session/WaitingPage';
 import { useEffect } from 'react';
 import { Statement } from '@/types/statement';
+import { Session } from '@/types/session';
+import { useToast } from "@/hooks/use-toast";
 
 const UserPage = () => {
   const { id: sessionIdString } = useParams();
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Get user's localStorage name to fetch the correct user data
+  // Get user's localStorage name
   const storedName = localStorage.getItem(`session_${sessionId}_name`);
-  console.log('Stored name from localStorage:', storedName);
 
-  // Fetch session details to verify it's published
-  const { data: session, isLoading: isLoadingSession } = useQuery({
+  // 1. Fetch session details
+  const { 
+    data: session,
+    isLoading: isLoadingSession
+  } = useQuery<Session>({
     queryKey: ['session', sessionId],
     queryFn: async () => {
       if (!sessionId) throw new Error('Session ID is required');
-      console.log('Fetching session details for user page:', sessionId);
+      
       const { data, error } = await supabase
         .from('SESSION')
         .select('*')
@@ -30,126 +34,110 @@ const UserPage = () => {
         .single();
       
       if (error) throw error;
-      console.log('Session details retrieved:', data);
       return data;
     },
     enabled: !!sessionId,
   });
 
-  // Fetch statements when session is started
-  const { data: statements } = useQuery({
-    queryKey: ['statements', sessionId],
-    queryFn: async () => {
-      if (!sessionId) throw new Error('Session ID is required');
-      const { data, error } = await supabase
-        .from('STATEMENT')
-        .select('*')
-        .eq('session_id', sessionId);
-
-      if (error) throw error;
-      return data as Statement[];
-    },
-    enabled: !!sessionId && session?.status === 'STARTED',
-  });
-
-  // Fetch active statement using session.has_active_round
-  const { data: activeStatement, isLoading: isLoadingActiveStatement } = useQuery({
-    queryKey: ['active-statement', sessionId, session?.has_active_round],
-    queryFn: async () => {
-      if (!sessionId || !session?.has_active_round) return null;
-      
-      console.log('Fetching active statement for round:', session.has_active_round);
-      
-      const { data: round, error: roundError } = await supabase
-        .from('ROUND')
-        .select('statement_id, status')
-        .eq('id', session.has_active_round)
-        .single();
-
-      if (roundError) throw roundError;
-
-      if (!round?.statement_id || round.status !== 'STARTED') return null;
-
-      const { data: statement, error: statementError } = await supabase
-        .from('STATEMENT')
-        .select('*')
-        .eq('id', round.statement_id)
-        .single();
-
-      if (statementError) throw statementError;
-      console.log('Active statement found:', statement);
-      return statement;
-    },
-    enabled: !!sessionId && !!session?.has_active_round,
-  });
-
-  // Fetch user information using the stored name
-  const { data: userData } = useQuery({
+  // 2. Fetch user data if they've joined
+  const {
+    data: userData,
+    isLoading: isLoadingUser
+  } = useQuery({
     queryKey: ['user', sessionId, storedName],
     queryFn: async () => {
-      if (!sessionId || !storedName) throw new Error('Session ID and name are required');
-      console.log('Fetching user data with name:', storedName);
+      if (!sessionId || !storedName) throw new Error('No stored user name found');
       
       const { data, error } = await supabase
         .from('SESSION_USERS')
         .select('*')
         .eq('session_id', sessionId)
         .eq('name', storedName)
-        .maybeSingle();
-
+        .single();
+      
       if (error) throw error;
-      console.log('User data retrieved:', data);
       return data;
     },
     enabled: !!sessionId && !!storedName,
   });
 
-  // Fetch user's answers to check progress
-  const { data: userAnswers } = useQuery({
-    queryKey: ['userAnswers', sessionId, userData?.id, session?.has_active_round],
+  // 3. Fetch current round and statement if session is started
+  const {
+    data: currentRound,
+    isLoading: isLoadingRound
+  } = useQuery({
+    queryKey: ['active-round', sessionId, session?.has_active_round],
     queryFn: async () => {
-      if (!sessionId || !userData?.id || !session?.has_active_round) return null;
-      
+      if (!sessionId || !session?.has_active_round) return null;
+
+      const { data, error } = await supabase
+        .from('ROUND')
+        .select(`
+          id,
+          status,
+          statement_id,
+          statement:STATEMENT (
+            id,
+            statement,
+            description
+          )
+        `)
+        .eq('id', session.has_active_round)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId && !!session?.has_active_round,
+  });
+
+  // 4. Fetch user's answer for current round
+  const {
+    data: userAnswer,
+    isLoading: isLoadingAnswer
+  } = useQuery({
+    queryKey: ['user-answer', sessionId, userData?.id, session?.has_active_round],
+    queryFn: async () => {
+      if (!userData?.id || !session?.has_active_round) return null;
+
       const { data, error } = await supabase
         .from('ANSWER')
         .select('*')
         .eq('respondant_id', userData.id)
         .eq('round_id', session.has_active_round)
-        .maybeSingle();
+        .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows returned" error
       return data;
     },
-    enabled: !!sessionId && !!userData?.id && !!session?.has_active_round,
+    enabled: !!userData?.id && !!session?.has_active_round,
   });
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions for updates
   useEffect(() => {
     if (!sessionId) return;
 
-    console.log('Setting up real-time subscriptions for session:', sessionId);
-    
-    // Session changes subscription
+    // Subscribe to session changes
     const sessionChannel = supabase
-      .channel(`session-status-${sessionId}`)
+      .channel('session-changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'SESSION',
           filter: `id=eq.${sessionId}`,
         },
-        (payload) => {
-          console.log('Session status changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        () => {
+          console.log('Session updated, refreshing...');
+          window.location.reload();
         }
       )
       .subscribe();
 
-    // Round changes subscription
+    // Subscribe to round changes
     const roundChannel = supabase
-      .channel(`round-updates-${sessionId}`)
+      .channel('round-changes')
       .on(
         'postgres_changes',
         {
@@ -158,60 +146,66 @@ const UserPage = () => {
           table: 'ROUND',
           filter: `id=eq.${session?.has_active_round}`,
         },
-        (payload) => {
-          console.log('Round updated:', payload);
-          queryClient.invalidateQueries({ queryKey: ['active-statement', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['userAnswers', sessionId] });
+        () => {
+          console.log('Round updated, refreshing...');
+          window.location.reload();
         }
       )
       .subscribe();
 
+    // Cleanup subscriptions
     return () => {
-      console.log('Cleaning up subscriptions');
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(roundChannel);
     };
-  }, [sessionId, queryClient, session?.has_active_round]);
+  }, [sessionId, session?.has_active_round]);
 
-  if (isLoadingSession || isLoadingActiveStatement) {
+  // Loading states
+  if (isLoadingSession || isLoadingUser || isLoadingRound || isLoadingAnswer) {
     return (
       <div className="container mx-auto p-8">
-        <p className="text-center">Loading session...</p>
+        <div className="text-center text-gray-600">Loading...</div>
       </div>
     );
   }
 
+  // Error states
   if (!session) {
     return (
       <div className="container mx-auto p-8">
-        <p className="text-center text-red-500">Session not found</p>
+        <div className="text-center text-red-500">Session not found</div>
       </div>
     );
   }
 
+  // Session status checks
   if (session.status === 'UNPUBLISHED') {
     return (
       <div className="container mx-auto p-8">
-        <p className="text-center text-yellow-500">This session is not currently active</p>
+        <div className="text-center text-yellow-500">
+          This session is not currently active
+        </div>
       </div>
     );
   }
 
-  // Map the Statement type to what UserResponseForm expects
-  const mapStatementToFormProps = (statement: Statement) => {
-    return {
-      id: statement.id,
-      content: statement.statement || '',
-      status: session.has_active_round ? 'STARTED' : 'NOT_STARTED'
-    };
-  };
+  // Map statement for form props
+  const getFormProps = (statement: Statement) => ({
+    id: statement.id,
+    content: statement.statement || '',
+    status: 'STARTED'
+  });
 
+  // Main content render
   const renderContent = () => {
+    // If session is published but user hasn't joined
     if (session.status === 'PUBLISHED' && !userData) {
       return <JoinSessionForm />;
     }
 
+    // If session is started
     if (session.status === 'STARTED') {
+      // Check if user has joined
       if (!userData) {
         return (
           <div className="text-center text-red-500">
@@ -220,8 +214,8 @@ const UserPage = () => {
         );
       }
 
-      // If there's no active round, show a message
-      if (!session.has_active_round) {
+      // Check for active round
+      if (!session.has_active_round || !currentRound) {
         return (
           <div className="text-center text-gray-600">
             Waiting for the administrator to start a round...
@@ -229,29 +223,31 @@ const UserPage = () => {
         );
       }
 
-      // If there's an active round and statement, show the form or waiting page
-      if (activeStatement) {
-        console.log('Rendering active statement form:', activeStatement);
-        if (!userAnswers) {
+      // Check round status and user answer
+      if (currentRound.status === 'STARTED' && currentRound.statement) {
+        if (!userAnswer) {
           return (
             <UserResponseForm 
-              statement={mapStatementToFormProps(activeStatement)}
+              statement={getFormProps(currentRound.statement)}
               onSubmit={() => {
-                queryClient.invalidateQueries({ 
-                  queryKey: ['userAnswers', sessionId, userData.id, session.has_active_round] 
+                toast({
+                  title: "Success",
+                  description: "Your response has been submitted",
                 });
+                window.location.reload();
               }}
             />
           );
+        } else {
+          return <WaitingPage />;
         }
-        return <WaitingPage />;
-      } else {
-        return (
-          <div className="text-center text-gray-600">
-            Waiting for the next statement...
-          </div>
-        );
       }
+
+      return (
+        <div className="text-center text-gray-600">
+          Waiting for the next statement...
+        </div>
+      );
     }
 
     return null;
