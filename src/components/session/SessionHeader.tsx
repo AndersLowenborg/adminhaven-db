@@ -108,53 +108,54 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
         </Button>
       </div>
       
+      <div className="flex items-center gap-4 mb-6">
+        <img 
+          src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
+          alt="Grousion Logo" 
+          className="w-48 h-auto"
+        />
+        <h1 className="text-2xl font-bold text-[#403E43]">Session Management</h1>
+      </div>
+
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <img 
-            src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
-            alt="Grousion Logo" 
-            className="w-48 h-auto"
-          />
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-[#403E43]">Session Management</h1>
-            {isEditingName ? (
-              <form onSubmit={handleNameSubmit} className="flex gap-2 items-center">
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="max-w-[300px]"
-                  placeholder="Enter session name"
-                  autoFocus
-                />
-                <Button type="submit" size="sm">Save</Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setIsEditingName(false);
-                    setNewName(name);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </form>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  {name || 'Unnamed Session'}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setIsEditingName(true)}
-                  className="h-6 px-2"
-                >
-                  Edit
-                </Button>
-              </div>
-            )}
-          </div>
+        <div className="space-y-2">
+          {isEditingName ? (
+            <form onSubmit={handleNameSubmit} className="flex gap-2 items-center">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="max-w-[300px]"
+                placeholder="Enter session name"
+                autoFocus
+              />
+              <Button type="submit" size="sm">Save</Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setIsEditingName(false);
+                  setNewName(name);
+                }}
+              >
+                Cancel
+              </Button>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {name || 'Unnamed Session'}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsEditingName(true)}
+                className="h-6 px-2"
+              >
+                Edit
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <Button
