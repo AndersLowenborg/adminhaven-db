@@ -3,12 +3,14 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from 'qrcode.react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Cell, ResponsiveContainer } from 'recharts';
 import { useParticipants } from '@/hooks/use-participants';
 import { StatementTimer } from '@/components/session/StatementTimer';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -32,6 +34,7 @@ const PresenterPage = () => {
   const sessionId = sessionIdString ? parseInt(sessionIdString, 10) : null;
   const sessionUrl = sessionId ? `${window.location.origin}/user/${sessionId}` : '';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
 
   // Fetch session data
@@ -39,6 +42,25 @@ const PresenterPage = () => {
     queryKey: ['presenter-session', sessionId],
     queryFn: async () => {
       console.log('Fetching session data for presenter page, ID:', sessionId);
+      
+      // First try to get the raw count to verify the session exists
+      const { count, error: countError } = await supabase
+        .from('SESSION')
+        .select('*', { count: 'exact', head: true })
+        .eq('id', sessionId);
+        
+      if (countError) {
+        console.error('Error checking session existence:', countError);
+        throw countError;
+      }
+      
+      console.log('Session count:', count);
+      
+      if (count === 0) {
+        console.error('No session found with ID:', sessionId);
+        throw new Error('Session not found');
+      }
+
       const { data, error } = await supabase
         .from('SESSION')
         .select('*')
@@ -52,6 +74,7 @@ const PresenterPage = () => {
       
       console.log('Session data retrieved:', data);
       if (!data) {
+        console.error('Session data is null despite count > 0. Possible RLS issue.');
         throw new Error('Session not found');
       }
       
@@ -158,7 +181,17 @@ const PresenterPage = () => {
   if (isSessionLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-        <p className="text-[#8E9196]">Loading session...</p>
+        <div className="container mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/admin')}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Admin
+          </Button>
+          <p className="text-[#8E9196]">Loading session...</p>
+        </div>
       </div>
     );
   }
@@ -166,7 +199,19 @@ const PresenterPage = () => {
   if (!session || !sessionId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-        <p className="text-red-600">Session not found</p>
+        <div className="container mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/admin')}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Admin
+          </Button>
+          <Card className="p-6">
+            <p className="text-red-600">Session not found. This session might have been deleted or you may not have permission to access it.</p>
+          </Card>
+        </div>
       </div>
     );
   }
