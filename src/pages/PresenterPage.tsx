@@ -191,15 +191,20 @@ const PresenterPage = () => {
   const getAnswersForStatement = (statement: any) => {
     if (!answers || !session?.has_active_round) return [];
     
-    // Only return answers if they're for the active round and statement
+    // Check if this statement has an active round
     const activeRound = rounds?.find(r => 
       r.id === session.has_active_round && 
       r.statement_id === statement.id
     );
     
-    if (!activeRound) return [];
+    if (!activeRound) {
+      console.log(`No active round found for statement ${statement.id}`);
+      return [];
+    }
     
-    return answers;
+    // Only return answers for this statement's active round
+    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
+    return answers.filter(answer => answer.round_id === activeRound.id);
   };
 
   if (isSessionLoading) {
@@ -265,14 +270,18 @@ const PresenterPage = () => {
         {statements && statements.length > 0 ? (
           <div className="space-y-6 mb-8">
             <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
-            {statements.map(statement => (
-              <StatementResults
-                key={statement.id}
-                statement={statement}
-                answers={getAnswersForStatement(statement)}
-                isVisible={visibleResults.includes(statement.id)}
-              />
-            ))}
+            {statements.map(statement => {
+              const statementAnswers = getAnswersForStatement(statement);
+              console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
+              return (
+                <StatementResults
+                  key={statement.id}
+                  statement={statement}
+                  answers={statementAnswers}
+                  isVisible={visibleResults.includes(statement.id)}
+                />
+              );
+            })}
           </div>
         ) : (
           <Card className="mb-8 p-6 shadow-sm text-center">
