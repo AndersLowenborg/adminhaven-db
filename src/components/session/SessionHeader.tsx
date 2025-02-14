@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Session } from "@/types/session";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface SessionHeaderProps {
   name: string;
@@ -22,6 +24,57 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handlePublish = async () => {
+    try {
+      const { error } = await supabase
+        .from('SESSION')
+        .update({ status: 'PUBLISHED' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Session published successfully",
+      });
+      
+      onStatusChange();
+    } catch (error) {
+      console.error('Error publishing session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStart = async () => {
+    try {
+      const { error } = await supabase
+        .from('SESSION')
+        .update({ status: 'STARTED' })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Session started successfully",
+      });
+      
+      onStatusChange();
+    } catch (error) {
+      console.error('Error starting session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start session",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div>
@@ -47,14 +100,32 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           />
           <h1 className="text-2xl font-bold text-[#403E43]">Session Management</h1>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            window.open(`/presenter/${sessionId}`, '_blank');
-          }}
-        >
-          Open Presenter View
-        </Button>
+        <div className="flex items-center gap-4">
+          {status === 'UNPUBLISHED' && (
+            <Button
+              onClick={handlePublish}
+              variant="default"
+            >
+              Publish Session
+            </Button>
+          )}
+          {status === 'PUBLISHED' && (
+            <Button
+              onClick={handleStart}
+              variant="default"
+            >
+              Start Session
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.open(`/presenter/${sessionId}`, '_blank');
+            }}
+          >
+            Open Presenter View
+          </Button>
+        </div>
       </div>
     </div>
   );
