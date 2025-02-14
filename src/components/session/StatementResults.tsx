@@ -30,10 +30,6 @@ interface StatementResultsProps {
 }
 
 export const StatementResults = ({ statement, answers, isVisible }: StatementResultsProps) => {
-  if (!isVisible) {
-    return null;
-  }
-
   const chartData = answers.map((answer, index) => ({
     x: answer.agreement_level,
     y: answer.confidence_level,
@@ -102,3 +98,4 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
     </Card>
   );
 };
+
