@@ -38,18 +38,23 @@ export const useRounds = (sessionId: number) => {
         ? existingRounds[0].round_number + 1 
         : 1;
 
-      const { error: roundError } = await supabase
+      // Create the new round with required fields
+      const { data: newRound, error: roundError } = await supabase
         .from('ROUND')
         .insert({
+          id: Date.now(), // Generate a unique ID
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'STARTED',
-          started_at: new Date().toISOString()
-        });
+          started_at: new Date().toISOString(),
+          respondant_type: 'SESSION_USER' // Set default respondant type
+        })
+        .select()
+        .single();
 
       if (roundError) throw roundError;
 
-      return { success: true };
+      return { success: true, round: newRound };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
