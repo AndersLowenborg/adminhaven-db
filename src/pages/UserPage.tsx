@@ -67,13 +67,14 @@ const UserPage = () => {
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
-        .eq('status', 'STARTED');
+        .eq('status', 'STARTED')
+        .eq('statement_id', statements?.[currentStatementIndex]?.id); // Add filter for current statement
 
       if (error) throw error;
       console.log('Active rounds:', data);
       return data;
     },
-    enabled: !!sessionId && session?.status === 'STARTED',
+    enabled: !!sessionId && session?.status === 'STARTED' && !!statements,
     refetchInterval: 1000, // Poll every second for active rounds
   });
 
