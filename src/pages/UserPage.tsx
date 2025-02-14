@@ -70,30 +70,21 @@ const UserPage = () => {
     queryFn: async () => {
       if (!sessionId || !session?.has_active_round) return null;
 
-      // Get both round and statement data in a single query
-      const { data, error } = await supabase
+      // First get the round with its statement
+      const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
-        .select(`
-          *,
-          STATEMENT!inner (
-            id,
-            statement,
-            description
-          )
-        `)
+        .select('*, statement:statement_id(*)')
         .eq('id', session.has_active_round)
         .single();
 
-      if (error) throw error;
+      if (roundError) throw roundError;
+      if (!roundData) return null;
 
       // Transform the data to match our expected format
-      if (data) {
-        return {
-          ...data,
-          statement: data.STATEMENT
-        };
-      }
-      return null;
+      return {
+        ...roundData,
+        statement: roundData.statement as Statement
+      };
     },
     enabled: !!sessionId && !!session?.has_active_round,
   });
@@ -221,8 +212,10 @@ const UserPage = () => {
         );
       }
 
-      // Check for active round
-      if (!session.has_active_round || !currentRound) {
+      console.log('Current round:', currentRound); // Debug log
+
+      // Check for active round and its statement
+      if (!currentRound?.statement) {
         return (
           <div className="text-center text-gray-600">
             Waiting for the administrator to start a round...
@@ -231,7 +224,7 @@ const UserPage = () => {
       }
 
       // Check round status and user answer
-      if (currentRound.status === 'STARTED' && currentRound.statement) {
+      if (currentRound.status === 'STARTED') {
         if (!userAnswer) {
           return (
             <UserResponseForm 
