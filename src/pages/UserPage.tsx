@@ -34,6 +34,7 @@ const UserPage = () => {
         .single();
       
       if (error) throw error;
+      console.log('Session data:', data);
       return data;
     },
     enabled: !!sessionId,
@@ -56,6 +57,7 @@ const UserPage = () => {
         .single();
       
       if (error) throw error;
+      console.log('User data:', data);
       return data;
     },
     enabled: !!sessionId && !!storedName,
@@ -70,6 +72,8 @@ const UserPage = () => {
     queryFn: async () => {
       if (!sessionId || !session?.has_active_round) return null;
 
+      console.log('Fetching round data for:', session.has_active_round);
+
       // First get the round data
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
@@ -77,8 +81,17 @@ const UserPage = () => {
         .eq('id', session.has_active_round)
         .single();
 
-      if (roundError) throw roundError;
-      if (!roundData) return null;
+      if (roundError) {
+        console.error('Round fetch error:', roundError);
+        throw roundError;
+      }
+      
+      console.log('Round data:', roundData);
+      
+      if (!roundData) {
+        console.log('No round data found');
+        return null;
+      }
 
       // Then get the statement data
       const { data: statementData, error: statementError } = await supabase
@@ -87,7 +100,13 @@ const UserPage = () => {
         .eq('id', roundData.statement_id)
         .maybeSingle();
 
-      if (statementError) throw statementError;
+      if (statementError) {
+        console.error('Statement fetch error:', statementError);
+        throw statementError;
+      }
+
+      console.log('Statement data:', statementData);
+      
       if (!statementData) {
         console.log('No statement found for round:', roundData.statement_id);
         return null;
@@ -119,6 +138,7 @@ const UserPage = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows returned" error
+      console.log('User answer:', data);
       return data;
     },
     enabled: !!userData?.id && !!session?.has_active_round,
@@ -127,6 +147,8 @@ const UserPage = () => {
   // Set up real-time subscriptions for updates
   useEffect(() => {
     if (!sessionId) return;
+
+    console.log('Setting up subscriptions for session:', sessionId);
 
     // Subscribe to session changes
     const sessionChannel = supabase
@@ -139,8 +161,8 @@ const UserPage = () => {
           table: 'SESSION',
           filter: `id=eq.${sessionId}`,
         },
-        () => {
-          console.log('Session updated, refreshing...');
+        (payload) => {
+          console.log('Session update received:', payload);
           window.location.reload();
         }
       )
@@ -157,8 +179,8 @@ const UserPage = () => {
           table: 'ROUND',
           filter: `id=eq.${session?.has_active_round}`,
         },
-        () => {
-          console.log('Round updated, refreshing...');
+        (payload) => {
+          console.log('Round update received:', payload);
           window.location.reload();
         }
       )
@@ -209,6 +231,13 @@ const UserPage = () => {
 
   // Main content render
   const renderContent = () => {
+    console.log('Rendering content with:', {
+      session,
+      userData,
+      currentRound,
+      userAnswer
+    });
+
     // If session is published but user hasn't joined
     if (session.status === 'PUBLISHED' && !userData) {
       return <JoinSessionForm />;
@@ -224,8 +253,6 @@ const UserPage = () => {
           </div>
         );
       }
-
-      console.log('Current round:', currentRound); // Debug log
 
       // Check for active round and its statement
       if (!currentRound?.statement) {
