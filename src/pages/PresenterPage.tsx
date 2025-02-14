@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,19 +111,25 @@ const PresenterPage = () => {
   });
 
   const { data: answers } = useQuery({
-    queryKey: ['presenter-answers', sessionId],
+    queryKey: ['presenter-answers', sessionId, session?.has_active_round],
     queryFn: async () => {
-      if (!rounds?.length) return [];
+      if (!session?.has_active_round) {
+        console.log('No active round found');
+        return [];
+      }
+
+      console.log('Fetching answers for active round:', session.has_active_round);
       
       const { data, error } = await supabase
         .from('ANSWER')
         .select('*')
-        .in('round_id', rounds.map(r => r.id));
+        .eq('round_id', session.has_active_round);
 
       if (error) throw error;
+      console.log('Fetched answers:', data);
       return data;
     },
-    enabled: !!sessionId && !!rounds?.length,
+    enabled: !!sessionId && !!session?.has_active_round,
   });
 
   useEffect(() => {
@@ -183,15 +188,18 @@ const PresenterPage = () => {
     };
   }, [sessionId, queryClient]);
 
-  const getAnswersForStatement = (statementId: number) => {
-    if (!answers || !rounds) return [];
+  const getAnswersForStatement = (statement: any) => {
+    if (!answers || !session?.has_active_round) return [];
     
-    // Get the round for this statement
-    const round = rounds.find(r => r.statement_id === statementId);
-    if (!round) return [];
+    // Only return answers if they're for the active round and statement
+    const activeRound = rounds?.find(r => 
+      r.id === session.has_active_round && 
+      r.statement_id === statement.id
+    );
     
-    // Get answers for this round
-    return answers.filter(answer => answer.round_id === round.id);
+    if (!activeRound) return [];
+    
+    return answers;
   };
 
   if (isSessionLoading) {
@@ -261,7 +269,7 @@ const PresenterPage = () => {
               <StatementResults
                 key={statement.id}
                 statement={statement}
-                answers={getAnswersForStatement(statement.id)}
+                answers={getAnswersForStatement(statement)}
                 isVisible={visibleResults.includes(statement.id)}
               />
             ))}
