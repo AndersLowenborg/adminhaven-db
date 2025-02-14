@@ -102,9 +102,11 @@ const PresenterPage = () => {
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
+        .eq('statement_id', sessionId)
         .eq('status', 'STARTED');
 
       if (error) throw error;
+      console.log('Fetched rounds:', data);
       return data;
     },
     enabled: !!sessionId,
@@ -189,22 +191,22 @@ const PresenterPage = () => {
   }, [sessionId, queryClient]);
 
   const getAnswersForStatement = (statement: any) => {
-    if (!answers || !session?.has_active_round) return [];
-    
-    // Check if this statement has an active round
-    const activeRound = rounds?.find(r => 
-      r.id === session.has_active_round && 
-      r.statement_id === statement.id
-    );
-    
-    if (!activeRound) {
-      console.log(`No active round found for statement ${statement.id}`);
+    if (!answers) {
+      console.log('No answers available');
       return [];
     }
     
-    // Only return answers for this statement's active round
-    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
-    return answers.filter(answer => answer.round_id === activeRound.id);
+    if (!session?.has_active_round) {
+      console.log('No active round in session');
+      return [];
+    }
+
+    console.log(`Checking answers for statement ${statement.id}`);
+    console.log('All answers:', answers);
+    console.log('Active round:', session.has_active_round);
+    
+    // Simply return all answers since they're already filtered by the active round
+    return answers;
   };
 
   if (isSessionLoading) {
