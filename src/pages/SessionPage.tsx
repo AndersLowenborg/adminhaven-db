@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/use-session';
@@ -8,7 +9,7 @@ import { useSessionSubscriptions } from '@/hooks/use-session-subscriptions';
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const SessionPage = () => {
@@ -17,6 +18,7 @@ const SessionPage = () => {
   const [newStatement, setNewStatement] = useState('');
   const [newBackground, setNewBackground] = useState('');
   const [isAddingStatement, setIsAddingStatement] = useState(false);
+  const queryClient = useQueryClient();
 
   const { session, isLoadingSession, updateSession } = useSession(sessionId);
   const { 
