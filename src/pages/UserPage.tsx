@@ -50,8 +50,7 @@ const UserPage = () => {
       const { data, error } = await supabase
         .from('STATEMENT')
         .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .eq('session_id', sessionId);
 
       if (error) throw error;
       return data as Statement[];
@@ -70,7 +69,7 @@ const UserPage = () => {
         .from('ROUND')
         .select('*')
         .eq('status', 'STARTED')
-        .eq('statement_id', statements?.[currentStatementIndex]?.id || 0); // Ensure we always have a valid value
+        .eq('statement_id', statements?.[currentStatementIndex]?.id || 0);
 
       if (error) {
         console.error('Error fetching active rounds:', error);
