@@ -4,5 +4,4 @@ export interface Statement {
   session_id: number | null;
   statement: string | null;
   description: string | null;
-  show_results?: boolean;
 }

@@ -8,7 +8,6 @@ import { Toggle } from "@/components/ui/toggle";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -62,35 +61,19 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     return Math.max(...statementRounds.map(r => r.round_number));
   };
 
-  const handleToggleResults = async (statementId: number) => {
-    try {
-      const isCurrentlyShowing = showingResultsFor.includes(statementId);
-      
-      if (isCurrentlyShowing) {
-        setShowingResultsFor(prev => prev.filter(id => id !== statementId));
-      } else {
-        setShowingResultsFor(prev => [...prev, statementId]);
-      }
-
-      const { error } = await supabase
-        .from('STATEMENT')
-        .update({ show_results: !isCurrentlyShowing })
-        .eq('id', statementId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Results ${isCurrentlyShowing ? 'hidden' : 'shown'} for this statement`,
-      });
-    } catch (error) {
-      console.error('Error toggling results:', error);
-      toast({
-        title: "Error",
-        description: "Failed to toggle results visibility",
-        variant: "destructive",
-      });
+  const handleToggleResults = (statementId: number) => {
+    const isCurrentlyShowing = showingResultsFor.includes(statementId);
+    
+    if (isCurrentlyShowing) {
+      setShowingResultsFor(prev => prev.filter(id => id !== statementId));
+    } else {
+      setShowingResultsFor(prev => [...prev, statementId]);
     }
+
+    toast({
+      title: "Success",
+      description: `Results ${isCurrentlyShowing ? 'hidden' : 'shown'} for this statement`,
+    });
   };
 
   return (
