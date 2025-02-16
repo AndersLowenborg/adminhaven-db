@@ -9,6 +9,7 @@ import { StatementResults } from '@/components/session/StatementResults';
 import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { GroupPreparation } from '@/components/session/GroupPreparation';
 
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
@@ -19,7 +20,6 @@ const PresenterPage = () => {
   const { participants } = useParticipants(sessionId!);
   const [visibleResults, setVisibleResults] = useState<number[]>([]);
 
-  // Listen for visibility toggle events from the parent session
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `showingResultsFor-${sessionId}`) {
@@ -30,7 +30,6 @@ const PresenterPage = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Initialize from localStorage
     const storedValue = localStorage.getItem(`showingResultsFor-${sessionId}`);
     if (storedValue) {
       setVisibleResults(JSON.parse(storedValue));
@@ -101,7 +100,6 @@ const PresenterPage = () => {
     queryFn: async () => {
       console.log('Fetching rounds for session:', sessionId);
       
-      // First get all statements for this session
       const { data: statements, error: statementsError } = await supabase
         .from('STATEMENT')
         .select('id')
@@ -117,7 +115,6 @@ const PresenterPage = () => {
       const statementIds = statements.map(s => s.id);
       console.log('Statement IDs:', statementIds);
 
-      // Then get all rounds for these statements
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
@@ -220,11 +217,10 @@ const PresenterPage = () => {
       return [];
     }
 
-    // Get the active round for this statement
     const activeRound = rounds?.find(r => 
       r.statement_id === statement.id && 
       r.id === session.has_active_round &&
-      r.status === 'STARTED'  // Add status check here
+      r.status === 'STARTED'
     );
 
     if (!activeRound) {
@@ -293,6 +289,14 @@ const PresenterPage = () => {
               sessionId={sessionId}
               queryKey={['participants', sessionId]}
             />
+            {session.status === 'STARTED' && participants && answers && (
+              <div className="mt-6">
+                <GroupPreparation 
+                  participants={participants}
+                  answers={answers}
+                />
+              </div>
+            )}
           </Card>
         )}
         
