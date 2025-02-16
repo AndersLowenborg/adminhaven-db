@@ -53,6 +53,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 }) => {
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
+  const [isPreparingGroups, setIsPreparingGroups] = useState(false);
 
   // Helper function to determine if statements can be deleted
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
@@ -72,6 +73,26 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       title: "Success",
       description: `Results ${!isCurrentlyShowing ? 'shown' : 'hidden'} for this statement`,
     });
+  };
+
+  const handlePrepareGroups = async (statementId: number) => {
+    setIsPreparingGroups(true);
+    try {
+      // Prepare groups logic will be implemented here
+      toast({
+        title: "Success",
+        description: "Groups prepared successfully",
+      });
+    } catch (error) {
+      console.error('Error preparing groups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare groups",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPreparingGroups(false);
+    }
   };
 
   return (
@@ -158,6 +179,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       className="whitespace-nowrap"
                     >
                       End Round {currentRoundNumber}
+                    </Button>
+                    <Button
+                      onClick={() => handlePrepareGroups(statement.id)}
+                      variant="outline"
+                      disabled={isPreparingGroups}
+                      className="whitespace-nowrap"
+                    >
+                      Prepare Groups
                     </Button>
                     <Toggle
                       pressed={isShowingResults}
