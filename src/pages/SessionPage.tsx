@@ -9,7 +9,6 @@ import { useSessionSubscriptions } from '@/hooks/use-session-subscriptions';
 import { SessionHeader } from '@/components/session/SessionHeader';
 import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
-import { GroupPreparation } from '@/components/session/GroupPreparation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -50,23 +49,6 @@ const SessionPage = () => {
       return data;
     },
     enabled: !!sessionId,
-  });
-
-  // Fetch answers for the current round
-  const { data: answers } = useQuery({
-    queryKey: ['round-answers', sessionId],
-    queryFn: async () => {
-      if (!session?.has_active_round) return [];
-      
-      const { data, error } = await supabase
-        .from('ANSWER')
-        .select('*')
-        .eq('round_id', session.has_active_round);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!sessionId && !!session?.has_active_round,
   });
 
   const handleAddStatement = async (e: React.FormEvent) => {
@@ -122,13 +104,6 @@ const SessionPage = () => {
           sessionId={sessionId}
           queryKey={['participants', sessionId]}
         />
-
-        <div className="mt-6">
-          <GroupPreparation 
-            participants={participants || []}
-            answers={answers || []}
-          />
-        </div>
 
         {isLoadingStatements ? (
           <div>Loading statements...</div>

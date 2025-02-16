@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -284,11 +285,18 @@ const PresenterPage = () => {
         
         {session && (
           <Card className="mb-8 p-6 shadow-sm">
-            <ParticipantsList 
-              participants={participants || []} 
-              sessionId={sessionId}
-              queryKey={['participants', sessionId]}
-            />
+            <div className="space-y-6">
+              <ParticipantsList 
+                participants={participants || []} 
+                sessionId={sessionId}
+                queryKey={['participants', sessionId]}
+              />
+              
+              <GroupPreparation 
+                participants={participants || []}
+                answers={answers || []}
+              />
+            </div>
           </Card>
         )}
         
