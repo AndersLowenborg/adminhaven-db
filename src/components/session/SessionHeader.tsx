@@ -185,6 +185,8 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             onClick={() => {
               window.open(`/presenter/${sessionId}`, '_blank');
             }}
+            disabled={status === 'UNPUBLISHED'}
+            title={status === 'UNPUBLISHED' ? "Session must be published first" : ""}
           >
             Open Presenter View
           </Button>
