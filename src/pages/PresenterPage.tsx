@@ -289,12 +289,6 @@ const PresenterPage = () => {
               sessionId={sessionId}
               queryKey={['participants', sessionId]}
             />
-            <div className="mt-6">
-              <GroupPreparation 
-                participants={participants || []}
-                answers={answers || []}
-              />
-            </div>
           </Card>
         )}
         
