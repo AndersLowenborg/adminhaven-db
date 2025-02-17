@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +130,12 @@ const PresenterPage = () => {
     },
     enabled: !!sessionId && !!session?.has_active_round,
   });
+
+  const getCurrentRoundNumber = () => {
+    if (!session?.has_active_round || !rounds) return 1;
+    const activeRound = rounds.find(r => r.id === session.has_active_round);
+    return activeRound?.round_number || 1;
+  };
 
   useEffect(() => {
     if (!sessionId) return;
@@ -276,6 +281,7 @@ const PresenterPage = () => {
               <GroupPreparation 
                 participants={participants || []}
                 answers={answers || []}
+                currentRoundNumber={getCurrentRoundNumber()}
               />
             </div>
           </Card>
