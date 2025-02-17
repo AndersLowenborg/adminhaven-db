@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SessionsTable } from '@/components/admin/SessionsTable';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
-import { AdminSession } from '@/types/admin-session';
+import { Session, SessionWithUsers } from '@/types/session';
 
 export const AdminSessionsList = () => {
   const { session } = useSessionContext();
@@ -64,7 +64,7 @@ export const AdminSessionsList = () => {
       );
 
       console.log('Final sessions with users:', sessionsWithUsers);
-      return sessionsWithUsers as AdminSession[];
+      return sessionsWithUsers as SessionWithUsers[];
     },
     enabled: !!session?.user?.id,
   });

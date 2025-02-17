@@ -79,7 +79,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
       console.error('Error toggling session state:', error);
       toast({
         title: "Error",
-        description: `Failed to ${status === 'STARTED' ? 'end' : 'lock'} session`,
+        description: `Failed to ${status === 'STARTED' ? 'end' : 'start'} session`,
         variant: "destructive",
       });
     }
@@ -178,7 +178,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
                 : ""
             }
           >
-            {status === 'STARTED' ? 'End Session' : 'Lock Session'}
+            {status === 'STARTED' ? 'End Session' : 'Start Session'}
           </Button>
           <Button
             variant="outline"

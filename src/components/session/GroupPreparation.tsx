@@ -41,12 +41,6 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         groups[groupIndex].members.push(participant);
       });
 
-      // Get the current round ID from the answers
-      const roundId = answers[0]?.round_id;
-      if (!roundId) {
-        throw new Error('No round ID found in answers');
-      }
-
       // For each group, create a database entry and assign members
       for (const group of groups) {
         if (group.members.length > 0) {
@@ -75,16 +69,6 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           );
 
           await Promise.all(memberPromises);
-
-          // Create entry in ROUND_GROUPS to link the group to the round
-          const { error: roundGroupError } = await supabase
-            .from('ROUND_GROUPS')
-            .insert([{
-              round_id: roundId,
-              group_id: groupData.id
-            }]);
-
-          if (roundGroupError) throw roundGroupError;
 
           // Update the group object with the database id and leader
           group.id = groupData.id;

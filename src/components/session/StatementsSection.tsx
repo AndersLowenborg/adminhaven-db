@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -24,12 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -166,171 +161,162 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   };
 
   return (
-    <TooltipProvider>
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Statements</h2>
-          <Button 
-            onClick={onAddClick}
-            disabled={isAddingStatement || sessionStatus === 'ENDED'}
-            className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90"
-          >
-            + Add Statement
-          </Button>
-        </div>
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Statements</h2>
+        <Button 
+          onClick={onAddClick}
+          disabled={isAddingStatement || sessionStatus === 'ENDED'}
+          className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90"
+        >
+          + Add Statement
+        </Button>
+      </div>
 
-        {isAddingStatement && (
-          <form onSubmit={onSubmitStatement} className="mb-4">
-            <Card className="p-4">
+      {isAddingStatement && (
+        <form onSubmit={onSubmitStatement} className="mb-4">
+          <Card className="p-4">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="statement" className="block text-sm font-medium mb-1">
+                  Statement
+                </label>
+                <Input
+                  id="statement"
+                  value={newStatement}
+                  onChange={(e) => onNewStatementChange(e.target.value)}
+                  placeholder="Enter statement"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="background" className="block text-sm font-medium mb-1">
+                  Background (optional)
+                </label>
+                <Textarea
+                  id="background"
+                  value={newBackground}
+                  onChange={(e) => onNewBackgroundChange(e.target.value)}
+                  placeholder="Enter background information"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isAddingStatementPending}>
+                  Save
+                </Button>
+                <Button type="button" variant="outline" onClick={onCancelAdd}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </form>
+      )}
+
+      <div className="space-y-4">
+        {statements.map((statement) => {
+          const activeRound = activeRounds.find(
+            round => round.statement_id === statement.id && round.status === 'STARTED'
+          );
+          const hasActiveRound = !!activeRound;
+          const currentRoundNumber = selectedRounds[statement.id] || "1";
+          const isShowingResults = visibleResults.includes(statement.id);
+          const availableRounds = getAvailableRounds(statement.id);
+
+          return (
+            <Card key={statement.id} className="p-6">
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="statement" className="block text-sm font-medium mb-1">
-                    Statement
-                  </label>
-                  <Input
-                    id="statement"
-                    value={newStatement}
-                    onChange={(e) => onNewStatementChange(e.target.value)}
-                    placeholder="Enter statement"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="background" className="block text-sm font-medium mb-1">
-                    Background (optional)
-                  </label>
-                  <Textarea
-                    id="background"
-                    value={newBackground}
-                    onChange={(e) => onNewBackgroundChange(e.target.value)}
-                    placeholder="Enter background information"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={isAddingStatementPending}>
-                    Save
+                <div className="font-medium text-lg">{statement.statement}</div>
+                {statement.description && (
+                  <div className="text-muted-foreground">{statement.description}</div>
+                )}
+                <div className="flex items-center gap-2 justify-end">
+                  <Select
+                    value={currentRoundNumber}
+                    onValueChange={(value) => setSelectedRounds({
+                      ...selectedRounds,
+                      [statement.id]: value
+                    })}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRounds.map((num) => (
+                        <SelectItem 
+                          key={num} 
+                          value={num}
+                          disabled={hasActiveRound || sessionStatus !== 'STARTED'}
+                        >
+                          {num}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (hasActiveRound) {
+                        onEndRound(statement.id);
+                      } else {
+                        onStartRound(statement.id);
+                      }
+                    }}
+                    disabled={sessionStatus !== 'STARTED'}
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound ? "text-orange-500" : ""}`}
+                  >
+                    {hasActiveRound ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                   </Button>
-                  <Button type="button" variant="outline" onClick={onCancelAdd}>
-                    Cancel
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleToggleResults(statement.id)}
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
+                  >
+                    <LineChartIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleGroupPreparation(statement.id)}
+                    className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
+                  >
+                    <UsersRoundIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+                    disabled={hasActiveRound || sessionStatus === 'ENDED'}
+                    className="hover:bg-orange-50 hover:text-orange-600"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDeleteStatement(statement.id)}
+                    disabled={!canDeleteStatements || isDeletingStatementPending}
+                    className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </Card>
-          </form>
-        )}
-
-        <div className="space-y-4">
-          {statements.map((statement) => {
-            const activeRound = activeRounds.find(
-              round => round.statement_id === statement.id && round.status === 'STARTED'
-            );
-            const hasActiveRound = !!activeRound;
-            const currentRoundNumber = selectedRounds[statement.id] || "1";
-            const isShowingResults = visibleResults.includes(statement.id);
-            const availableRounds = getAvailableRounds(statement.id);
-
-            return (
-              <Card key={statement.id} className="p-6">
-                <div className="space-y-4">
-                  <div className="font-medium text-lg">{statement.statement}</div>
-                  {statement.description && (
-                    <div className="text-muted-foreground">{statement.description}</div>
-                  )}
-                  <div className="flex items-center gap-2 justify-end">
-                    <Select
-                      value={currentRoundNumber}
-                      onValueChange={(value) => setSelectedRounds({
-                        ...selectedRounds,
-                        [statement.id]: value
-                      })}
-                    >
-                      <SelectTrigger className="w-[80px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableRounds.map((num) => (
-                          <SelectItem 
-                            key={num} 
-                            value={num}
-                            disabled={hasActiveRound || sessionStatus !== 'STARTED'}
-                          >
-                            {num}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (hasActiveRound) {
-                          onEndRound(statement.id);
-                        } else {
-                          onStartRound(statement.id);
-                        }
-                      }}
-                      disabled={sessionStatus !== 'STARTED'}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound ? "text-orange-500" : ""}`}
-                    >
-                      {hasActiveRound ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleToggleResults(statement.id)}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
-                    >
-                      <LineChartIcon className="h-4 w-4" />
-                    </Button>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleGroupPreparation(statement.id)}
-                          className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
-                        >
-                          <UsersRoundIcon className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Close round and prepare groups for next round
-                      </TooltipContent>
-                    </Tooltip>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
-                      disabled={hasActiveRound || sessionStatus === 'ENDED'}
-                      className="hover:bg-orange-50 hover:text-orange-600"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeleteStatement(statement.id)}
-                      disabled={!canDeleteStatements || isDeletingStatementPending}
-                      className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        {groupPreparationData && (
-          <div className="mt-8">
-            <GroupPreparation 
-              participants={groupPreparationData.participants}
-              answers={groupPreparationData.answers}
-            />
-          </div>
-        )}
+          );
+        })}
       </div>
-    </TooltipProvider>
+
+      {groupPreparationData && (
+        <div className="mt-8">
+          <GroupPreparation 
+            participants={groupPreparationData.participants}
+            answers={groupPreparationData.answers}
+          />
+        </div>
+      )}
+    </div>
   );
 };
