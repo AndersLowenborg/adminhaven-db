@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -70,17 +69,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
   
-  // Helper function to determine if statements can be deleted
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   const canPrepareGroups = (statementId: number) => {
-    const selectedRoundNumber = parseInt(selectedRounds[statementId] || "1");
-    const completedRoundsForSelection = activeRounds.filter(round => 
+    const completedRounds = activeRounds.filter(round => 
       round.statement_id === statementId && 
-      round.status === 'COMPLETED' &&
-      round.round_number === selectedRoundNumber
+      round.status === 'COMPLETED'
     );
-    return completedRoundsForSelection.length > 0;
+    return completedRounds.length > 0;
   };
 
   const handleGroupPreparation = async (statementId: number) => {
@@ -279,7 +275,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleGroupPreparation(statement.id)}
-                    disabled={hasActiveRound || !canPrepareGroups(statement.id)}
+                    disabled={!canPrepareGroups(statement.id)}
                     className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
                   >
                     <UsersRoundIcon className="h-4 w-4" />
