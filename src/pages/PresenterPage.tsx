@@ -131,6 +131,23 @@ const PresenterPage = () => {
     enabled: !!sessionId && !!rounds,
   });
 
+  const getStatementStatus = (statement: any) => {
+    if (!rounds || rounds.length === 0) {
+      return "Round 1 - Not Started";
+    }
+
+    const statementRounds = rounds
+      .filter(round => round.statement_id === statement.id)
+      .sort((a, b) => b.round_number - a.round_number);
+
+    if (statementRounds.length === 0) {
+      return "Round 1 - Not Started";
+    }
+
+    const latestRound = statementRounds[0];
+    return `Round ${latestRound.round_number} - ${latestRound.status === 'STARTED' ? 'In Progress' : 'Completed'}`;
+  };
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -278,15 +295,23 @@ const PresenterPage = () => {
           <div className="space-y-6 mb-8">
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
-              console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
+              const roundStatus = getStatementStatus(statement);
               
               return (
-                <StatementResults
-                  key={statement.id}
-                  statement={statement}
-                  answers={statementAnswers}
-                  isVisible={visibleResults.includes(statement.id)}
-                />
+                <Card key={statement.id} className="p-6 shadow-sm">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-medium text-[#403E43]">{statement.statement}</h3>
+                    <p className="text-sm text-[#8E9196]">{roundStatus}</p>
+                    {visibleResults.includes(statement.id) && (
+                      <StatementResults
+                        key={statement.id}
+                        statement={statement}
+                        answers={statementAnswers}
+                        isVisible={visibleResults.includes(statement.id)}
+                      />
+                    )}
+                  </div>
+                </Card>
               );
             })}
           </div>
