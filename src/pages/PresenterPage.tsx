@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { GroupPreparation } from '@/components/session/GroupPreparation';
+import { useStatementVisibility } from '@/hooks/use-statement-visibility';
 
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
@@ -19,7 +19,7 @@ const PresenterPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
-  const [visibleResults, setVisibleResults] = useState<number[]>([]);
+  const { visibleResults } = useStatementVisibility(sessionId!);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -306,14 +306,15 @@ const PresenterPage = () => {
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
               console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
-              return (
+              
+              return visibleResults.includes(statement.id) ? (
                 <StatementResults
                   key={statement.id}
                   statement={statement}
                   answers={statementAnswers}
-                  isVisible={visibleResults.includes(statement.id)}
+                  isVisible={true}
                 />
-              );
+              ) : null;
             })}
           </div>
         ) : (
