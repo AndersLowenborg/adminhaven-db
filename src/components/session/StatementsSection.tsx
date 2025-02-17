@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { 
   PlayIcon,
-  StopCircleIcon,
+  PauseIcon,
   LineChartIcon,
   PencilIcon,
   TrashIcon,
@@ -181,7 +181,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     disabled={sessionStatus !== 'STARTED'}
                     className={hasActiveRound ? "bg-red-500 hover:bg-red-600 text-white" : "bg-[#FF5D0A] hover:bg-[#FF5D0A]/90 text-white"}
                   >
-                    {hasActiveRound ? <StopCircleIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                    {hasActiveRound ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                   </Button>
                   <Button
                     variant="ghost"
