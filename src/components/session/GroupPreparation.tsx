@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Answer } from '@/types/answer';
 import { Participant } from '@/types/participant';
 import { Badge } from "@/components/ui/badge";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/hooks/use-toast";
 
 interface GroupPreparationProps {
   participants: Participant[];
@@ -17,59 +19,88 @@ interface Group {
 }
 
 export const GroupPreparation = ({ participants, answers }: GroupPreparationProps) => {
-  const formGroups = (participants: Participant[], answers: Answer[]): Group[] => {
-    // Map confidence and agreement levels to participants
-    const participantData = participants.map(participant => {
-      const answer = answers.find(a => a.respondant_id === participant.id);
-      return {
-        participant,
-        confidenceLevel: answer?.confidence_level || 0,
-        agreementLevel: answer?.agreement_level || 0
-      };
-    });
+  const { toast } = useToast();
+  const [savedGroups, setSavedGroups] = React.useState<Group[]>([]);
 
-    // Calculate number of groups needed (2-3 participants per group)
-    const totalParticipants = participants.length;
-    const numGroups = Math.ceil(totalParticipants / 3);
-    
-    const groups: Group[] = [];
-    
-    // Create initial empty groups
-    for (let i = 0; i < numGroups; i++) {
-      groups.push({ id: i + 1, members: [] });
-    }
-
-    // Sort participants by confidence level
-    const sortedParticipants = [...participantData].sort((a, b) => b.confidenceLevel - a.confidenceLevel);
-
-    // Distribute participants evenly across groups
-    sortedParticipants.forEach((data, index) => {
-      const groupIndex = index % groups.length;
-      groups[groupIndex].members.push(data.participant);
-    });
-
-    // Assign leaders based on highest confidence in each group
-    groups.forEach(group => {
-      if (group.members.length > 0) {
-        // Find participant with highest confidence in this group
-        const memberWithConfidence = group.members.map(member => ({
-          member,
-          confidence: participantData.find(p => p.participant.id === member.id)?.confidenceLevel || 0
-        }));
-        
-        const highestConfidence = memberWithConfidence.reduce((prev, current) => 
-          (current.confidence > prev.confidence) ? current : prev
-        );
-        
-        group.leader = highestConfidence.member;
+  const createGroups = async (participants: Participant[], answers: Answer[]) => {
+    try {
+      // Calculate number of groups needed (2-3 participants per group)
+      const totalParticipants = participants.length;
+      const numGroups = Math.ceil(totalParticipants / 3);
+      
+      const groups: Group[] = [];
+      
+      // Create initial empty groups
+      for (let i = 0; i < numGroups; i++) {
+        groups.push({ id: i + 1, members: [] });
       }
-    });
 
-    // Filter out empty groups
-    return groups.filter(group => group.members.length > 0);
+      // Distribute participants evenly across groups
+      participants.forEach((participant, index) => {
+        const groupIndex = index % groups.length;
+        groups[groupIndex].members.push(participant);
+      });
+
+      // For each group, create a database entry and assign members
+      for (const group of groups) {
+        if (group.members.length > 0) {
+          // Randomly select a leader from the group members
+          const leaderIndex = Math.floor(Math.random() * group.members.length);
+          const leader = group.members[leaderIndex];
+          
+          // Create group in database
+          const { data: groupData, error: groupError } = await supabase
+            .from('GROUP')
+            .insert([{ leader: leader.id }])
+            .select()
+            .single();
+
+          if (groupError) throw groupError;
+
+          // Add members to group
+          const memberPromises = group.members.map(member => 
+            supabase
+              .from('GROUP_MEMBERS')
+              .insert([{
+                member_id: member.id,
+                member_type: 'SESSION_USER',
+                parent_group_id: groupData.id
+              }])
+          );
+
+          await Promise.all(memberPromises);
+
+          // Update the group object with the database id and leader
+          group.id = groupData.id;
+          group.leader = leader;
+        }
+      }
+
+      // Filter out empty groups and update state
+      const finalGroups = groups.filter(group => group.members.length > 0);
+      setSavedGroups(finalGroups);
+
+      toast({
+        title: "Success",
+        description: "Groups have been created and saved",
+      });
+
+    } catch (error) {
+      console.error('Error creating groups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create groups",
+        variant: "destructive",
+      });
+    }
   };
 
-  const groups = formGroups(participants, answers);
+  // Create groups when component mounts
+  React.useEffect(() => {
+    if (participants.length > 0 && answers.length > 0) {
+      createGroups(participants, answers);
+    }
+  }, [participants, answers]);
 
   return (
     <Card>
@@ -78,8 +109,8 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {groups.length > 0 ? (
-            groups.map((group, index) => (
+          {savedGroups.length > 0 ? (
+            savedGroups.map((group, index) => (
               <Card key={group.id} className="p-4">
                 <div className="font-medium mb-2">Group {index + 1}</div>
                 <div className="space-y-2">
