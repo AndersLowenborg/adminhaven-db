@@ -302,6 +302,7 @@ const PresenterPage = () => {
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
               const roundStatus = getStatementStatus(statement);
+              console.log(`Rendering statement ${statement.id} with status:`, roundStatus);
               
               return (
                 <Card key={statement.id} className="p-6 shadow-sm">
