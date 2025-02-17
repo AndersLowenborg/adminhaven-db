@@ -70,8 +70,9 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
       console.log('Successfully deleted session:', sessionId);
       
-      queryClient.invalidateQueries({ 
-        queryKey: ['admin-sessions', authSession?.user?.id] 
+      // Using void to prevent type instantiation issues
+      void queryClient.invalidateQueries({ 
+        queryKey: ['admin-sessions', authSession?.user?.id] as const
       });
 
       toast({
