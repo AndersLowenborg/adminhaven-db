@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+
+import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,26 +21,6 @@ const PresenterPage = () => {
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
   const { visibleResults } = useStatementVisibility(sessionId!);
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `showingResultsFor-${sessionId}`) {
-        const newVisibleResults = e.newValue ? JSON.parse(e.newValue) : [];
-        setVisibleResults(newVisibleResults);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    const storedValue = localStorage.getItem(`showingResultsFor-${sessionId}`);
-    if (storedValue) {
-      setVisibleResults(JSON.parse(storedValue));
-    }
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [sessionId]);
 
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
@@ -302,19 +283,18 @@ const PresenterPage = () => {
         
         {statements && statements.length > 0 ? (
           <div className="space-y-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
               console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
               
-              return visibleResults.includes(statement.id) ? (
+              return (
                 <StatementResults
                   key={statement.id}
                   statement={statement}
                   answers={statementAnswers}
-                  isVisible={true}
+                  isVisible={visibleResults.includes(statement.id)}
                 />
-              ) : null;
+              );
             })}
           </div>
         ) : (
