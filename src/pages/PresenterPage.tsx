@@ -305,9 +305,13 @@ const PresenterPage = () => {
               
               return (
                 <Card key={statement.id} className="p-6 shadow-sm">
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-medium text-[#403E43]">{statement.statement}</h3>
-                    <p className="text-sm text-[#8E9196]">{roundStatus}</p>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-xl font-medium text-[#403E43]">{statement.statement}</h3>
+                      <div className="px-3 py-1 bg-orange-100 rounded-full">
+                        <p className="text-sm font-medium text-orange-600">{roundStatus}</p>
+                      </div>
+                    </div>
                     {visibleResults.includes(statement.id) && (
                       <StatementResults
                         key={statement.id}
