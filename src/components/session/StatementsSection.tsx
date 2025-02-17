@@ -275,7 +275,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleGroupPreparation(statement.id)}
-                    disabled={!canPrepareGroups(statement.id)}
                     className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
                   >
                     <UsersRoundIcon className="h-4 w-4" />
