@@ -44,7 +44,15 @@ export type Database = {
             | null
           round_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_answer_round"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "ROUND"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       GROUP: {
         Row: {
@@ -80,7 +88,15 @@ export type Database = {
           member_type?: Database["public"]["Enums"]["respondant_type"] | null
           parent_group_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_group_members_group"
+            columns: ["parent_group_id"]
+            isOneToOne: false
+            referencedRelation: "GROUP"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ROUND: {
         Row: {
@@ -117,7 +133,15 @@ export type Database = {
           statement_id?: number | null
           status?: Database["public"]["Enums"]["round_status"] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_round_statement"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "STATEMENT"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ROUND_GROUPS: {
         Row: {
@@ -135,7 +159,22 @@ export type Database = {
           id?: number
           round_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_round_groups_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "GROUP"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_round_groups_round"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "ROUND"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       SESSION: {
         Row: {
@@ -189,7 +228,15 @@ export type Database = {
           name?: string | null
           session_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_session_users_session"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "SESSION"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       STATEMENT: {
         Row: {
@@ -210,7 +257,15 @@ export type Database = {
           session_id?: number | null
           statement?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_statement_session"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "SESSION"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
