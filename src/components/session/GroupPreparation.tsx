@@ -48,11 +48,20 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
       groups[groupIndex].members.push(data.participant);
     });
 
-    // Assign random leaders to groups that have members
+    // Assign leaders based on highest confidence in each group
     groups.forEach(group => {
       if (group.members.length > 0) {
-        const leaderIndex = Math.floor(Math.random() * group.members.length);
-        group.leader = group.members[leaderIndex];
+        // Find participant with highest confidence in this group
+        const memberWithConfidence = group.members.map(member => ({
+          member,
+          confidence: participantData.find(p => p.participant.id === member.id)?.confidenceLevel || 0
+        }));
+        
+        const highestConfidence = memberWithConfidence.reduce((prev, current) => 
+          (current.confidence > prev.confidence) ? current : prev
+        );
+        
+        group.leader = highestConfidence.member;
       }
     });
 
