@@ -1,5 +1,4 @@
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +19,8 @@ const PresenterPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
-  const { visibleResults } = useStatementVisibility(sessionId!);
+  const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId!);
+  const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
 
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
@@ -111,25 +111,45 @@ const PresenterPage = () => {
   });
 
   const { data: answers } = useQuery({
-    queryKey: ['presenter-answers', sessionId, session?.has_active_round],
+    queryKey: ['presenter-answers', sessionId, selectedRounds],
     queryFn: async () => {
-      if (!session?.has_active_round) {
-        console.log('No active round found');
+      if (!sessionId) {
         return [];
       }
 
-      console.log('Fetching answers for active round:', session.has_active_round);
+      const allAnswers: any[] = [];
       
-      const { data, error } = await supabase
-        .from('ANSWER')
-        .select('*')
-        .eq('round_id', session.has_active_round);
+      const { data: statements } = await supabase
+        .from('STATEMENT')
+        .select('id')
+        .eq('session_id', sessionId);
 
-      if (error) throw error;
-      console.log('Fetched answers:', data);
-      return data;
+      if (!statements) return [];
+
+      for (const statement of statements) {
+        const roundNumber = parseInt(selectedRounds[statement.id] || "1", 10);
+        
+        const { data: rounds } = await supabase
+          .from('ROUND')
+          .select('id')
+          .eq('statement_id', statement.id)
+          .eq('round_number', roundNumber);
+
+        if (rounds && rounds.length > 0) {
+          const { data: roundAnswers } = await supabase
+            .from('ANSWER')
+            .select('*')
+            .eq('round_id', rounds[0].id);
+
+          if (roundAnswers) {
+            allAnswers.push(...roundAnswers);
+          }
+        }
+      }
+
+      return allAnswers;
     },
-    enabled: !!sessionId && !!session?.has_active_round,
+    enabled: !!sessionId,
   });
 
   useEffect(() => {
@@ -194,24 +214,20 @@ const PresenterPage = () => {
       return [];
     }
     
-    if (!session?.has_active_round) {
-      console.log('No active round in session');
-      return [];
-    }
-
-    const activeRound = rounds?.find(r => 
+    const roundNumber = parseInt(selectedRounds[statement.id] || "1", 10);
+    console.log(`Getting answers for statement ${statement.id}, round ${roundNumber}`);
+    
+    const round = rounds?.find(r => 
       r.statement_id === statement.id && 
-      r.id === session.has_active_round &&
-      r.status === 'STARTED'
+      r.round_number === roundNumber
     );
 
-    if (!activeRound) {
-      console.log(`No active round found for statement ${statement.id}`);
+    if (!round) {
+      console.log(`No round found for statement ${statement.id}, round number ${roundNumber}`);
       return [];
     }
 
-    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
-    return answers.filter(answer => answer.round_id === activeRound.id);
+    return answers.filter(answer => answer.round_id === round.id);
   };
 
   if (isSessionLoading) {
@@ -293,6 +309,13 @@ const PresenterPage = () => {
                   statement={statement}
                   answers={statementAnswers}
                   isVisible={visibleResults.includes(statement.id)}
+                  selectedRound={selectedRounds[statement.id] || "1"}
+                  onRoundChange={(value) => {
+                    setSelectedRounds(prev => ({
+                      ...prev,
+                      [statement.id]: value
+                    }));
+                  }}
                 />
               );
             })}
