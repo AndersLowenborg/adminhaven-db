@@ -175,11 +175,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     </SelectContent>
                   </Select>
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="icon"
                     onClick={() => hasActiveRound ? onEndRound(statement.id) : onStartRound(statement.id)}
                     disabled={sessionStatus !== 'STARTED'}
-                    className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90 text-white"
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound ? "text-orange-500" : ""}`}
                   >
                     {hasActiveRound ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                   </Button>
