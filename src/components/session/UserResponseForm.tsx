@@ -68,6 +68,24 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
 
     setIsSubmitting(true);
     try {
+      // First check if the session still has an active round
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      if (!sessionData.has_active_round) {
+        toast({
+          title: "Round Ended",
+          description: "The round has ended. Please wait for the next round.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Get the active round for this statement
       const { data: activeRound, error: roundError } = await supabase
         .from('ROUND')
