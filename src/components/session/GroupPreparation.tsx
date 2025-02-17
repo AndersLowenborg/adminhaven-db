@@ -28,53 +28,27 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
       };
     });
 
-    // Sort by confidence level
-    const mediumConfidence = participantData.filter(p => p.confidenceLevel >= 3 && p.confidenceLevel <= 7);
-    const highConfidence = participantData.filter(p => p.confidenceLevel > 7);
-    
-    // Calculate number of groups needed
+    // Calculate number of groups needed (2-3 participants per group)
     const totalParticipants = participants.length;
     const numGroups = Math.ceil(totalParticipants / 3);
     
     const groups: Group[] = [];
     
-    // Create groups
+    // Create initial empty groups
     for (let i = 0; i < numGroups; i++) {
       groups.push({ id: i + 1, members: [] });
     }
 
-    // First, pair high confidence users with opposing views
-    const sortedHighConfidence = [...highConfidence].sort((a, b) => b.agreementLevel - a.agreementLevel);
-    while (sortedHighConfidence.length >= 2) {
-      const agree = sortedHighConfidence.shift();
-      const disagree = sortedHighConfidence.pop();
-      if (agree && disagree) {
-        const groupIndex = groups.findIndex(g => g.members.length < 3);
-        if (groupIndex !== -1) {
-          groups[groupIndex].members.push(agree.participant, disagree.participant);
-        }
-      }
-    }
+    // Sort participants by confidence level
+    const sortedParticipants = [...participantData].sort((a, b) => b.confidenceLevel - a.confidenceLevel);
 
-    // Distribute medium confidence users
-    let currentGroupIndex = 0;
-    mediumConfidence.forEach(data => {
-      while (groups[currentGroupIndex].members.length >= 3) {
-        currentGroupIndex = (currentGroupIndex + 1) % groups.length;
-      }
-      groups[currentGroupIndex].members.push(data.participant);
-      currentGroupIndex = (currentGroupIndex + 1) % groups.length;
+    // Distribute participants evenly across groups
+    sortedParticipants.forEach((data, index) => {
+      const groupIndex = index % groups.length;
+      groups[groupIndex].members.push(data.participant);
     });
 
-    // Add any remaining high confidence users
-    sortedHighConfidence.forEach(data => {
-      const targetGroup = groups.find(g => g.members.length < 3);
-      if (targetGroup) {
-        targetGroup.members.push(data.participant);
-      }
-    });
-
-    // Assign random leaders
+    // Assign random leaders to groups that have members
     groups.forEach(group => {
       if (group.members.length > 0) {
         const leaderIndex = Math.floor(Math.random() * group.members.length);
@@ -82,7 +56,8 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
       }
     });
 
-    return groups;
+    // Filter out empty groups
+    return groups.filter(group => group.members.length > 0);
   };
 
   const groups = formGroups(participants, answers);
