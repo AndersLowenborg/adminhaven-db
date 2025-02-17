@@ -1,11 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
-import { EyeIcon, EyeOffIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
@@ -57,13 +56,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 
   // Helper function to determine if statements can be deleted
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
-
-  // Get the last completed round number for a statement
-  const getLastRoundNumber = (statementId: number) => {
-    const statementRounds = activeRounds.filter(round => round.statement_id === statementId);
-    if (statementRounds.length === 0) return 0;
-    return Math.max(...statementRounds.map(r => r.round_number));
-  };
 
   const handleToggleResults = (statementId: number) => {
     toggleVisibility(statementId);
@@ -156,14 +148,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         </div>
         
         {statements.map((statement) => {
-          const hasActiveRound = activeRounds.some(
+          const activeRound = activeRounds.find(
             round => round.statement_id === statement.id && round.status === 'STARTED'
           );
-          
-          const currentRoundNumber = hasActiveRound 
-            ? activeRounds.find(round => round.statement_id === statement.id && round.status === 'STARTED')?.round_number 
-            : getLastRoundNumber(statement.id) + 1;
-
+          const hasActiveRound = !!activeRound;
+          const currentRoundNumber = activeRound?.round_number || 0;
           const isShowingResults = visibleResults.includes(statement.id);
 
           return (
@@ -188,45 +177,48 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     >
                       Prepare Groups
                     </Button>
-                    <div className="flex items-center gap-2 ml-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={currentRoundNumber <= 1}
-                        title="Previous round"
-                      >
-                        <ChevronLeftIcon className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium">Round {currentRoundNumber}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={currentRoundNumber >= 4}
-                        title="Next round"
-                      >
-                        <ChevronRightIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Toggle
-                      pressed={isShowingResults}
-                      onPressedChange={() => handleToggleResults(statement.id)}
-                      className="ml-2"
-                      aria-label="Toggle results visibility"
-                    >
-                      {isShowingResults ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
-                    </Toggle>
                   </>
                 ) : (
-                  <Button
-                    onClick={() => onStartRound(statement.id)}
-                    disabled={sessionStatus !== 'STARTED'}
-                    variant="secondary"
-                    className="whitespace-nowrap"
-                    title={sessionStatus !== 'STARTED' ? "Session must be started to begin rounds" : ""}
-                  >
-                    Start Round {currentRoundNumber}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4].map((roundNumber) => (
+                      <Button
+                        key={roundNumber}
+                        onClick={() => onStartRound(statement.id)}
+                        disabled={
+                          sessionStatus !== 'STARTED' || 
+                          (roundNumber !== 1 && !activeRounds.some(r => 
+                            r.statement_id === statement.id && 
+                            r.status === 'COMPLETED' && 
+                            r.round_number === roundNumber - 1
+                          ))
+                        }
+                        variant="secondary"
+                        className="whitespace-nowrap"
+                        title={
+                          sessionStatus !== 'STARTED' 
+                            ? "Session must be started to begin rounds" 
+                            : roundNumber !== 1 && !activeRounds.some(r => 
+                                r.statement_id === statement.id && 
+                                r.status === 'COMPLETED' && 
+                                r.round_number === roundNumber - 1
+                              )
+                            ? `Complete Round ${roundNumber - 1} first`
+                            : `Start Round ${roundNumber}`
+                        }
+                      >
+                        Start Round {roundNumber}
+                      </Button>
+                    ))}
+                  </div>
                 )}
+                <Toggle
+                  pressed={isShowingResults}
+                  onPressedChange={() => handleToggleResults(statement.id)}
+                  className="ml-2"
+                  aria-label="Toggle results visibility"
+                >
+                  {isShowingResults ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
+                </Toggle>
                 <Button
                   variant="outline"
                   onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
