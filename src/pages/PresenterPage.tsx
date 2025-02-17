@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,8 +99,7 @@ const PresenterPage = () => {
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
-        .in('statement_id', statementIds)
-        .eq('status', 'STARTED');
+        .in('statement_id', statementIds);
 
       if (error) throw error;
       console.log('Fetched rounds:', data);
@@ -111,25 +109,26 @@ const PresenterPage = () => {
   });
 
   const { data: answers } = useQuery({
-    queryKey: ['presenter-answers', sessionId, session?.has_active_round],
+    queryKey: ['presenter-answers', sessionId],
     queryFn: async () => {
-      if (!session?.has_active_round) {
-        console.log('No active round found');
+      if (!rounds || rounds.length === 0) {
+        console.log('No rounds found');
         return [];
       }
 
-      console.log('Fetching answers for active round:', session.has_active_round);
+      const roundIds = rounds.map(round => round.id);
+      console.log('Fetching answers for rounds:', roundIds);
       
       const { data, error } = await supabase
         .from('ANSWER')
         .select('*')
-        .eq('round_id', session.has_active_round);
+        .in('round_id', roundIds);
 
       if (error) throw error;
       console.log('Fetched answers:', data);
-      return data;
+      return data || [];
     },
-    enabled: !!sessionId && !!session?.has_active_round,
+    enabled: !!sessionId && !!rounds,
   });
 
   useEffect(() => {
@@ -189,29 +188,23 @@ const PresenterPage = () => {
   }, [sessionId, queryClient]);
 
   const getAnswersForStatement = (statement: any) => {
-    if (!answers) {
-      console.log('No answers available');
+    if (!answers || !rounds) {
+      console.log('No answers or rounds available');
       return [];
     }
     
-    if (!session?.has_active_round) {
-      console.log('No active round in session');
-      return [];
-    }
-
-    const activeRound = rounds?.find(r => 
-      r.statement_id === statement.id && 
-      r.id === session.has_active_round &&
-      r.status === 'STARTED'
+    const statementRoundIds = rounds
+      .filter(round => round.statement_id === statement.id)
+      .map(round => round.id);
+    
+    console.log(`Statement ${statement.id} has rounds:`, statementRoundIds);
+    
+    const statementAnswers = answers.filter(answer => 
+      statementRoundIds.includes(answer.round_id || 0)
     );
-
-    if (!activeRound) {
-      console.log(`No active round found for statement ${statement.id}`);
-      return [];
-    }
-
-    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
-    return answers.filter(answer => answer.round_id === activeRound.id);
+    
+    console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
+    return statementAnswers;
   };
 
   if (isSessionLoading) {
