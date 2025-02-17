@@ -1,13 +1,27 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { 
+  PlayIcon,
+  LineChartIcon,
+  PencilIcon,
+  TrashIcon,
+  ChevronDownIcon
+} from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -52,7 +66,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 }) => {
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
-  const [isPreparingGroups, setIsPreparingGroups] = useState(false);
+  const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
 
   // Helper function to determine if statements can be deleted
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
@@ -67,26 +81,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     });
   };
 
-  const handlePrepareGroups = async (statementId: number) => {
-    setIsPreparingGroups(true);
-    try {
-      // Prepare groups logic will be implemented here
-      toast({
-        title: "Success",
-        description: "Groups prepared successfully",
-      });
-    } catch (error) {
-      console.error('Error preparing groups:', error);
-      toast({
-        title: "Error",
-        description: "Failed to prepare groups",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPreparingGroups(false);
-    }
-  };
-
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
@@ -94,9 +88,9 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         <Button 
           onClick={onAddClick}
           disabled={isAddingStatement || sessionStatus === 'ENDED'}
-          title={sessionStatus === 'ENDED' ? "Cannot add statements to ended session" : ""}
+          className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90"
         >
-          Add Statement
+          + Add Statement
         </Button>
       </div>
 
@@ -140,104 +134,80 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         </form>
       )}
 
-      <div className="grid gap-4">
-        <div className="grid grid-cols-[1fr,1fr,auto] gap-4 px-4 py-2 bg-muted rounded-lg">
-          <div>Statement</div>
-          <div>Background</div>
-          <div>Actions</div>
-        </div>
-        
+      <div className="space-y-4">
         {statements.map((statement) => {
           const activeRound = activeRounds.find(
             round => round.statement_id === statement.id && round.status === 'STARTED'
           );
           const hasActiveRound = !!activeRound;
-          const currentRoundNumber = activeRound?.round_number || 0;
+          const currentRoundNumber = activeRound?.round_number || selectedRounds[statement.id] || "1";
           const isShowingResults = visibleResults.includes(statement.id);
 
           return (
-            <Card key={statement.id} className="p-4 grid grid-cols-[1fr,1fr,auto] gap-4">
-              <div>{statement.statement}</div>
-              <div>{statement.description || '-'}</div>
-              <div className="flex items-center gap-2">
-                {hasActiveRound ? (
-                  <>
-                    <Button
-                      onClick={() => onEndRound(statement.id)}
-                      variant="secondary"
-                      className="whitespace-nowrap"
-                    >
-                      End Round {currentRoundNumber}
-                    </Button>
-                    <Button
-                      onClick={() => handlePrepareGroups(statement.id)}
-                      variant="outline"
-                      disabled={isPreparingGroups}
-                      className="whitespace-nowrap"
-                    >
-                      Prepare Groups
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4].map((roundNumber) => (
-                      <Button
-                        key={roundNumber}
-                        onClick={() => onStartRound(statement.id)}
-                        disabled={
-                          sessionStatus !== 'STARTED' || 
-                          (roundNumber !== 1 && !activeRounds.some(r => 
-                            r.statement_id === statement.id && 
-                            r.status === 'COMPLETED' && 
-                            r.round_number === roundNumber - 1
-                          ))
-                        }
-                        variant="secondary"
-                        className="whitespace-nowrap"
-                        title={
-                          sessionStatus !== 'STARTED' 
-                            ? "Session must be started to begin rounds" 
-                            : roundNumber !== 1 && !activeRounds.some(r => 
-                                r.statement_id === statement.id && 
-                                r.status === 'COMPLETED' && 
-                                r.round_number === roundNumber - 1
-                              )
-                            ? `Complete Round ${roundNumber - 1} first`
-                            : `Start Round ${roundNumber}`
-                        }
-                      >
-                        Start Round {roundNumber}
-                      </Button>
-                    ))}
-                  </div>
+            <Card key={statement.id} className="p-6">
+              <div className="space-y-4">
+                <div className="font-medium text-lg">{statement.statement}</div>
+                {statement.description && (
+                  <div className="text-muted-foreground">{statement.description}</div>
                 )}
-                <Toggle
-                  pressed={isShowingResults}
-                  onPressedChange={() => handleToggleResults(statement.id)}
-                  className="ml-2"
-                  aria-label="Toggle results visibility"
-                >
-                  {isShowingResults ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
-                </Toggle>
-                <Button
-                  variant="outline"
-                  onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
-                  disabled={hasActiveRound || sessionStatus === 'ENDED'}
-                  title={
-                    sessionStatus === 'ENDED' ? "Cannot edit statements in ended session" :
-                    hasActiveRound ? "Cannot edit statement while round is active" : ""
-                  }
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => onDeleteStatement(statement.id)}
-                  disabled={!canDeleteStatements || isDeletingStatementPending}
-                  title={!canDeleteStatements ? "Can only delete statements when session is unpublished" : ""}
-                >
-                  Delete
-                </Button>
+                <div className="flex items-center gap-2 justify-end">
+                  <Select
+                    value={currentRoundNumber.toString()}
+                    onValueChange={(value) => setSelectedRounds({
+                      ...selectedRounds,
+                      [statement.id]: value
+                    })}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map((num) => (
+                        <SelectItem 
+                          key={num} 
+                          value={num.toString()}
+                          disabled={hasActiveRound || sessionStatus !== 'STARTED'}
+                        >
+                          {num}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => onStartRound(statement.id)}
+                    disabled={hasActiveRound || sessionStatus !== 'STARTED'}
+                    className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90 text-white"
+                  >
+                    <PlayIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleToggleResults(statement.id)}
+                    className={isShowingResults ? "bg-orange-100" : ""}
+                  >
+                    <LineChartIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+                    disabled={hasActiveRound || sessionStatus === 'ENDED'}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDeleteStatement(statement.id)}
+                    disabled={!canDeleteStatements || isDeletingStatementPending}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </Card>
           );
