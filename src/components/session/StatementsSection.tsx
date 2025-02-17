@@ -187,7 +187,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleToggleResults(statement.id)}
-                    className={isShowingResults ? "bg-orange-100" : ""}
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
                   >
                     <LineChartIcon className="h-4 w-4" />
                   </Button>
@@ -195,7 +195,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     disabled={!hasActiveRound || sessionStatus !== 'STARTED'}
-                    className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                    className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
                   >
                     <UsersRoundIcon className="h-4 w-4" />
                   </Button>
@@ -204,6 +204,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     size="icon"
                     onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
                     disabled={hasActiveRound || sessionStatus === 'ENDED'}
+                    className="hover:bg-orange-50 hover:text-orange-600"
                   >
                     <PencilIcon className="h-4 w-4" />
                   </Button>
@@ -212,7 +213,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     size="icon"
                     onClick={() => onDeleteStatement(statement.id)}
                     disabled={!canDeleteStatements || isDeletingStatementPending}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
