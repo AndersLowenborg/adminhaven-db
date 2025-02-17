@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -302,7 +302,6 @@ const PresenterPage = () => {
         
         {statements && statements.length > 0 ? (
           <div className="space-y-6 mb-8">
-            <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
               console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
