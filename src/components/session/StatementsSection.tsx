@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -276,14 +276,21 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   >
                     <LineChartIcon className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleGroupPreparation(statement.id)}
-                    className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
-                  >
-                    <UsersRoundIcon className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleGroupPreparation(statement.id)}
+                        className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
+                      >
+                        <UsersRoundIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Close round and prepare groups for next round
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     variant="ghost"
                     size="icon"
