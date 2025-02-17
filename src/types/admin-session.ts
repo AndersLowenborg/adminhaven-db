@@ -19,28 +19,3 @@ export interface AdminSession {
   created_at: string;
   users?: SessionUser[];
 }
-
-// Round interface
-export interface Round {
-  id: number;
-  statement_id: number | null;
-  status: RoundStatus;
-  round_number: number | null;
-  started_at: string | null;
-  ended_at: string | null;
-  respondant_type: RespondantType | null;
-}
-
-// Group interface
-export interface Group {
-  id: number;
-  leader: number | null;
-  members?: SessionUser[];
-}
-
-// Round-Group relationship interface
-export interface RoundGroup {
-  id: number;
-  round_id: number | null;
-  group_id: number | null;
-}
