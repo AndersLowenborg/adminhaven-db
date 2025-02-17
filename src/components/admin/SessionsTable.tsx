@@ -30,10 +30,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SessionWithUsers } from '@/types/session';
+
+interface SessionUser {
+  id: number;
+  name: string | null;
+  session_id: number | null;
+}
+
+interface Session {
+  id: number;
+  name: string | null;
+  status: 'UNPUBLISHED' | 'PUBLISHED' | 'STARTED' | 'ENDED';
+  created_at: string;
+  users?: SessionUser[];
+}
 
 interface SessionsTableProps {
-  sessions: SessionWithUsers[];
+  sessions: Session[];
 }
 
 export const SessionsTable = ({ sessions }: SessionsTableProps) => {
