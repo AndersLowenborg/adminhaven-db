@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { WaitingPage } from './WaitingPage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface UserResponseFormProps {
   statement: {
@@ -22,6 +24,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [roundEnded, setRoundEnded] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -78,6 +81,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
       if (sessionError) throw sessionError;
 
       if (!sessionData.has_active_round) {
+        setRoundEnded(true);
         toast({
           title: "Round Ended",
           description: "The round has ended. Please wait for the next round.",
@@ -148,6 +152,15 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <CardTitle className="text-xl">{statement.content}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {roundEnded && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Round Ended</AlertTitle>
+            <AlertDescription>
+              This statement has been closed by the administrator. Please wait for the next round.
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -160,7 +173,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status !== 'STARTED'}
+              disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
             />
           </div>
           
@@ -175,7 +188,7 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               max={10}
               step={1}
               className="w-full"
-              disabled={isSubmitting || statement.status !== 'STARTED'}
+              disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
             />
           </div>
         </div>
@@ -183,9 +196,10 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
         <Button 
           onClick={handleSubmit} 
           className="w-full"
-          disabled={isSubmitting || statement.status !== 'STARTED'}
+          disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
         >
           {isSubmitting ? "Submitting..." : 
+           roundEnded ? "Round Ended" :
            statement.status !== 'STARTED' ? "Waiting for admin to activate statement" : 
            "Submit Response"}
         </Button>
