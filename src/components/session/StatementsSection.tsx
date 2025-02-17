@@ -74,11 +74,13 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   const canPrepareGroups = (statementId: number) => {
-    const completedRounds = activeRounds.filter(round => 
+    const selectedRoundNumber = parseInt(selectedRounds[statementId] || "1");
+    const completedRoundsForSelection = activeRounds.filter(round => 
       round.statement_id === statementId && 
-      round.status === 'COMPLETED'
+      round.status === 'COMPLETED' &&
+      round.round_number === selectedRoundNumber
     );
-    return completedRounds.length > 0;
+    return completedRoundsForSelection.length > 0;
   };
 
   const handleGroupPreparation = async (statementId: number) => {
