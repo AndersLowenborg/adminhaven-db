@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -68,6 +69,9 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
+  
+  // Helper function to determine if statements can be deleted
+  const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   const canPrepareGroups = (statementId: number) => {
     const completedRounds = activeRounds.filter(round => 
