@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { 
   PlayIcon,
+  StopIcon,
   LineChartIcon,
   PencilIcon,
   TrashIcon,
@@ -176,11 +177,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   <Button
                     variant="secondary"
                     size="icon"
-                    onClick={() => onStartRound(statement.id)}
-                    disabled={hasActiveRound || sessionStatus !== 'STARTED'}
-                    className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90 text-white"
+                    onClick={() => hasActiveRound ? onEndRound(statement.id) : onStartRound(statement.id)}
+                    disabled={sessionStatus !== 'STARTED'}
+                    className={hasActiveRound ? "bg-red-500 hover:bg-red-600 text-white" : "bg-[#FF5D0A] hover:bg-[#FF5D0A]/90 text-white"}
                   >
-                    <PlayIcon className="h-4 w-4" />
+                    {hasActiveRound ? <StopIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -216,3 +217,4 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
+
