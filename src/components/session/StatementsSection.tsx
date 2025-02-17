@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
+import { GroupPreparation } from "./GroupPreparation";
 import {
   Select,
   SelectContent,
@@ -68,6 +70,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
+  const [groupPreparationData, setGroupPreparationData] = useState<{ participants: any[], answers: any[] } | null>(null);
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
@@ -111,9 +114,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       console.log('Answers:', answers);
       console.log('Participants:', participants);
 
+      setGroupPreparationData({ participants, answers });
+
       toast({
-        title: "Groups Preparation",
-        description: "Starting group formation process...",
+        title: "Groups Prepared",
+        description: "Groups have been formed based on participant responses.",
       });
 
     } catch (error) {
@@ -303,6 +308,15 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           );
         })}
       </div>
+
+      {groupPreparationData && (
+        <div className="mt-8">
+          <GroupPreparation 
+            participants={groupPreparationData.participants}
+            answers={groupPreparationData.answers}
+          />
+        </div>
+      )}
     </div>
   );
 };
