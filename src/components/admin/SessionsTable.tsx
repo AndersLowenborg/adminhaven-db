@@ -30,6 +30,10 @@ interface SessionsTableProps {
   sessions: SessionWithUsers[];
 }
 
+type DeleteSessionResponse = {
+  error: Error | null;
+};
+
 export const SessionsTable = ({ sessions }: SessionsTableProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,7 +41,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
   const { session: authSession } = useSessionContext();
   const [sessionToDelete, setSessionToDelete] = React.useState<number | null>(null);
 
-  const handleDelete = async (sessionId: number) => {
+  const handleDelete = async (sessionId: number): Promise<void> => {
     try {
       console.log('Attempting to delete session:', sessionId);
       
@@ -47,10 +51,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         .select('id')
         .eq('session_id', sessionId);
 
-      if (roundsError) {
-        console.error('Error fetching rounds:', roundsError);
-        throw roundsError;
-      }
+      if (roundsError) throw roundsError;
 
       // Get all groups associated with these rounds
       const roundIds = rounds?.map(round => round.id) || [];
@@ -59,10 +60,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         .select('group_id')
         .in('round_id', roundIds);
 
-      if (groupsError) {
-        console.error('Error fetching round groups:', groupsError);
-        throw groupsError;
-      }
+      if (groupsError) throw groupsError;
 
       // Delete the groups
       const groupIds = [...new Set(roundGroups?.map(rg => rg.group_id) || [])];
@@ -72,10 +70,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           .delete()
           .in('id', groupIds);
 
-        if (deleteGroupsError) {
-          console.error('Error deleting groups:', deleteGroupsError);
-          throw deleteGroupsError;
-        }
+        if (deleteGroupsError) throw deleteGroupsError;
       }
 
       // Finally delete the session (this will cascade delete rounds and round_groups)
@@ -84,10 +79,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
         .delete()
         .eq('id', sessionId);
 
-      if (deleteSessionError) {
-        console.error('Error deleting session:', deleteSessionError);
-        throw deleteSessionError;
-      }
+      if (deleteSessionError) throw deleteSessionError;
 
       console.log('Successfully deleted session:', sessionId);
       
@@ -218,4 +210,3 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     </>
   );
 };
-
