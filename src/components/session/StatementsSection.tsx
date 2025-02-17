@@ -82,6 +82,30 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     });
   };
 
+  // Helper function to get available round numbers for a statement
+  const getAvailableRounds = (statementId: number) => {
+    // Always include rounds 1 and 2
+    const availableRounds = ["1", "2"];
+    
+    // Get all rounds for this statement
+    const statementRounds = activeRounds.filter(round => 
+      round.statement_id === statementId && 
+      (round.status === 'STARTED' || round.status === 'COMPLETED')
+    );
+
+    // Add round 3 if round 2 is started or completed
+    if (statementRounds.some(round => round.round_number === 2)) {
+      availableRounds.push("3");
+    }
+
+    // Add round 4 if round 3 is started or completed
+    if (statementRounds.some(round => round.round_number === 3)) {
+      availableRounds.push("4");
+    }
+
+    return availableRounds;
+  };
+
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
@@ -141,8 +165,9 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
             round => round.statement_id === statement.id && round.status === 'STARTED'
           );
           const hasActiveRound = !!activeRound;
-          const currentRoundNumber = activeRound?.round_number || selectedRounds[statement.id] || "1";
+          const currentRoundNumber = selectedRounds[statement.id] || "1";
           const isShowingResults = visibleResults.includes(statement.id);
+          const availableRounds = getAvailableRounds(statement.id);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -153,7 +178,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                 )}
                 <div className="flex items-center gap-2 justify-end">
                   <Select
-                    value={currentRoundNumber.toString()}
+                    value={currentRoundNumber}
                     onValueChange={(value) => setSelectedRounds({
                       ...selectedRounds,
                       [statement.id]: value
@@ -163,10 +188,10 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4].map((num) => (
+                      {availableRounds.map((num) => (
                         <SelectItem 
                           key={num} 
-                          value={num.toString()}
+                          value={num}
                           disabled={hasActiveRound || sessionStatus !== 'STARTED'}
                         >
                           {num}
@@ -177,7 +202,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => hasActiveRound ? onEndRound(statement.id) : onStartRound(statement.id)}
+                    onClick={() => {
+                      const roundNumber = parseInt(currentRoundNumber);
+                      if (hasActiveRound) {
+                        onEndRound(statement.id);
+                      } else {
+                        onStartRound(statement.id);
+                      }
+                    }}
                     disabled={sessionStatus !== 'STARTED'}
                     className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound ? "text-orange-500" : ""}`}
                   >
