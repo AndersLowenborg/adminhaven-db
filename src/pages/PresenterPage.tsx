@@ -133,6 +133,7 @@ const PresenterPage = () => {
 
   const getStatementStatus = (statement: any) => {
     if (!rounds || rounds.length === 0) {
+      console.log('No rounds available for statement:', statement.id);
       return "Round 1 - Not Started";
     }
 
@@ -140,12 +141,17 @@ const PresenterPage = () => {
       .filter(round => round.statement_id === statement.id)
       .sort((a, b) => b.round_number - a.round_number);
 
+    console.log(`Statement ${statement.id} rounds:`, statementRounds);
+
     if (statementRounds.length === 0) {
+      console.log('No rounds found for statement:', statement.id);
       return "Round 1 - Not Started";
     }
 
     const latestRound = statementRounds[0];
-    return `Round ${latestRound.round_number} - ${latestRound.status === 'STARTED' ? 'In Progress' : 'Completed'}`;
+    const status = `Round ${latestRound.round_number} - ${latestRound.status === 'STARTED' ? 'In Progress' : 'Completed'}`;
+    console.log(`Statement ${statement.id} status:`, status);
+    return status;
   };
 
   useEffect(() => {
