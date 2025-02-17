@@ -39,69 +39,63 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
   }));
 
   return (
-    <>
-      {isVisible && (
-        <>
-          <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
-          <Card className="p-6 shadow-sm">
-            <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
-            {chartData.length > 0 ? (
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-                    <XAxis 
-                      type="number" 
-                      dataKey="x" 
-                      name="Agreement" 
-                      domain={[0, 10]}
-                      tickCount={11}
-                      label={{ value: 'Agreement Level', position: 'bottom', style: { fill: '#8E9196' } }}
-                    />
-                    <YAxis 
-                      type="number" 
-                      dataKey="y" 
-                      name="Confidence"
-                      domain={[0, 10]}
-                      tickCount={11}
-                      label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft', style: { fill: '#8E9196' } }}
-                    />
-                    <Scatter data={chartData}>
-                      {chartData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={COLORS[entry.colorIndex]}
-                        />
-                      ))}
-                    </Scatter>
-                    <ChartTooltip 
-                      cursor={{ strokeDasharray: '3 3' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-2 border rounded shadow">
-                              <p>Agreement: {data.agreement}</p>
-                              <p>Confidence: {data.confidence}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
-                No answers yet
-              </div>
-            )}
-            <div className="mt-4 text-sm text-[#8E9196]">
-              Total responses: {answers.length}
-            </div>
-          </Card>
-        </>
+    <Card key={statement.id} className="p-6 shadow-sm">
+      <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
+      {chartData.length > 0 ? (
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+              <XAxis 
+                type="number" 
+                dataKey="x" 
+                name="Agreement" 
+                domain={[0, 10]}
+                tickCount={11}
+                label={{ value: 'Agreement Level', position: 'bottom', style: { fill: '#8E9196' } }}
+              />
+              <YAxis 
+                type="number" 
+                dataKey="y" 
+                name="Confidence"
+                domain={[0, 10]}
+                tickCount={11}
+                label={{ value: 'Confidence Level', angle: -90, position: 'insideLeft', style: { fill: '#8E9196' } }}
+              />
+              <Scatter data={chartData}>
+                {chartData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[entry.colorIndex]}
+                  />
+                ))}
+              </Scatter>
+              <ChartTooltip 
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-2 border rounded shadow">
+                        <p>Agreement: {data.agreement}</p>
+                        <p>Confidence: {data.confidence}</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
+          No answers yet
+        </div>
       )}
-    </>
+      <div className="mt-4 text-sm text-[#8E9196]">
+        Total responses: {answers.length}
+      </div>
+    </Card>
   );
 };
+
