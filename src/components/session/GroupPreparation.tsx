@@ -41,7 +41,19 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         groups[groupIndex].members.push(participant);
       });
 
-      // For each group, create a database entry and assign members
+      // Get the current active round ID
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', answers[0]?.round_id)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      const activeRoundId = sessionData.has_active_round;
+      if (!activeRoundId) throw new Error('No active round found');
+
+      // For each group, create database entries
       for (const group of groups) {
         if (group.members.length > 0) {
           // Randomly select a leader from the group members
@@ -69,6 +81,16 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           );
 
           await Promise.all(memberPromises);
+
+          // Create round group association
+          const { error: roundGroupError } = await supabase
+            .from('ROUND_GROUPS')
+            .insert([{
+              round_id: activeRoundId,
+              group_id: groupData.id
+            }]);
+
+          if (roundGroupError) throw roundGroupError;
 
           // Update the group object with the database id and leader
           group.id = groupData.id;
