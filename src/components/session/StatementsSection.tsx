@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -11,7 +10,8 @@ import {
   LineChartIcon,
   PencilIcon,
   TrashIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  UsersRoundIcon
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -194,6 +194,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
+                    disabled={!hasActiveRound || sessionStatus !== 'STARTED'}
+                    className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                  >
+                    <UsersRoundIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
                     disabled={hasActiveRound || sessionStatus === 'ENDED'}
                   >
@@ -217,4 +225,3 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
-
