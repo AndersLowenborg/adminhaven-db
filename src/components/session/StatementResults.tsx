@@ -27,12 +27,21 @@ interface StatementResultsProps {
   };
   answers: Answer[];
   isVisible: boolean;
+  selectedRound: string;
 }
 
-export const StatementResults = ({ statement, answers, isVisible }: StatementResultsProps) => {
+export const StatementResults = ({ statement, answers, isVisible, selectedRound }: StatementResultsProps) => {
   if (!isVisible) return null;
 
-  const chartData = answers.map((answer, index) => ({
+  // Filter answers based on the selected round
+  const selectedRoundNumber = parseInt(selectedRound, 10);
+  const filteredAnswers = answers.filter(answer => {
+    // Get the round number from the round_id using the pattern: statement_id_round_number
+    const roundNumber = answer.round_id ? parseInt(answer.round_id.toString().split('_')[1], 10) : 1;
+    return roundNumber === selectedRoundNumber;
+  });
+
+  const chartData = filteredAnswers.map((answer, index) => ({
     x: answer.agreement_level,
     y: answer.confidence_level,
     agreement: answer.agreement_level,
@@ -42,7 +51,7 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
 
   return (
     <>
-      <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
+      <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results (Round {selectedRound})</h2>
       <Card key={statement.id} className="p-6 shadow-sm">
         <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
         {chartData.length > 0 ? (
@@ -93,11 +102,11 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
           </div>
         ) : (
           <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
-            No answers yet
+            No answers for round {selectedRound}
           </div>
         )}
         <div className="mt-4 text-sm text-[#8E9196]">
-          Total responses: {answers.length}
+          Total responses for round {selectedRound}: {chartData.length}
         </div>
       </Card>
     </>

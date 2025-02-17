@@ -69,9 +69,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
 
-  // Helper function to determine if statements can be deleted
-  const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
-
   const handleToggleResults = (statementId: number) => {
     toggleVisibility(statementId);
     
@@ -80,30 +77,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       title: "Success",
       description: `Results ${!isCurrentlyShowing ? 'shown' : 'hidden'} for this statement`,
     });
-  };
-
-  // Helper function to get available round numbers for a statement
-  const getAvailableRounds = (statementId: number) => {
-    // Always include rounds 1 and 2
-    const availableRounds = ["1", "2"];
-    
-    // Get all rounds for this statement
-    const statementRounds = activeRounds.filter(round => 
-      round.statement_id === statementId && 
-      (round.status === 'STARTED' || round.status === 'COMPLETED')
-    );
-
-    // Add round 3 if round 2 is started or completed
-    if (statementRounds.some(round => round.round_number === 2)) {
-      availableRounds.push("3");
-    }
-
-    // Add round 4 if round 3 is started or completed
-    if (statementRounds.some(round => round.round_number === 3)) {
-      availableRounds.push("4");
-    }
-
-    return availableRounds;
   };
 
   return (
@@ -167,7 +140,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const hasActiveRound = !!activeRound;
           const currentRoundNumber = selectedRounds[statement.id] || "1";
           const isShowingResults = visibleResults.includes(statement.id);
-          const availableRounds = getAvailableRounds(statement.id);
+          const availableRounds = ["1", "2", "3", "4"];
 
           return (
             <Card key={statement.id} className="p-6">
@@ -203,7 +176,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      const roundNumber = parseInt(currentRoundNumber);
                       if (hasActiveRound) {
                         onEndRound(statement.id);
                       } else {
@@ -244,12 +216,20 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => onDeleteStatement(statement.id)}
-                    disabled={!canDeleteStatements || isDeletingStatementPending}
+                    disabled={sessionStatus !== 'UNPUBLISHED' || isDeletingStatementPending}
                     className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </Button>
                 </div>
+                {isShowingResults && (
+                  <StatementResults
+                    statement={statement}
+                    answers={[]} // You'll need to pass the answers for this statement
+                    isVisible={isShowingResults}
+                    selectedRound={currentRoundNumber}
+                  />
+                )}
               </div>
             </Card>
           );
