@@ -41,6 +41,44 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     try {
       console.log('Attempting to delete session:', sessionId);
       
+      // Get all rounds for this session
+      const { data: rounds, error: roundsError } = await supabase
+        .from('ROUND')
+        .select('id')
+        .eq('session_id', sessionId);
+
+      if (roundsError) {
+        console.error('Error fetching rounds:', roundsError);
+        throw roundsError;
+      }
+
+      // Get all groups associated with these rounds
+      const roundIds = rounds?.map(round => round.id) || [];
+      const { data: roundGroups, error: groupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('group_id')
+        .in('round_id', roundIds);
+
+      if (groupsError) {
+        console.error('Error fetching round groups:', groupsError);
+        throw groupsError;
+      }
+
+      // Delete the groups
+      const groupIds = [...new Set(roundGroups?.map(rg => rg.group_id) || [])];
+      if (groupIds.length > 0) {
+        const { error: deleteGroupsError } = await supabase
+          .from('GROUP')
+          .delete()
+          .in('id', groupIds);
+
+        if (deleteGroupsError) {
+          console.error('Error deleting groups:', deleteGroupsError);
+          throw deleteGroupsError;
+        }
+      }
+
+      // Finally delete the session (this will cascade delete rounds and round_groups)
       const { error: deleteSessionError } = await supabase
         .from('SESSION')
         .delete()
@@ -180,3 +218,4 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     </>
   );
 };
+
