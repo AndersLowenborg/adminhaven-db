@@ -1,5 +1,4 @@
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +19,8 @@ const PresenterPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
-  const { visibleResults } = useStatementVisibility(sessionId!);
+  const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId!);
+  const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
 
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
@@ -285,7 +285,7 @@ const PresenterPage = () => {
           <div className="space-y-6 mb-8">
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
-              console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
+              const currentRound = selectedRounds[statement.id] || "1";
               
               return (
                 <StatementResults
@@ -293,6 +293,7 @@ const PresenterPage = () => {
                   statement={statement}
                   answers={statementAnswers}
                   isVisible={visibleResults.includes(statement.id)}
+                  selectedRound={currentRound}
                 />
               );
             })}

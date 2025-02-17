@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StatementResults } from "@/components/session/StatementResults";
 
 interface StatementsSectionProps {
   statements: Statement[];
