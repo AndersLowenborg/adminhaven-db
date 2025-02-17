@@ -131,29 +131,6 @@ const PresenterPage = () => {
     enabled: !!sessionId && !!rounds,
   });
 
-  const getStatementStatus = (statement: any) => {
-    if (!rounds || rounds.length === 0) {
-      console.log('No rounds available for statement:', statement.id);
-      return "Round 1 - Not Started";
-    }
-
-    const statementRounds = rounds
-      .filter(round => round.statement_id === statement.id)
-      .sort((a, b) => b.round_number - a.round_number);
-
-    console.log(`Statement ${statement.id} rounds:`, statementRounds);
-
-    if (statementRounds.length === 0) {
-      console.log('No rounds found for statement:', statement.id);
-      return "Round 1 - Not Started";
-    }
-
-    const latestRound = statementRounds[0];
-    const status = `Round ${latestRound.round_number} - ${latestRound.status === 'STARTED' ? 'In Progress' : 'Completed'}`;
-    console.log(`Statement ${statement.id} status:`, status);
-    return status;
-  };
-
   useEffect(() => {
     if (!sessionId) return;
 
@@ -301,28 +278,15 @@ const PresenterPage = () => {
           <div className="space-y-6 mb-8">
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
-              const roundStatus = getStatementStatus(statement);
-              console.log(`Rendering statement ${statement.id} with status:`, roundStatus);
+              console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
               
               return (
-                <Card key={statement.id} className="p-6 shadow-sm">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-xl font-medium text-[#403E43]">{statement.statement}</h3>
-                      <div className="px-3 py-1 bg-orange-100 rounded-full">
-                        <p className="text-sm font-medium text-orange-600">{roundStatus}</p>
-                      </div>
-                    </div>
-                    {visibleResults.includes(statement.id) && (
-                      <StatementResults
-                        key={statement.id}
-                        statement={statement}
-                        answers={statementAnswers}
-                        isVisible={visibleResults.includes(statement.id)}
-                      />
-                    )}
-                  </div>
-                </Card>
+                <StatementResults
+                  key={statement.id}
+                  statement={statement}
+                  answers={statementAnswers}
+                  isVisible={visibleResults.includes(statement.id)}
+                />
               );
             })}
           </div>
