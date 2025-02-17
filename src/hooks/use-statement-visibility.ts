@@ -10,11 +10,22 @@ export const useStatementVisibility = (sessionId: number) => {
   useEffect(() => {
     if (!sessionId) return;
 
+    // Get initial state from localStorage
+    const storedValue = localStorage.getItem(`showingResultsFor-${sessionId}`);
+    if (storedValue) {
+      setVisibleResults(JSON.parse(storedValue));
+    }
+
     // Set up real-time subscription for visibility updates
     const channel = supabase.channel(`visibility_${sessionId}`)
       .on('broadcast', { event: 'visibility_update' }, ({ payload }) => {
         console.log('Received visibility update:', payload);
         setVisibleResults(payload.visibleStatements);
+        // Update localStorage when receiving updates
+        localStorage.setItem(
+          `showingResultsFor-${sessionId}`, 
+          JSON.stringify(payload.visibleStatements)
+        );
       })
       .subscribe();
 
@@ -28,7 +39,14 @@ export const useStatementVisibility = (sessionId: number) => {
       ? visibleResults.filter(id => id !== statementId)
       : [...visibleResults, statementId];
 
+    // Update local state immediately
     setVisibleResults(newVisibleResults);
+    
+    // Update localStorage
+    localStorage.setItem(
+      `showingResultsFor-${sessionId}`, 
+      JSON.stringify(newVisibleResults)
+    );
     
     // Broadcast the update to all connected clients
     const channel = supabase.channel(`visibility_${sessionId}`);
