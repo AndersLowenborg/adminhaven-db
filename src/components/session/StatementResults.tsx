@@ -2,7 +2,6 @@
 import { Card } from "@/components/ui/card";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Cell } from 'recharts';
 import { ChartTooltip } from "@/components/ui/chart";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -28,17 +27,9 @@ interface StatementResultsProps {
   };
   answers: Answer[];
   isVisible: boolean;
-  selectedRound: string;
-  onRoundChange: (value: string) => void;
 }
 
-export const StatementResults = ({ 
-  statement, 
-  answers, 
-  isVisible, 
-  selectedRound,
-  onRoundChange
-}: StatementResultsProps) => {
+export const StatementResults = ({ statement, answers, isVisible }: StatementResultsProps) => {
   if (!isVisible) return null;
 
   const chartData = answers.map((answer, index) => ({
@@ -51,20 +42,7 @@ export const StatementResults = ({
 
   return (
     <>
-      <h2 className="text-2xl font-semibold text-[#403E43] mb-4 flex items-center justify-between">
-        <span>Results</span>
-        <Select value={selectedRound} onValueChange={onRoundChange}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">Round 1</SelectItem>
-            <SelectItem value="2">Round 2</SelectItem>
-            <SelectItem value="3">Round 3</SelectItem>
-            <SelectItem value="4">Round 4</SelectItem>
-          </SelectContent>
-        </Select>
-      </h2>
+      <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
       <Card key={statement.id} className="p-6 shadow-sm">
         <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
         {chartData.length > 0 ? (
@@ -115,11 +93,11 @@ export const StatementResults = ({
           </div>
         ) : (
           <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
-            No answers yet for round {selectedRound}
+            No answers yet
           </div>
         )}
         <div className="mt-4 text-sm text-[#8E9196]">
-          Total responses for round {selectedRound}: {answers.length}
+          Total responses: {answers.length}
         </div>
       </Card>
     </>

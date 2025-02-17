@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+
+import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,8 +20,7 @@ const PresenterPage = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { participants } = useParticipants(sessionId!);
-  const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId!);
-  const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
+  const { visibleResults } = useStatementVisibility(sessionId!);
 
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['presenter-session', sessionId],
@@ -111,45 +111,25 @@ const PresenterPage = () => {
   });
 
   const { data: answers } = useQuery({
-    queryKey: ['presenter-answers', sessionId, selectedRounds],
+    queryKey: ['presenter-answers', sessionId, session?.has_active_round],
     queryFn: async () => {
-      if (!sessionId) {
+      if (!session?.has_active_round) {
+        console.log('No active round found');
         return [];
       }
 
-      const allAnswers: any[] = [];
+      console.log('Fetching answers for active round:', session.has_active_round);
       
-      const { data: statements } = await supabase
-        .from('STATEMENT')
-        .select('id')
-        .eq('session_id', sessionId);
+      const { data, error } = await supabase
+        .from('ANSWER')
+        .select('*')
+        .eq('round_id', session.has_active_round);
 
-      if (!statements) return [];
-
-      for (const statement of statements) {
-        const roundNumber = parseInt(selectedRounds[statement.id] || "1", 10);
-        
-        const { data: rounds } = await supabase
-          .from('ROUND')
-          .select('id')
-          .eq('statement_id', statement.id)
-          .eq('round_number', roundNumber);
-
-        if (rounds && rounds.length > 0) {
-          const { data: roundAnswers } = await supabase
-            .from('ANSWER')
-            .select('*')
-            .eq('round_id', rounds[0].id);
-
-          if (roundAnswers) {
-            allAnswers.push(...roundAnswers);
-          }
-        }
-      }
-
-      return allAnswers;
+      if (error) throw error;
+      console.log('Fetched answers:', data);
+      return data;
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && !!session?.has_active_round,
   });
 
   useEffect(() => {
@@ -214,20 +194,24 @@ const PresenterPage = () => {
       return [];
     }
     
-    const roundNumber = parseInt(selectedRounds[statement.id] || "1", 10);
-    console.log(`Getting answers for statement ${statement.id}, round ${roundNumber}`);
-    
-    const round = rounds?.find(r => 
-      r.statement_id === statement.id && 
-      r.round_number === roundNumber
-    );
-
-    if (!round) {
-      console.log(`No round found for statement ${statement.id}, round number ${roundNumber}`);
+    if (!session?.has_active_round) {
+      console.log('No active round in session');
       return [];
     }
 
-    return answers.filter(answer => answer.round_id === round.id);
+    const activeRound = rounds?.find(r => 
+      r.statement_id === statement.id && 
+      r.id === session.has_active_round &&
+      r.status === 'STARTED'
+    );
+
+    if (!activeRound) {
+      console.log(`No active round found for statement ${statement.id}`);
+      return [];
+    }
+
+    console.log(`Filtering answers for statement ${statement.id}, round ${activeRound.id}`);
+    return answers.filter(answer => answer.round_id === activeRound.id);
   };
 
   if (isSessionLoading) {
@@ -309,13 +293,6 @@ const PresenterPage = () => {
                   statement={statement}
                   answers={statementAnswers}
                   isVisible={visibleResults.includes(statement.id)}
-                  selectedRound={selectedRounds[statement.id] || "1"}
-                  onRoundChange={(value) => {
-                    setSelectedRounds(prev => ({
-                      ...prev,
-                      [statement.id]: value
-                    }));
-                  }}
                 />
               );
             })}
