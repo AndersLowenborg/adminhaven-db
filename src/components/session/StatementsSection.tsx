@@ -3,7 +3,6 @@ import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
 import { 
   PlayIcon,
   PauseIcon,
@@ -23,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -69,8 +69,60 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
 
-  // Helper function to determine if statements can be deleted
-  const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
+  const canPrepareGroups = (statementId: number) => {
+    const completedRounds = activeRounds.filter(round => 
+      round.statement_id === statementId && 
+      round.status === 'COMPLETED'
+    );
+    return completedRounds.length > 0;
+  };
+
+  const handleGroupPreparation = async (statementId: number) => {
+    const selectedRound = parseInt(selectedRounds[statementId] || "1");
+    console.log('Preparing groups for statement:', statementId, 'round:', selectedRound);
+    
+    try {
+      const { data: roundData, error: roundError } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('statement_id', statementId)
+        .eq('round_number', selectedRound)
+        .single();
+
+      if (roundError) throw roundError;
+
+      const { data: answers, error: answersError } = await supabase
+        .from('ANSWER')
+        .select('*')
+        .eq('round_id', roundData.id);
+
+      if (answersError) throw answersError;
+
+      const { data: participants, error: participantsError } = await supabase
+        .from('SESSION_USERS')
+        .select('*')
+        .eq('session_id', sessionId);
+
+      if (participantsError) throw participantsError;
+
+      console.log('Round data:', roundData);
+      console.log('Answers:', answers);
+      console.log('Participants:', participants);
+
+      toast({
+        title: "Groups Preparation",
+        description: "Starting group formation process...",
+      });
+
+    } catch (error) {
+      console.error('Error preparing groups:', error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare groups",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleToggleResults = (statementId: number) => {
     toggleVisibility(statementId);
@@ -82,23 +134,18 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     });
   };
 
-  // Helper function to get available round numbers for a statement
   const getAvailableRounds = (statementId: number) => {
-    // Always include rounds 1 and 2
     const availableRounds = ["1", "2"];
     
-    // Get all rounds for this statement
     const statementRounds = activeRounds.filter(round => 
       round.statement_id === statementId && 
       (round.status === 'STARTED' || round.status === 'COMPLETED')
     );
 
-    // Add round 3 if round 2 is started or completed
     if (statementRounds.some(round => round.round_number === 2)) {
       availableRounds.push("3");
     }
 
-    // Add round 4 if round 3 is started or completed
     if (statementRounds.some(round => round.round_number === 3)) {
       availableRounds.push("4");
     }
@@ -203,7 +250,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      const roundNumber = parseInt(currentRoundNumber);
                       if (hasActiveRound) {
                         onEndRound(statement.id);
                       } else {
@@ -226,7 +272,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    disabled={!hasActiveRound || sessionStatus !== 'STARTED'}
+                    onClick={() => handleGroupPreparation(statement.id)}
+                    disabled={hasActiveRound || !canPrepareGroups(statement.id)}
                     className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
                   >
                     <UsersRoundIcon className="h-4 w-4" />
