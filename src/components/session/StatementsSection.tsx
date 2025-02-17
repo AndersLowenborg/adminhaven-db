@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
@@ -188,6 +188,25 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     >
                       Prepare Groups
                     </Button>
+                    <div className="flex items-center gap-2 ml-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={currentRoundNumber <= 1}
+                        title="Previous round"
+                      >
+                        <ChevronLeftIcon className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium">Round {currentRoundNumber}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={currentRoundNumber >= 4}
+                        title="Next round"
+                      >
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Toggle
                       pressed={isShowingResults}
                       onPressedChange={() => handleToggleResults(statement.id)}
