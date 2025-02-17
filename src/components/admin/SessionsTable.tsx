@@ -24,15 +24,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SessionWithUsers } from '@/types/session';
 
 interface SessionsTableProps {
   sessions: SessionWithUsers[];
 }
-
-type DeleteSessionResponse = {
-  error: Error | null;
-};
 
 export const SessionsTable = ({ sessions }: SessionsTableProps) => {
   const navigate = useNavigate();
@@ -119,7 +121,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
   };
 
   return (
-    <>
+    <TooltipProvider>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -140,9 +142,19 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
               >
                 <TableCell className="font-medium">{session.name}</TableCell>
                 <TableCell>
-                  <Badge variant={getStatusColor(session.status)}>
-                    {session.status.replace(/_/g, ' ')}
-                  </Badge>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant={getStatusColor(session.status)}>
+                        {session.status.replace(/_/g, ' ')}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {session.status === 'UNPUBLISHED' && "Session is not yet available to participants"}
+                      {session.status === 'PUBLISHED' && "Session is open for participants to join"}
+                      {session.status === 'STARTED' && "Session is locked and in progress"}
+                      {session.status === 'ENDED' && "Session has been completed"}
+                    </TooltipContent>
+                  </Tooltip>
                 </TableCell>
                 <TableCell>
                   {session.users && session.users.length > 0 ? (
@@ -164,17 +176,24 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
                   {new Date(session.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSessionToDelete(session.id);
-                    }}
-                    className="w-8 h-8 p-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSessionToDelete(session.id);
+                        }}
+                        className="w-8 h-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Delete this session and all associated data
+                    </TooltipContent>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
@@ -207,6 +226,6 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 };
