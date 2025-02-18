@@ -250,7 +250,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const isPlayButtonEnabled = sessionStatus === 'STARTED' && 
             (!activeRound || 
              currentRoundStatus === 'NOT_STARTED' || 
-             (isRoundLocked && currentRound !== null));
+             (isRoundLocked && currentRound !== null) ||
+             isRoundStarted);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -278,7 +279,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       disabled={!isPlayButtonEnabled}
                       className={`hover:bg-orange-50 hover:text-orange-600 ${isRoundStarted ? "text-orange-500" : ""}`}
                     >
-                      {isRoundStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                      {currentRound === 2 || isRoundStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="ghost"
