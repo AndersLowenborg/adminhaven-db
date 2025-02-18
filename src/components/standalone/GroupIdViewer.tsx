@@ -16,7 +16,7 @@ export const GroupIdViewer = () => {
       return data;
     },
     staleTime: 0, // Mark data as immediately stale
-    cacheTime: 0, // Don't cache the data at all
+    gcTime: 0, // Don't cache the data at all (previously cacheTime)
   });
 
   if (isLoading) return <div>Loading group IDs...</div>;
