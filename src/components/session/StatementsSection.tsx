@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -17,13 +18,6 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
 import { GroupPreparation } from "./GroupPreparation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StatementsSectionProps {
@@ -69,7 +63,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 }) => {
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
-  const [selectedRounds, setSelectedRounds] = useState<Record<number, string>>({});
   const [groupPreparationData, setGroupPreparationData] = useState<{ participants: any[], answers: any[] } | null>(null);
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
@@ -88,15 +81,13 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   };
 
   const handleGroupPreparation = async (statementId: number) => {
-    const selectedRound = parseInt(selectedRounds[statementId] || "1");
-    console.log('Preparing groups for statement:', statementId, 'round:', selectedRound);
+    console.log('Preparing groups for statement:', statementId);
     
     try {
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
         .select('*')
         .eq('statement_id', statementId)
-        .eq('round_number', selectedRound)
         .single();
 
       if (roundError) throw roundError;
@@ -146,25 +137,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       title: "Success",
       description: `Results ${!isCurrentlyShowing ? 'shown' : 'hidden'} for this statement`,
     });
-  };
-
-  const getAvailableRounds = (statementId: number) => {
-    const availableRounds = ["1", "2"];
-    
-    const statementRounds = activeRounds.filter(round => 
-      round.statement_id === statementId && 
-      (round.status === 'STARTED' || round.status === 'COMPLETED')
-    );
-
-    if (statementRounds.some(round => round.round_number === 2)) {
-      availableRounds.push("3");
-    }
-
-    if (statementRounds.some(round => round.round_number === 3)) {
-      availableRounds.push("4");
-    }
-
-    return availableRounds;
   };
 
   return (
@@ -228,12 +200,9 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           );
           const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
-          const currentRoundNumber = selectedRounds[statement.id] || "1";
+          const currentRoundNumber = activeRound?.round_number || 1;
           const isShowingResults = visibleResults.includes(statement.id);
-          const availableRounds = getAvailableRounds(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
-
-          console.log('Statement:', statement.id, 'canStartPrepareGroups:', canStartPrepareGroups);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -242,79 +211,62 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                 {statement.description && (
                   <div className="text-muted-foreground">{statement.description}</div>
                 )}
-                <div className="flex items-center gap-2 justify-end">
-                  <Select
-                    value={currentRoundNumber}
-                    onValueChange={(value) => setSelectedRounds({
-                      ...selectedRounds,
-                      [statement.id]: value
-                    })}
-                  >
-                    <SelectTrigger className="w-[80px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableRounds.map((num) => (
-                        <SelectItem 
-                          key={num} 
-                          value={num}
-                          disabled={hasActiveRound || sessionStatus !== 'STARTED'}
-                        >
-                          {num}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (hasActiveRound && !isRoundLocked) {
-                        onEndRound(statement.id);
-                      } else if (!hasActiveRound) {
-                        onStartRound(statement.id);
-                      }
-                    }}
-                    disabled={sessionStatus !== 'STARTED' || isRoundLocked}
-                    className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
-                  >
-                    {hasActiveRound && !isRoundLocked ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleToggleResults(statement.id)}
-                    className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
-                  >
-                    <LineChartIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleGroupPreparation(statement.id)}
-                    disabled={!canStartPrepareGroups}
-                    className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "text-orange-500" : ""}`}
-                  >
-                    <UsersRoundIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
-                    disabled={hasActiveRound || sessionStatus === 'ENDED'}
-                    className="hover:bg-orange-50 hover:text-orange-600"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDeleteStatement(statement.id)}
-                    disabled={!canDeleteStatements || isDeletingStatementPending}
-                    className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    Current Round: {currentRoundNumber}
+                  </span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (hasActiveRound && !isRoundLocked) {
+                          onEndRound(statement.id);
+                        } else if (!hasActiveRound) {
+                          onStartRound(statement.id);
+                        }
+                      }}
+                      disabled={sessionStatus !== 'STARTED' || isRoundLocked}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
+                    >
+                      {hasActiveRound && !isRoundLocked ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleResults(statement.id)}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
+                    >
+                      <LineChartIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleGroupPreparation(statement.id)}
+                      disabled={!canStartPrepareGroups}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "text-orange-500" : ""}`}
+                    >
+                      <UsersRoundIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+                      disabled={hasActiveRound || sessionStatus === 'ENDED'}
+                      className="hover:bg-orange-50 hover:text-orange-600"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDeleteStatement(statement.id)}
+                      disabled={!canDeleteStatements || isDeletingStatementPending}
+                      className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -333,3 +285,4 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
+
