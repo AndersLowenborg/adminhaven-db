@@ -41,64 +41,79 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
     try {
       console.log('Attempting to delete session and related data:', sessionId);
 
-      // 1. Delete answers for all rounds in the session
-      const { data: rounds } = await supabase
-        .from('ROUND')
-        .select('id')
-        .eq('statement_id', supabase.from('STATEMENT').select('id').eq('session_id', sessionId));
-
-      if (rounds) {
-        await supabase
-          .from('ANSWER')
-          .delete()
-          .in('round_id', rounds.map(r => r.id));
-      }
-
-      // 2. Delete round_groups and associated groups
-      const { data: roundGroups } = await supabase
-        .from('ROUND_GROUPS')
-        .select('group_id')
-        .in('round_id', rounds?.map(r => r.id) || []);
-
-      if (roundGroups) {
-        // Delete group members first
-        await supabase
-          .from('GROUP_MEMBERS')
-          .delete()
-          .in('parent_group_id', roundGroups.map(rg => rg.group_id));
-
-        // Delete the groups
-        await supabase
-          .from('GROUP')
-          .delete()
-          .in('id', roundGroups.map(rg => rg.group_id));
-
-        // Delete round_groups
-        await supabase
-          .from('ROUND_GROUPS')
-          .delete()
-          .in('group_id', roundGroups.map(rg => rg.group_id));
-      }
-
-      // 3. Delete rounds
-      await supabase
-        .from('ROUND')
-        .delete()
-        .in('statement_id', supabase.from('STATEMENT').select('id').eq('session_id', sessionId));
-
-      // 4. Delete statements
-      await supabase
+      // 1. First get all statements for this session
+      const { data: statements } = await supabase
         .from('STATEMENT')
-        .delete()
+        .select('id')
         .eq('session_id', sessionId);
 
-      // 5. Delete session users
+      if (statements && statements.length > 0) {
+        const statementIds = statements.map(s => s.id);
+
+        // 2. Get all rounds for these statements
+        const { data: rounds } = await supabase
+          .from('ROUND')
+          .select('id')
+          .in('statement_id', statementIds);
+
+        if (rounds && rounds.length > 0) {
+          const roundIds = rounds.map(r => r.id);
+
+          // 3. Delete answers for these rounds
+          await supabase
+            .from('ANSWER')
+            .delete()
+            .in('round_id', roundIds);
+
+          // 4. Get and delete round_groups and associated groups
+          const { data: roundGroups } = await supabase
+            .from('ROUND_GROUPS')
+            .select('group_id')
+            .in('round_id', roundIds);
+
+          if (roundGroups && roundGroups.length > 0) {
+            const groupIds = roundGroups.map(rg => rg.group_id);
+
+            // Delete group members first
+            await supabase
+              .from('GROUP_MEMBERS')
+              .delete()
+              .in('parent_group_id', groupIds);
+
+            // Delete the groups
+            await supabase
+              .from('GROUP')
+              .delete()
+              .in('id', groupIds);
+
+            // Delete round_groups
+            await supabase
+              .from('ROUND_GROUPS')
+              .delete()
+              .in('round_id', roundIds);
+          }
+
+          // 5. Delete rounds
+          await supabase
+            .from('ROUND')
+            .delete()
+            .in('statement_id', statementIds);
+        }
+
+        // 6. Delete statements
+        await supabase
+          .from('STATEMENT')
+          .delete()
+          .eq('session_id', sessionId);
+      }
+
+      // 7. Delete session users
       await supabase
         .from('SESSION_USERS')
         .delete()
         .eq('session_id', sessionId);
 
-      // 6. Finally, delete the session
+      // 8. Finally, delete the session
       const { error: deleteSessionError } = await supabase
         .from('SESSION')
         .delete()
