@@ -272,19 +272,19 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleToggleResults(statement.id)}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
-                    >
-                      <LineChartIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
                       onClick={() => handleGroupPreparation(statement.id)}
                       disabled={!canStartPrepareGroups}
                       className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "text-orange-500" : ""}`}
                     >
                       <UsersRoundIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleResults(statement.id)}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
+                    >
+                      <LineChartIcon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
