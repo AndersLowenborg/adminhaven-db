@@ -222,7 +222,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
         description: "Your response has been submitted",
       });
       
-      setIsSubmitted(true);
+      setHasSubmitted(true);
       onSubmit();
     } catch (error) {
       console.error('Error submitting response:', error);
