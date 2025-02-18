@@ -165,13 +165,15 @@ const PresenterPage = () => {
       // Get the group IDs for the active round
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
-        .select('group_id')
-        .eq('round_id', activeRoundId);
+        .select('*')  // Changed to select all columns for debugging
+        .eq('round_id', activeRoundId.toString());  // Convert to string to ensure correct comparison
 
       if (roundGroupsError) {
         console.error('Error fetching round groups:', roundGroupsError);
         throw roundGroupsError;
       }
+
+      console.log('Raw round groups data:', roundGroups);
 
       if (!roundGroups || roundGroups.length === 0) {
         console.log('No groups found for active round');

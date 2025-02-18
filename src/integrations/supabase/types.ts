@@ -111,7 +111,7 @@ export type Database = {
         }
         Insert: {
           ended_at?: string | null
-          id: number
+          id?: number
           respondant_id?: number | null
           respondant_type?:
             | Database["public"]["Enums"]["respondant_type"]
