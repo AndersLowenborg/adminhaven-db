@@ -11,6 +11,7 @@ import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useStatementVisibility } from '@/hooks/use-statement-visibility';
+import { GroupIdViewer } from "@/components/standalone/GroupIdViewer";
 
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
@@ -345,6 +346,10 @@ const PresenterPage = () => {
             className="w-48 h-auto"
           />
           <h1 className="text-3xl font-bold text-[#403E43]">Presenter Dashboard</h1>
+        </div>
+        
+        <div className="mb-8">
+          <GroupIdViewer />
         </div>
         
         {session && (
