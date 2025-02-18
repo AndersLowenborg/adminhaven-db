@@ -263,6 +263,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
              currentRoundStatus === 'NOT_STARTED' || 
              (isRoundLocked && currentRound !== null));
 
+          const isLockButtonEnabled = isRoundStarted;
+
           return (
             <Card key={statement.id} className="p-6">
               <div className="space-y-4">
@@ -276,21 +278,27 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     {currentRoundStatus && ` (${currentRoundStatus})`}
                   </span>
                   <div className="flex items-center gap-2 ml-auto">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (isRoundStarted) {
-                          onEndRound(statement.id);
-                        } else {
-                          onStartRound(statement.id);
-                        }
-                      }}
-                      disabled={!isPlayButtonEnabled && !isRoundStarted}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${isRoundStarted ? "text-orange-500" : ""}`}
-                    >
-                      {isRoundStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-                    </Button>
+                    {isRoundStarted ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEndRound(statement.id)}
+                        disabled={!isLockButtonEnabled}
+                        className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
+                      >
+                        <LockIcon className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onStartRound(statement.id)}
+                        disabled={!isPlayButtonEnabled}
+                        className="hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        <PlayIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
