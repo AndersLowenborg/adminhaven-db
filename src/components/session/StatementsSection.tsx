@@ -248,7 +248,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       <div className="space-y-4">
         {statements.map((statement) => {
           const activeRound = activeRounds?.find(
-            round => round.statement_id === statement.id
+            round => round.statement_id === statement.id && 
+                    round.round_number === currentRound
           );
           
           console.log('Active round for statement', statement.id, ':', activeRound);
@@ -265,6 +266,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 
           const isLockButtonEnabled = isRoundStarted;
 
+          const showLockButton = activeRound?.status === 'STARTED';
+
           return (
             <Card key={statement.id} className="p-6">
               <div className="space-y-4">
@@ -278,7 +281,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     {currentRoundStatus && ` (${currentRoundStatus})`}
                   </span>
                   <div className="flex items-center gap-2 ml-auto">
-                    {isRoundStarted ? (
+                    {showLockButton ? (
                       <Button
                         variant="ghost"
                         size="icon"
