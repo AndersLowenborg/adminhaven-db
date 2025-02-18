@@ -299,7 +299,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
-                      disabled={hasActiveRound || sessionStatus === 'ENDED'}
+                      disabled={!!activeRound || sessionStatus === 'ENDED'}
                       className="hover:bg-orange-50 hover:text-orange-600"
                     >
                       <PencilIcon className="h-4 w-4" />
