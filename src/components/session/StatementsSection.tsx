@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -115,7 +116,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     
     const round = activeRounds?.find(round => 
       round.statement_id === statementId && 
-      round.status === 'LOCKED'
+      round.status === 'LOCKED' &&
+      round.round_number === 1  // Only enable for first round when locked
     );
     
     console.log('Found round:', round);
