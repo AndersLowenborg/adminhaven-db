@@ -9,7 +9,8 @@ export default defineConfig((config: ConfigEnv) => {
   const plugins: PluginOption[] = [react()];
   
   if (config.mode === 'development') {
-    plugins.push(componentTagger);
+    // Call the componentTagger function to get the plugin instance
+    plugins.push(componentTagger());
   }
 
   return {
