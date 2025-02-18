@@ -178,13 +178,9 @@ const PresenterPage = () => {
           group:GROUP(
             id,
             leader,
-            members:GROUP_MEMBERS!inner(
+            members:GROUP_MEMBERS(
               member_id,
-              member_type,
-              user:SESSION_USERS(
-                id,
-                name
-              )
+              member_type
             )
           )
         `)
@@ -195,23 +191,35 @@ const PresenterPage = () => {
         throw roundGroupsError;
       }
 
-      console.log('Groups with full details:', roundGroups);
+      // Get all member IDs from the groups
+      const memberIds = roundGroups
+        .filter(rg => rg.group)
+        .flatMap(rg => rg.group.members.map(m => m.member_id))
+        .filter(id => id !== null);
 
-      if (!roundGroups || roundGroups.length === 0) {
-        console.log('No groups found for active round');
-        return [];
+      // Fetch all users in a separate query
+      const { data: users, error: usersError } = await supabase
+        .from('SESSION_USERS')
+        .select('id, name')
+        .in('id', memberIds);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
       }
+
+      // Create a map of user data for easy lookup
+      const userMap = new Map(users?.map(user => [user.id, user]));
 
       // Transform the data to match our expected format
       const groups = roundGroups
-        .filter(rg => rg.group) // Ensure group exists
+        .filter(rg => rg.group)
         .map(rg => ({
           ...rg.group,
           members: rg.group.members
-            .filter(member => member.user) // Filter out members without user data
             .map(member => ({
               ...member,
-              name: member.user?.name || 'Unknown User'
+              name: userMap.get(member.member_id)?.name || 'Unknown User'
             }))
         }));
 
