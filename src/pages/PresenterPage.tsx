@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from 'qrcode.react';
