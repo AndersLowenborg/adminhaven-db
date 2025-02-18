@@ -11,6 +11,7 @@ import { StatementsSection } from '@/components/session/StatementsSection';
 import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Toaster } from "@/components/ui/toaster";
 
 const SessionPage = () => {
   const { id: sessionIdString } = useParams();
@@ -45,7 +46,7 @@ const SessionPage = () => {
         .from('ROUND')
         .select('*')
         .or('status.eq.STARTED,status.eq.LOCKED')
-        .eq('statement_id', statements?.[0]?.id); // Filter by first statement if available
+        .eq('statement_id', statements?.[0]?.id);
 
       if (error) {
         console.error('Error fetching active rounds:', error);
@@ -97,56 +98,59 @@ const SessionPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-8">
-      <SessionHeader 
-        name={session?.name || ''} 
-        status={session?.status || ''}
-        sessionId={sessionId}
-        onUpdateName={updateSession}
-        onStatusChange={() => {
-          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-          queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
-        }}
-        participants={participants || []}
-      />
-
-      <div className="space-y-8">
-        <ParticipantsList 
-          participants={participants || []} 
+    <>
+      <div className="container mx-auto p-8">
+        <SessionHeader 
+          name={session?.name || ''} 
+          status={session?.status || ''}
           sessionId={sessionId}
-          queryKey={['participants', sessionId]}
+          onUpdateName={updateSession}
+          onStatusChange={() => {
+            queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+            queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
+          }}
+          participants={participants || []}
         />
 
-        {isLoadingStatements ? (
-          <div>Loading statements...</div>
-        ) : (
-          <StatementsSection
-            statements={statements || []}
-            isAddingStatement={isAddingStatement}
-            newStatement={newStatement}
-            newBackground={newBackground}
-            onNewStatementChange={setNewStatement}
-            onNewBackgroundChange={setNewBackground}
-            onAddClick={() => setIsAddingStatement(true)}
-            onCancelAdd={() => {
-              setIsAddingStatement(false);
-              setNewStatement('');
-              setNewBackground('');
-            }}
-            onSubmitStatement={handleAddStatement}
-            onDeleteStatement={deleteStatement}
-            onUpdateStatement={handleUpdateStatement}
-            isAddingStatementPending={isAddingStatementPending}
-            isDeletingStatementPending={isDeletingStatementPending}
-            sessionStatus={session?.status || ''}
-            onStartRound={handleStartRound}
-            onEndRound={handleLockRound}
-            activeRounds={activeRounds}
+        <div className="space-y-8">
+          <ParticipantsList 
+            participants={participants || []} 
             sessionId={sessionId}
+            queryKey={['participants', sessionId]}
           />
-        )}
+
+          {isLoadingStatements ? (
+            <div>Loading statements...</div>
+          ) : (
+            <StatementsSection
+              statements={statements || []}
+              isAddingStatement={isAddingStatement}
+              newStatement={newStatement}
+              newBackground={newBackground}
+              onNewStatementChange={setNewStatement}
+              onNewBackgroundChange={setNewBackground}
+              onAddClick={() => setIsAddingStatement(true)}
+              onCancelAdd={() => {
+                setIsAddingStatement(false);
+                setNewStatement('');
+                setNewBackground('');
+              }}
+              onSubmitStatement={handleAddStatement}
+              onDeleteStatement={deleteStatement}
+              onUpdateStatement={handleUpdateStatement}
+              isAddingStatementPending={isAddingStatementPending}
+              isDeletingStatementPending={isDeletingStatementPending}
+              sessionStatus={session?.status || ''}
+              onStartRound={handleStartRound}
+              onEndRound={handleLockRound}
+              activeRounds={activeRounds}
+              sessionId={sessionId}
+            />
+          )}
+        </div>
       </div>
-    </div>
+      <Toaster />
+    </>
   );
 };
 
