@@ -156,23 +156,23 @@ const PresenterPage = () => {
 
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
-        .select('group_id')
+        .select('groups_id')
         .eq('round_id', sessionData.has_active_round);
 
       if (roundGroupsError) throw roundGroupsError;
       
-      const groupIds = roundGroups.map(rg => rg.group_id).filter(Boolean);
+      const groupIds = roundGroups?.map(rg => rg.groups_id).filter(Boolean) || [];
       if (groupIds.length === 0) {
         console.log('No groups found for round');
         return [];
       }
 
-      const { data: groupsWithMembers, error: groupsError } = await supabase
-        .from('GROUP')
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('GROUPS')
         .select(`
           id,
           leader,
-          GROUP_MEMBERS (
+          GROUP_MEMBERS!inner (
             id,
             member_id,
             member_type
@@ -181,10 +181,11 @@ const PresenterPage = () => {
         .in('id', groupIds);
 
       if (groupsError) throw groupsError;
+      if (!groupsData) return [];
 
-      const memberIds = groupsWithMembers
-        ?.flatMap(group => group.GROUP_MEMBERS?.map(member => member.member_id))
-        .filter(Boolean) || [];
+      const memberIds = groupsData.flatMap(group => 
+        group.GROUP_MEMBERS?.map(member => member.member_id)
+      ).filter(Boolean);
 
       const { data: users, error: usersError } = await supabase
         .from('SESSION_USERS')
@@ -195,7 +196,7 @@ const PresenterPage = () => {
 
       const userMap = new Map(users?.map(user => [user.id, user.name]));
 
-      return (groupsWithMembers || []).map(group => ({
+      return groupsData.map(group => ({
         ...group,
         members: group.GROUP_MEMBERS.map(member => ({
           ...member,

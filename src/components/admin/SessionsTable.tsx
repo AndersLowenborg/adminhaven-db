@@ -68,21 +68,21 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
           // 4. Get and delete round_groups and associated groups
           const { data: roundGroups } = await supabase
             .from('ROUND_GROUPS')
-            .select('group_id')
+            .select('groups_id')
             .in('round_id', roundIds);
 
           if (roundGroups && roundGroups.length > 0) {
-            const groupIds = roundGroups.map(rg => rg.group_id);
+            const groupIds = roundGroups.map(rg => rg.groups_id).filter(Boolean);
 
             // Delete group members first
             await supabase
               .from('GROUP_MEMBERS')
               .delete()
-              .in('parent_group_id', groupIds);
+              .in('parent_groups_id', groupIds);
 
             // Delete the groups
             await supabase
-              .from('GROUP')
+              .from('GROUPS')
               .delete()
               .in('id', groupIds);
 
