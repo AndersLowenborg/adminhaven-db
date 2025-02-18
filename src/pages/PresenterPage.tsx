@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -142,10 +141,18 @@ const PresenterPage = () => {
 
       console.log('Fetching groups for session:', sessionId);
 
-      // First get the active round ID
+      // First get the active round ID and details
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
-        .select('has_active_round')
+        .select(`
+          *,
+          active_round:ROUND!has_active_round(
+            id,
+            round_number,
+            status,
+            statement:STATEMENT(*)
+          )
+        `)
         .eq('id', sessionId)
         .single();
 
@@ -160,48 +167,52 @@ const PresenterPage = () => {
         return [];
       }
 
-      console.log('Active round ID:', activeRoundId);
+      console.log('Active round details:', sessionData.active_round);
 
-      // Get the group IDs for the active round
+      // Get the groups with all their relationships for the active round
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
-        .select('*')  // Changed to select all columns for debugging
-        .eq('round_id', activeRoundId);  // Keep as number, don't convert to string
+        .select(`
+          group_id,
+          round_id,
+          group:GROUP(
+            id,
+            leader,
+            members:GROUP_MEMBERS(
+              member_id,
+              member_type,
+              user:SESSION_USERS!inner(
+                id,
+                name
+              )
+            )
+          )
+        `)
+        .eq('round_id', activeRoundId);
 
       if (roundGroupsError) {
         console.error('Error fetching round groups:', roundGroupsError);
         throw roundGroupsError;
       }
 
-      console.log('Raw round groups data:', roundGroups);
+      console.log('Groups with full details:', roundGroups);
 
       if (!roundGroups || roundGroups.length === 0) {
         console.log('No groups found for active round');
         return [];
       }
 
-      const groupIds = roundGroups.map(rg => rg.group_id);
-      console.log('Group IDs:', groupIds);
+      // Transform the data to match our expected format
+      const groups = roundGroups.map(rg => ({
+        ...rg.group,
+        members: rg.group.members.map(member => ({
+          ...member,
+          name: member.user.name
+        }))
+      }));
 
-      // Finally fetch the groups with their members
-      const { data: groupData, error: groupsError } = await supabase
-        .from('GROUP')
-        .select(`
-          *,
-          members:GROUP_MEMBERS(
-            member_id,
-            member_type
-          )
-        `)
-        .in('id', groupIds);
-
-      if (groupsError) {
-        console.error('Error fetching groups:', groupsError);
-        throw groupsError;
-      }
-
-      console.log('Found groups with members:', groupData);
-      return groupData || [];
+      console.log('Processed groups:', groups);
+      return groups;
     },
     enabled: !!sessionId,
   });
