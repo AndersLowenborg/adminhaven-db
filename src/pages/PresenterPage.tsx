@@ -166,30 +166,39 @@ const PresenterPage = () => {
         return [];
       }
 
-      const { data: groupsData, error: groupsError } = await supabase
+      const { data: groupsWithMembers, error: groupsError } = await supabase
         .from('GROUP')
         .select(`
           id,
           leader,
-          GROUP_MEMBERS!inner (
+          GROUP_MEMBERS (
             id,
             member_id,
-            member_type,
-            SESSION_USERS!inner (
-              id,
-              name
-            )
+            member_type
           )
         `)
         .in('id', groupIds);
 
       if (groupsError) throw groupsError;
 
-      return (groupsData || []).map(group => ({
+      const memberIds = groupsWithMembers
+        ?.flatMap(group => group.GROUP_MEMBERS?.map(member => member.member_id))
+        .filter(Boolean) || [];
+
+      const { data: users, error: usersError } = await supabase
+        .from('SESSION_USERS')
+        .select('id, name')
+        .in('id', memberIds);
+
+      if (usersError) throw usersError;
+
+      const userMap = new Map(users?.map(user => [user.id, user.name]));
+
+      return (groupsWithMembers || []).map(group => ({
         ...group,
         members: group.GROUP_MEMBERS.map(member => ({
           ...member,
-          name: member.SESSION_USERS.name || 'Unknown User'
+          name: userMap.get(member.member_id) || 'Unknown User'
         }))
       }));
     },
