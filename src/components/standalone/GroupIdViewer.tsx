@@ -14,7 +14,9 @@ export const GroupIdViewer = () => {
       if (error) throw error;
       console.log('Raw database response for GROUP ids:', data);
       return data;
-    }
+    },
+    staleTime: 0, // Mark data as immediately stale
+    cacheTime: 0, // Don't cache the data at all
   });
 
   if (isLoading) return <div>Loading group IDs...</div>;
