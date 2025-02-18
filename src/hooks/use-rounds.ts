@@ -127,16 +127,29 @@ export const useRounds = (sessionId: number) => {
     mutationFn: async (statementId: number) => {
       console.log('Locking round for statement:', statementId);
       
+      // Get the current active round
+      const { data: activeRound, error: activeRoundError } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('statement_id', statementId)
+        .eq('status', 'STARTED')
+        .maybeSingle();
+
+      if (activeRoundError) throw activeRoundError;
+      if (!activeRound) {
+        throw new Error('No active round found to lock');
+      }
+
       // Lock the round
-      const { error: roundError } = await supabase
+      const { error: lockError } = await supabase
         .from('ROUND')
         .update({ 
           status: 'LOCKED',
+          ended_at: new Date().toISOString()
         })
-        .eq('statement_id', statementId)
-        .eq('status', 'STARTED');
+        .eq('id', activeRound.id);
 
-      if (roundError) throw roundError;
+      if (lockError) throw lockError;
 
       return { success: true };
     },
