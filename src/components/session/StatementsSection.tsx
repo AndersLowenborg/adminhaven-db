@@ -1,23 +1,15 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  PlayIcon,
-  PauseIcon,
-  LineChartIcon,
-  PencilIcon,
-  TrashIcon,
-  ChevronDownIcon,
-  UsersRoundIcon,
-  LockIcon
-} from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
 import { GroupPreparation } from "./GroupPreparation";
 import { supabase } from "@/integrations/supabase/client";
+import { StatementCard } from "./StatementCard";
 
 interface StatementsSectionProps {
   statements: Statement[];
@@ -113,7 +105,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     console.log('Checking canPrepareGroups for statement:', statementId);
     console.log('Active rounds:', activeRounds);
     
-    // Check if there's any active round that's in Round 2 or higher
     const hasLaterRounds = activeRounds?.some(round => 
       round.statement_id === statementId && 
       round.round_number > 1
@@ -265,82 +256,30 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
              (isRoundLocked && currentRound !== null));
 
           const isLockButtonEnabled = isRoundStarted;
-
           const showLockButton = activeRound?.status === 'STARTED';
 
           return (
-            <Card key={statement.id} className="p-6">
-              <div className="space-y-4">
-                <div className="font-medium text-lg">{statement.statement}</div>
-                {statement.description && (
-                  <div className="text-muted-foreground">{statement.description}</div>
-                )}
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">
-                    Current Round: {currentRound || 'Not started'}
-                    {currentRoundStatus && ` (${currentRoundStatus})`}
-                  </span>
-                  <div className="flex items-center gap-2 ml-auto">
-                    {showLockButton ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEndRound(statement.id)}
-                        disabled={!isLockButtonEnabled}
-                        className="hover:bg-secondary hover:text-primary text-primary"
-                      >
-                        <LockIcon className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onStartRound(statement.id)}
-                        disabled={!isPlayButtonEnabled}
-                        className="hover:bg-secondary hover:text-primary"
-                      >
-                        <PlayIcon className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleGroupPreparation(statement.id)}
-                      disabled={!canStartPrepareGroups}
-                      className={`hover:bg-secondary hover:text-primary ${canStartPrepareGroups ? "" : "text-primary"}`}
-                    >
-                      <UsersRoundIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleToggleResults(statement.id)}
-                      className={`hover:bg-secondary hover:text-primary ${isShowingResults ? "bg-secondary text-primary" : ""}`}
-                    >
-                      <LineChartIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
-                      disabled={!!activeRound || sessionStatus === 'ENDED'}
-                      className="hover:bg-secondary hover:text-primary"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeleteStatement(statement.id)}
-                      disabled={!canDeleteStatements || isDeletingStatementPending}
-                      className="hover:bg-secondary hover:text-destructive text-destructive"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <StatementCard
+              key={statement.id}
+              statement={statement}
+              currentRound={currentRound}
+              currentRoundStatus={currentRoundStatus}
+              showLockButton={showLockButton}
+              isLockButtonEnabled={isLockButtonEnabled}
+              isPlayButtonEnabled={isPlayButtonEnabled}
+              canStartPrepareGroups={canStartPrepareGroups}
+              isShowingResults={isShowingResults}
+              hasActiveRound={!!activeRound}
+              sessionStatus={sessionStatus}
+              canDeleteStatements={canDeleteStatements}
+              isDeletingStatementPending={isDeletingStatementPending}
+              onEndRound={onEndRound}
+              onStartRound={onStartRound}
+              handleGroupPreparation={handleGroupPreparation}
+              handleToggleResults={handleToggleResults}
+              onUpdateStatement={onUpdateStatement}
+              onDeleteStatement={onDeleteStatement}
+            />
           );
         })}
       </div>
