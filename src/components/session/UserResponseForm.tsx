@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,10 +26,78 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   const [agreementLevel, setAgreementLevel] = React.useState(5);
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [roundEnded, setRoundEnded] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  useEffect(() => {
+    const checkExistingAnswer = async () => {
+      const sessionIdString = window.location.pathname.split('/').pop();
+      const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
+      
+      if (!sessionId || !statement.id) return;
+
+      try {
+        // Get the active round
+        const { data: activeRound, error: roundError } = await supabase
+          .from('ROUND')
+          .select('id')
+          .eq('statement_id', statement.id)
+          .eq('status', 'STARTED')
+          .single();
+
+        if (roundError) throw roundError;
+
+        if (groupData?.isLeader) {
+          // Check for existing group answer
+          const { data: roundGroup } = await supabase
+            .from('ROUND_GROUPS')
+            .select('groups_id')
+            .eq('round_id', activeRound.id)
+            .single();
+
+          if (roundGroup) {
+            const { data: existingAnswer } = await supabase
+              .from('ANSWER')
+              .select('id')
+              .eq('round_id', activeRound.id)
+              .eq('respondant_type', 'GROUP')
+              .eq('respondant_id', roundGroup.groups_id)
+              .single();
+
+            setHasSubmitted(!!existingAnswer);
+          }
+        } else {
+          // Check for existing individual answer
+          const storedName = localStorage.getItem(`session_${sessionId}_name`);
+          const { data: userData } = await supabase
+            .from('SESSION_USERS')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('name', storedName)
+            .single();
+
+          if (userData) {
+            const { data: existingAnswer } = await supabase
+              .from('ANSWER')
+              .select('id')
+              .eq('round_id', activeRound.id)
+              .eq('respondant_type', 'SESSION_USER')
+              .eq('respondant_id', userData.id)
+              .single();
+
+            setHasSubmitted(!!existingAnswer);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking existing answer:', error);
+      }
+    };
+
+    checkExistingAnswer();
+  }, [statement.id, groupData]);
 
   useEffect(() => {
     if (!statement.id) return;
@@ -58,7 +125,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   }, [statement.id, queryClient]);
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || hasSubmitted) return;
     
     if (statement.status !== 'STARTED') {
       return;
@@ -170,7 +237,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   };
 
   // Check if already submitted, show waiting page
-  if (isSubmitted) {
+  if (hasSubmitted) {
     return <WaitingPage />;
   }
 
