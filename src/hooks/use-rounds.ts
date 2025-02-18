@@ -141,14 +141,14 @@ export const useRounds = (sessionId: number) => {
         throw new Error('Maximum round number reached');
       }
 
-      // Start the next round
+      // Start the next round with NOT_STARTED status
       const { data: newRound, error: startError } = await supabase
         .from('ROUND')
         .insert({
           id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
-          status: 'STARTED',
+          status: 'NOT_STARTED',  // Changed from 'STARTED' to 'NOT_STARTED'
           started_at: new Date().toISOString(),
           respondant_type: nextRoundNumber === 1 ? 'SESSION_USER' : 'GROUP'
         })
@@ -172,7 +172,7 @@ export const useRounds = (sessionId: number) => {
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",
-        description: "Moved to next round",
+        description: "Next round prepared",
       });
     },
     onError: (error) => {
