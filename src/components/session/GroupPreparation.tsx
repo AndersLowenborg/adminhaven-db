@@ -24,6 +24,36 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
   const createGroups = async (participants: Participant[], answers: Answer[]) => {
     try {
+      // First, get the current session's active round
+      const sessionId = answers[0]?.round_id ? 
+        // Get session ID from the first answer's round
+        (await supabase
+          .from('ROUND')
+          .select('statement_id')
+          .eq('id', answers[0].round_id)
+          .single())
+          .data?.statement_id : null;
+
+      if (!sessionId) {
+        throw new Error('Could not determine session ID');
+      }
+
+      // Get the active round ID from the session
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+      
+      const activeRoundId = sessionData.has_active_round;
+      if (!activeRoundId) {
+        throw new Error('No active round found in session');
+      }
+
+      console.log('Creating groups for active round:', activeRoundId);
+
       // Calculate number of groups needed (2-3 participants per group)
       const totalParticipants = participants.length;
       const numGroups = Math.ceil(totalParticipants / 3);
@@ -40,12 +70,6 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         const groupIndex = index % groups.length;
         groups[groupIndex].members.push(participant);
       });
-
-      // The round ID is directly available in the answers array
-      const roundId = answers[0]?.round_id;
-      if (!roundId) {
-        throw new Error('No round ID found in answers');
-      }
 
       // For each group, create database entries
       for (const group of groups) {
@@ -76,11 +100,11 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
           await Promise.all(memberPromises);
 
-          // Create round group association
+          // Create round group association with the ACTIVE round
           const { error: roundGroupError } = await supabase
             .from('ROUND_GROUPS')
             .insert([{
-              round_id: roundId,
+              round_id: activeRoundId, // Using the active round ID instead of the previous round
               group_id: groupData.id
             }]);
 
@@ -149,3 +173,4 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
     </Card>
   );
 };
+
