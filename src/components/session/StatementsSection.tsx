@@ -248,7 +248,9 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const canStartPrepareGroups = canPrepareGroups(statement.id);
 
           const isPlayButtonEnabled = sessionStatus === 'STARTED' && 
-            (!activeRound || (isRoundLocked && currentRound !== null));
+            (!activeRound || 
+             currentRoundStatus === 'NOT_STARTED' || 
+             (isRoundLocked && currentRound !== null));
 
           return (
             <Card key={statement.id} className="p-6">
