@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,7 @@ const UserPage = () => {
       
       if (error) throw error;
       console.log('Session data:', data);
-      return data;
+      return data as Session;
     },
     enabled: !!sessionId,
   });

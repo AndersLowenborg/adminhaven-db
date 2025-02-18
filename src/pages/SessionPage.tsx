@@ -31,7 +31,7 @@ const SessionPage = () => {
     isDeletingStatement: isDeletingStatementPending,
   } = useStatements(sessionId);
   const { participants, isLoadingParticipants } = useParticipants(sessionId);
-  const { startRound, endRound } = useRounds(sessionId);
+  const { startRound, lockRound } = useRounds(sessionId);
 
   // Set up real-time subscriptions
   useSessionSubscriptions(sessionId);
@@ -71,8 +71,8 @@ const SessionPage = () => {
     startRound({ statementId, session });
   };
 
-  const handleEndRound = (statementId: number) => {
-    endRound(statementId);
+  const handleLockRound = (statementId: number) => {
+    lockRound(statementId);
   };
 
   if (!sessionId) {
@@ -128,7 +128,7 @@ const SessionPage = () => {
             isDeletingStatementPending={isDeletingStatementPending}
             sessionStatus={session?.status || ''}
             onStartRound={handleStartRound}
-            onEndRound={handleEndRound}
+            onEndRound={handleLockRound}
             activeRounds={activeRounds}
             sessionId={sessionId}
           />
