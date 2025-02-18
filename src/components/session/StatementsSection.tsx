@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -288,7 +287,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       size="icon"
                       onClick={() => handleGroupPreparation(statement.id)}
                       disabled={!canStartPrepareGroups}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "text-orange-500" : ""}`}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "" : "text-orange-500"}`}
                     >
                       <UsersRoundIcon className="h-4 w-4" />
                     </Button>
