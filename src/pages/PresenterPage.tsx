@@ -156,7 +156,7 @@ const PresenterPage = () => {
         return [];
       }
 
-      // Simple query to get groups and their members for the active round
+      // First get the groups with their members
       const { data: roundGroups, error: groupsError } = await supabase
         .from('ROUND_GROUPS')
         .select(`
@@ -164,12 +164,9 @@ const PresenterPage = () => {
             id,
             leader,
             members:GROUP_MEMBERS(
+              id,
               member_id,
-              member_type,
-              member:SESSION_USERS(
-                id,
-                name
-              )
+              member_type
             )
           )
         `)
@@ -177,13 +174,27 @@ const PresenterPage = () => {
 
       if (groupsError) throw groupsError;
 
+      // Get all member IDs
+      const memberIds = roundGroups
+        .filter(rg => rg.group)
+        .flatMap(rg => rg.group.members.map(m => m.member_id))
+        .filter(Boolean);
+
+      // Get all users in one query
+      const { data: users } = await supabase
+        .from('SESSION_USERS')
+        .select('id, name')
+        .in('id', memberIds);
+
+      const userMap = new Map(users?.map(user => [user.id, user]) || []);
+
       return roundGroups
         .filter(rg => rg.group)
         .map(rg => ({
           ...rg.group,
           members: rg.group.members.map(member => ({
             ...member,
-            name: member.member?.name || 'Unknown User'
+            name: userMap.get(member.member_id)?.name || 'Unknown User'
           }))
         }));
     },
