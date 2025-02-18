@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -64,8 +63,43 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { toast } = useToast();
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [groupPreparationData, setGroupPreparationData] = useState<{ participants: any[], answers: any[] } | null>(null);
+  const [currentRound, setCurrentRound] = useState<number | null>(null);
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
+
+  React.useEffect(() => {
+    const fetchCurrentRound = async () => {
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        return;
+      }
+
+      if (sessionData.has_active_round) {
+        const { data: roundData, error: roundError } = await supabase
+          .from('ROUND')
+          .select('round_number')
+          .eq('id', sessionData.has_active_round)
+          .single();
+
+        if (roundError) {
+          console.error('Error fetching round:', roundError);
+          return;
+        }
+
+        setCurrentRound(roundData.round_number);
+      } else {
+        setCurrentRound(null);
+      }
+    };
+
+    fetchCurrentRound();
+  }, [sessionId, activeRounds]);
 
   const canPrepareGroups = (statementId: number) => {
     console.log('Checking canPrepareGroups for statement:', statementId);
@@ -142,7 +176,12 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Statements</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold">Statements</h2>
+          <span className="text-sm text-gray-600">
+            Current Round: {currentRound || 'Not started'}
+          </span>
+        </div>
         <Button 
           onClick={onAddClick}
           disabled={isAddingStatement || sessionStatus === 'ENDED'}
@@ -285,4 +324,3 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
-
