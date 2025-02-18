@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,6 @@ import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useStatementVisibility } from '@/hooks/use-statement-visibility';
-import { GroupIdViewer } from "@/components/standalone/GroupIdViewer";
 
 const PresenterPage = () => {
   const { id: sessionIdString } = useParams();
@@ -167,6 +167,8 @@ const PresenterPage = () => {
         return [];
       }
 
+      console.log('Found group IDs:', groupIds);
+
       const { data: groupsData, error: groupsError } = await supabase
         .from('GROUPS')
         .select(`
@@ -183,6 +185,8 @@ const PresenterPage = () => {
       if (groupsError) throw groupsError;
       if (!groupsData) return [];
 
+      console.log('Fetched groups data:', groupsData);
+
       const memberIds = groupsData.flatMap(group => 
         group.GROUP_MEMBERS?.map(member => member.member_id)
       ).filter(Boolean);
@@ -193,6 +197,8 @@ const PresenterPage = () => {
         .in('id', memberIds);
 
       if (usersError) throw usersError;
+
+      console.log('Fetched users data:', users);
 
       const userMap = new Map(users?.map(user => [user.id, user.name]));
 
@@ -349,10 +355,6 @@ const PresenterPage = () => {
           <h1 className="text-3xl font-bold text-[#403E43]">Presenter Dashboard</h1>
         </div>
         
-        <div className="mb-8">
-          <GroupIdViewer />
-        </div>
-        
         {session && (
           <Card className="mb-8 p-6 shadow-sm">
             <div className="space-y-6">
@@ -372,7 +374,7 @@ const PresenterPage = () => {
                         <div className="space-y-2">
                           {group.members.map((member) => (
                             <div key={member.member_id} className="flex items-center gap-2">
-                              {participants?.find(p => p.id === member.member_id)?.name}
+                              {member.name}
                               {group.leader === member.member_id && (
                                 <Badge variant="secondary">Leader</Badge>
                               )}
