@@ -8,13 +8,8 @@ export const GroupIdViewer = () => {
   const { session } = useSessionContext();
 
   const { data: groupIds, isLoading, error } = useQuery({
-    queryKey: ['standalone-group-ids', session?.user?.id],
+    queryKey: ['standalone-group-ids'],
     queryFn: async () => {
-      if (!session?.user) {
-        console.log('No authenticated user found');
-        throw new Error('Authentication required to view groups');
-      }
-
       const { data, error } = await supabase
         .from('GROUPS')
         .select('id');
@@ -27,18 +22,9 @@ export const GroupIdViewer = () => {
       console.log('Raw database response for GROUPS ids:', data);
       return data;
     },
-    enabled: !!session?.user, // Only run query when user is authenticated
     staleTime: 0,
     gcTime: 0,
   });
-
-  if (!session?.user) {
-    return (
-      <Card className="p-4">
-        <div className="text-amber-600">Please log in to view group IDs</div>
-      </Card>
-    );
-  }
 
   if (isLoading) return (
     <Card className="p-4">
