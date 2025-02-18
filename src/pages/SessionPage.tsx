@@ -40,15 +40,24 @@ const SessionPage = () => {
   const { data: activeRounds } = useQuery({
     queryKey: ['active-rounds', sessionId],
     queryFn: async () => {
+      console.log('Fetching active rounds for session:', sessionId);
       const { data, error } = await supabase
         .from('ROUND')
         .select('*')
-        .eq('status', 'STARTED');
+        .or('status.eq.STARTED,status.eq.LOCKED')
+        .eq('statement_id', statements?.[0]?.id); // Filter by first statement if available
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching active rounds:', error);
+        throw error;
+      }
+      console.log('Active rounds:', data);
       return data;
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && !!statements?.length,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const handleAddStatement = async (e: React.FormEvent) => {
@@ -94,7 +103,10 @@ const SessionPage = () => {
         status={session?.status || ''}
         sessionId={sessionId}
         onUpdateName={updateSession}
-        onStatusChange={() => queryClient.invalidateQueries({ queryKey: ['session', sessionId] })}
+        onStatusChange={() => {
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
+        }}
         participants={participants || []}
       />
 

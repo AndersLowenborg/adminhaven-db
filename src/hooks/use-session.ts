@@ -18,11 +18,17 @@ export const useSession = (sessionId: number) => {
         .eq('id', sessionId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching session:', error);
+        throw error;
+      }
       console.log('Session details:', data);
       return data as Session;
     },
     enabled: !!sessionId,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   const updateSessionMutation = useMutation({
