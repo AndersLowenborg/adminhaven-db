@@ -72,7 +72,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           
           // Create group in database
           const { data: groupData, error: groupError } = await supabase
-            .from('GROUP')
+            .from('GROUPS')
             .insert([{ leader: leader.id }])
             .select()
             .single();
@@ -91,7 +91,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
               .insert([{
                 member_id: member.id,
                 member_type: 'SESSION_USER',
-                parent_group_id: groupData.id
+                parent_groups_id: groupData.id
               }])
           );
 
@@ -103,7 +103,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
             .from('ROUND_GROUPS')
             .insert([{
               round_id: activeRoundId,
-              group_id: groupData.id
+              groups_id: groupData.id
             }])
             .select();
 

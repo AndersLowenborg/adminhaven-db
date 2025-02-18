@@ -8,11 +8,11 @@ export const GroupIdViewer = () => {
     queryKey: ['standalone-group-ids'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('GROUP')
+        .from('GROUPS')
         .select('id');
       
       if (error) throw error;
-      console.log('Raw database response for GROUP ids:', data);
+      console.log('Raw database response for GROUPS ids:', data);
       return data;
     },
     staleTime: 0, // Mark data as immediately stale

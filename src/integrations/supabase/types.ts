@@ -54,7 +54,36 @@ export type Database = {
           },
         ]
       }
-      GROUP: {
+      GROUP_MEMBERS: {
+        Row: {
+          id: number
+          member_id: number | null
+          member_type: Database["public"]["Enums"]["respondant_type"] | null
+          parent_groups_id: number | null
+        }
+        Insert: {
+          id?: number
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_groups_id?: number | null
+        }
+        Update: {
+          id?: number
+          member_id?: number | null
+          member_type?: Database["public"]["Enums"]["respondant_type"] | null
+          parent_groups_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_group_members_group"
+            columns: ["parent_groups_id"]
+            isOneToOne: false
+            referencedRelation: "GROUPS"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      GROUPS: {
         Row: {
           id: number
           leader: number | null
@@ -68,35 +97,6 @@ export type Database = {
           leader?: number | null
         }
         Relationships: []
-      }
-      GROUP_MEMBERS: {
-        Row: {
-          id: number
-          member_id: number | null
-          member_type: Database["public"]["Enums"]["respondant_type"] | null
-          parent_group_id: number | null
-        }
-        Insert: {
-          id?: number
-          member_id?: number | null
-          member_type?: Database["public"]["Enums"]["respondant_type"] | null
-          parent_group_id?: number | null
-        }
-        Update: {
-          id?: number
-          member_id?: number | null
-          member_type?: Database["public"]["Enums"]["respondant_type"] | null
-          parent_group_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_group_members_group"
-            columns: ["parent_group_id"]
-            isOneToOne: false
-            referencedRelation: "GROUP"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       ROUND: {
         Row: {
@@ -145,26 +145,26 @@ export type Database = {
       }
       ROUND_GROUPS: {
         Row: {
-          group_id: number | null
+          groups_id: number | null
           id: number
           round_id: number | null
         }
         Insert: {
-          group_id?: number | null
+          groups_id?: number | null
           id?: number
           round_id?: number | null
         }
         Update: {
-          group_id?: number | null
+          groups_id?: number | null
           id?: number
           round_id?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "fk_round_groups_group"
-            columns: ["group_id"]
+            columns: ["groups_id"]
             isOneToOne: false
-            referencedRelation: "GROUP"
+            referencedRelation: "GROUPS"
             referencedColumns: ["id"]
           },
           {
