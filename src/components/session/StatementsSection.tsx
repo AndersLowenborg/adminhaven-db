@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -113,10 +114,20 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     console.log('Checking canPrepareGroups for statement:', statementId);
     console.log('Active rounds:', activeRounds);
     
+    // Check if there's any active round that's in Round 2 or higher
+    const hasLaterRounds = activeRounds?.some(round => 
+      round.statement_id === statementId && 
+      round.round_number > 1
+    );
+
+    if (hasLaterRounds) {
+      return false;
+    }
+    
     const round = activeRounds?.find(round => 
       round.statement_id === statementId && 
       round.status === 'LOCKED' &&
-      round.round_number === 1  // Only enable for first round when locked
+      round.round_number === 1
     );
     
     console.log('Found round:', round);
