@@ -199,7 +199,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         <Button 
           onClick={onAddClick}
           disabled={isAddingStatement || sessionStatus === 'ENDED'}
-          className="bg-[#FF5D0A] hover:bg-[#FF5D0A]/90"
+          className="bg-primary hover:bg-primary/90"
         >
           + Add Statement
         </Button>
@@ -287,7 +287,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                         size="icon"
                         onClick={() => onEndRound(statement.id)}
                         disabled={!isLockButtonEnabled}
-                        className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
+                        className="hover:bg-secondary hover:text-primary text-primary"
                       >
                         <LockIcon className="h-4 w-4" />
                       </Button>
@@ -297,7 +297,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                         size="icon"
                         onClick={() => onStartRound(statement.id)}
                         disabled={!isPlayButtonEnabled}
-                        className="hover:bg-orange-50 hover:text-orange-600"
+                        className="hover:bg-secondary hover:text-primary"
                       >
                         <PlayIcon className="h-4 w-4" />
                       </Button>
@@ -307,7 +307,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       size="icon"
                       onClick={() => handleGroupPreparation(statement.id)}
                       disabled={!canStartPrepareGroups}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "" : "text-orange-500"}`}
+                      className={`hover:bg-secondary hover:text-primary ${canStartPrepareGroups ? "" : "text-primary"}`}
                     >
                       <UsersRoundIcon className="h-4 w-4" />
                     </Button>
@@ -315,7 +315,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleToggleResults(statement.id)}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${isShowingResults ? "bg-orange-100 text-orange-500" : ""}`}
+                      className={`hover:bg-secondary hover:text-primary ${isShowingResults ? "bg-secondary text-primary" : ""}`}
                     >
                       <LineChartIcon className="h-4 w-4" />
                     </Button>
@@ -324,7 +324,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       size="icon"
                       onClick={() => onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
                       disabled={!!activeRound || sessionStatus === 'ENDED'}
-                      className="hover:bg-orange-50 hover:text-orange-600"
+                      className="hover:bg-secondary hover:text-primary"
                     >
                       <PencilIcon className="h-4 w-4" />
                     </Button>
@@ -333,7 +333,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       size="icon"
                       onClick={() => onDeleteStatement(statement.id)}
                       disabled={!canDeleteStatements || isDeletingStatementPending}
-                      className="hover:bg-orange-50 hover:text-orange-600 text-red-500"
+                      className="hover:bg-secondary hover:text-destructive text-destructive"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </Button>
