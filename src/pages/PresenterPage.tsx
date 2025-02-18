@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,6 @@ import { StatementResults } from '@/components/session/StatementResults';
 import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { GroupPreparation } from '@/components/session/GroupPreparation';
 import { useStatementVisibility } from '@/hooks/use-statement-visibility';
 
 const PresenterPage = () => {
@@ -131,6 +131,42 @@ const PresenterPage = () => {
     enabled: !!sessionId && !!rounds,
   });
 
+  const { data: groups } = useQuery({
+    queryKey: ['presenter-groups', sessionId],
+    queryFn: async () => {
+      if (!rounds || rounds.length === 0) return [];
+
+      const roundIds = rounds.map(round => round.id);
+
+      // First get the group IDs associated with these rounds
+      const { data: roundGroups, error: roundGroupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('group_id')
+        .in('round_id', roundIds);
+
+      if (roundGroupsError) throw roundGroupsError;
+      if (!roundGroups || roundGroups.length === 0) return [];
+
+      const groupIds = roundGroups.map(rg => rg.group_id);
+
+      // Then fetch the groups and their members
+      const { data: groups, error: groupsError } = await supabase
+        .from('GROUP')
+        .select(`
+          *,
+          members:GROUP_MEMBERS(
+            member_id,
+            member_type
+          )
+        `)
+        .in('id', groupIds);
+
+      if (groupsError) throw groupsError;
+      return groups || [];
+    },
+    enabled: !!sessionId && !!rounds,
+  });
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -180,10 +216,26 @@ const PresenterPage = () => {
       )
       .subscribe();
 
+    const groupsChannel = supabase
+      .channel(`presenter-groups-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'GROUP'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['presenter-groups', sessionId] });
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(statementsChannel);
       supabase.removeChannel(roundsChannel);
       supabase.removeChannel(answersChannel);
+      supabase.removeChannel(groupsChannel);
     };
   }, [sessionId, queryClient]);
 
@@ -266,10 +318,28 @@ const PresenterPage = () => {
                 queryKey={['participants', sessionId]}
               />
               
-              <GroupPreparation 
-                participants={participants || []}
-                answers={answers || []}
-              />
+              {groups && groups.length > 0 && (
+                <div className="mt-6">
+                  <h2 className="text-xl font-semibold mb-4">Current Groups</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groups.map((group) => (
+                      <Card key={group.id} className="p-4">
+                        <div className="font-medium mb-2">Group {group.id}</div>
+                        <div className="space-y-2">
+                          {group.members.map((member) => (
+                            <div key={member.member_id} className="flex items-center gap-2">
+                              {participants?.find(p => p.id === member.member_id)?.name}
+                              {group.leader === member.member_id && (
+                                <Badge variant="secondary">Leader</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         )}
