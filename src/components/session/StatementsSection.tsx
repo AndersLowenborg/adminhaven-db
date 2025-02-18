@@ -75,10 +75,15 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   const canPrepareGroups = (statementId: number) => {
-    const round = activeRounds.find(round => 
+    console.log('Checking canPrepareGroups for statement:', statementId);
+    console.log('Active rounds:', activeRounds);
+    
+    const round = activeRounds?.find(round => 
       round.statement_id === statementId && 
       round.status === 'LOCKED'
     );
+    
+    console.log('Found round:', round);
     return !!round;
   };
 
@@ -217,7 +222,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 
       <div className="space-y-4">
         {statements.map((statement) => {
-          const activeRound = activeRounds.find(
+          const activeRound = activeRounds?.find(
             round => round.statement_id === statement.id && 
             (round.status === 'STARTED' || round.status === 'LOCKED')
           );
@@ -227,6 +232,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const isShowingResults = visibleResults.includes(statement.id);
           const availableRounds = getAvailableRounds(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
+
+          console.log('Statement:', statement.id, 'canStartPrepareGroups:', canStartPrepareGroups);
 
           return (
             <Card key={statement.id} className="p-6">
