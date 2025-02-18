@@ -178,7 +178,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
                 : ""
             }
           >
-            {status === 'STARTED' ? 'End Session' : 'Start Session'}
+            {status === 'STARTED' ? 'End Session' : 'Lock Session'}
           </Button>
           <Button
             variant="outline"
