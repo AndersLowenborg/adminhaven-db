@@ -3,25 +3,70 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useParams } from "react-router-dom";
 
 export const GroupIdViewer = () => {
   const { session } = useSessionContext();
+  const { id: sessionId } = useParams();
 
   const { data: groupIds, isLoading, error } = useQuery({
-    queryKey: ['standalone-group-ids'],
+    queryKey: ['standalone-group-ids', sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('GROUPS')
-        .select('id');
-      
-      if (error) {
-        console.error('Supabase error fetching groups:', error);
-        throw error;
+      if (!sessionId) {
+        console.log('No session ID available');
+        return [];
       }
 
-      console.log('Raw database response for GROUPS ids:', data);
-      return data;
+      // First get the active round for this session
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        throw sessionError;
+      }
+
+      if (!sessionData?.has_active_round) {
+        console.log('No active round found for session');
+        return [];
+      }
+
+      // Then get the groups associated with this round
+      const { data: roundGroups, error: roundGroupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('groups_id')
+        .eq('round_id', sessionData.has_active_round);
+
+      if (roundGroupsError) {
+        console.error('Error fetching round groups:', roundGroupsError);
+        throw roundGroupsError;
+      }
+
+      // Get the actual groups
+      const groupIds = roundGroups?.map(rg => rg.groups_id) || [];
+      
+      if (groupIds.length === 0) {
+        console.log('No groups found for round');
+        return [];
+      }
+
+      const { data: groups, error: groupsError } = await supabase
+        .from('GROUPS')
+        .select('id')
+        .in('id', groupIds);
+
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
+        throw groupsError;
+      }
+
+      console.log('Raw database response for GROUPS ids:', groups);
+      return groups;
     },
+    enabled: !!sessionId,
     staleTime: 0,
     gcTime: 0,
   });
@@ -51,7 +96,7 @@ export const GroupIdViewer = () => {
             </div>
           ))
         ) : (
-          <div className="text-muted-foreground">No groups found</div>
+          <div className="text-muted-foreground">No groups found for this session</div>
         )}
       </div>
     </Card>
