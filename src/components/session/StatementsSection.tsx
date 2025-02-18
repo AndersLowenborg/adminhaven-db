@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import {
   UsersRoundIcon,
   LockIcon
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStatementVisibility } from "@/hooks/use-statement-visibility";
 import { GroupPreparation } from "./GroupPreparation";
@@ -67,7 +68,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchCurrentRound = async () => {
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
@@ -324,3 +325,4 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
+
