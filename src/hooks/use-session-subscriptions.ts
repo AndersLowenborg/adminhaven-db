@@ -2,9 +2,11 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSessionSubscriptions = (sessionId: number) => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!sessionId) return;
@@ -57,6 +59,17 @@ export const useSessionSubscriptions = (sessionId: number) => {
         },
         (payload) => {
           console.log('Answers update received:', payload);
+          
+          // Show toast notification for new answers
+          if (payload.eventType === 'INSERT') {
+            if (payload.new.respondant_type === 'GROUP') {
+              toast({
+                title: "Group Answer Submitted",
+                description: "Your group leader has submitted an answer for the group.",
+              });
+            }
+          }
+          
           queryClient.invalidateQueries({ queryKey: ['answers', sessionId] });
         }
       )
@@ -68,5 +81,5 @@ export const useSessionSubscriptions = (sessionId: number) => {
       supabase.removeChannel(statementsChannel);
       supabase.removeChannel(answersChannel);
     };
-  }, [sessionId, queryClient]);
+  }, [sessionId, queryClient, toast]);
 };
