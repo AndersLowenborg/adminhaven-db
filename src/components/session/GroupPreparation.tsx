@@ -41,17 +41,11 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         groups[groupIndex].members.push(participant);
       });
 
-      // Get the current active round ID
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('SESSION')
-        .select('has_active_round')
-        .eq('id', answers[0]?.round_id)
-        .single();
-
-      if (sessionError) throw sessionError;
-
-      const activeRoundId = sessionData.has_active_round;
-      if (!activeRoundId) throw new Error('No active round found');
+      // The round ID is directly available in the answers array
+      const roundId = answers[0]?.round_id;
+      if (!roundId) {
+        throw new Error('No round ID found in answers');
+      }
 
       // For each group, create database entries
       for (const group of groups) {
@@ -86,7 +80,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           const { error: roundGroupError } = await supabase
             .from('ROUND_GROUPS')
             .insert([{
-              round_id: activeRoundId,
+              round_id: roundId,
               group_id: groupData.id
             }]);
 
