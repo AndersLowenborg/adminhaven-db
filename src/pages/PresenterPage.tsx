@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -135,37 +134,14 @@ const PresenterPage = () => {
   const { data: groups } = useQuery({
     queryKey: ['presenter-groups', sessionId],
     queryFn: async () => {
-      if (!rounds || rounds.length === 0) {
-        console.log('No rounds available for fetching groups');
+      if (!sessionId) {
+        console.log('No session ID available');
         return [];
       }
 
-      const roundIds = rounds.map(round => round.id);
-      console.log('Fetching groups for rounds:', roundIds);
+      console.log('Fetching groups for session:', sessionId);
 
-      // First get the group IDs associated with these rounds
-      const { data: roundGroups, error: roundGroupsError } = await supabase
-        .from('ROUND_GROUPS')
-        .select('group_id')
-        .in('round_id', roundIds);
-
-      if (roundGroupsError) {
-        console.error('Error fetching round groups:', roundGroupsError);
-        throw roundGroupsError;
-      }
-      
-      console.log('Found round groups:', roundGroups);
-      
-      if (!roundGroups || roundGroups.length === 0) {
-        console.log('No groups found for these rounds');
-        return [];
-      }
-
-      const groupIds = roundGroups.map(rg => rg.group_id);
-      console.log('Fetching details for groups:', groupIds);
-
-      // Then fetch the groups and their members
-      const { data: groups, error: groupsError } = await supabase
+      const { data: groupData, error: groupsError } = await supabase
         .from('GROUP')
         .select(`
           *,
@@ -174,17 +150,27 @@ const PresenterPage = () => {
             member_type
           )
         `)
-        .in('id', groupIds);
+        .in('id', supabase
+          .from('ROUND_GROUPS')
+          .select('group_id')
+          .eq('round_id', supabase
+            .from('SESSION')
+            .select('has_active_round')
+            .eq('id', sessionId)
+            .single()
+            .then(res => res.data?.has_active_round)
+          )
+        );
 
       if (groupsError) {
         console.error('Error fetching groups:', groupsError);
         throw groupsError;
       }
 
-      console.log('Found groups with members:', groups);
-      return groups || [];
+      console.log('Found groups with members:', groupData);
+      return groupData || [];
     },
-    enabled: !!sessionId && !!rounds,
+    enabled: !!sessionId,
   });
 
   useEffect(() => {
