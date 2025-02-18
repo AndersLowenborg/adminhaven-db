@@ -166,7 +166,7 @@ const PresenterPage = () => {
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
         .select('*')  // Changed to select all columns for debugging
-        .eq('round_id', activeRoundId.toString());  // Convert to string to ensure correct comparison
+        .eq('round_id', activeRoundId);  // Keep as number, don't convert to string
 
       if (roundGroupsError) {
         console.error('Error fetching round groups:', roundGroupsError);
