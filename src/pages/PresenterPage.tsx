@@ -171,11 +171,11 @@ const PresenterPage = () => {
         .select(`
           id,
           leader,
-          members:GROUP_MEMBERS!inner(
+          GROUP_MEMBERS!inner (
             id,
             member_id,
             member_type,
-            member:SESSION_USERS!inner(
+            SESSION_USERS!inner (
               id,
               name
             )
@@ -187,9 +187,9 @@ const PresenterPage = () => {
 
       return (groupsData || []).map(group => ({
         ...group,
-        members: group.members.map(member => ({
+        members: group.GROUP_MEMBERS.map(member => ({
           ...member,
-          name: member.member?.name || 'Unknown User'
+          name: member.SESSION_USERS.name || 'Unknown User'
         }))
       }));
     },
