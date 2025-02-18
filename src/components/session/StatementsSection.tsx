@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -177,12 +176,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Statements</h2>
-          <span className="text-sm text-gray-600">
-            Current Round: {currentRound || 'Not started'}
-          </span>
-        </div>
+        <h2 className="text-xl font-semibold">Statements</h2>
         <Button 
           onClick={onAddClick}
           disabled={isAddingStatement || sessionStatus === 'ENDED'}
@@ -240,7 +234,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           );
           const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
-          const currentRoundNumber = activeRound?.round_number || 1;
           const isShowingResults = visibleResults.includes(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
 
@@ -253,7 +246,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                 )}
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-gray-600">
-                    Current Round: {currentRoundNumber}
+                    Current Round: {currentRound || 'Not started'}
                   </span>
                   <div className="flex items-center gap-2 ml-auto">
                     <Button
@@ -325,4 +318,3 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     </div>
   );
 };
-
