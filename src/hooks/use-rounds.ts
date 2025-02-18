@@ -85,31 +85,20 @@ export const useRounds = (sessionId: number) => {
     },
   });
 
-  const endRoundMutation = useMutation({
+  const lockRoundMutation = useMutation({
     mutationFn: async (statementId: number) => {
-      console.log('Ending round for statement:', statementId);
+      console.log('Locking round for statement:', statementId);
       
-      // End the round
+      // Lock the round
       const { error: roundError } = await supabase
         .from('ROUND')
         .update({ 
-          status: 'COMPLETED',
-          ended_at: new Date().toISOString()
+          status: 'LOCKED',
         })
         .eq('statement_id', statementId)
         .eq('status', 'STARTED');
 
       if (roundError) throw roundError;
-
-      // Clear the active round from the session
-      const { error: sessionError } = await supabase
-        .from('SESSION')
-        .update({ 
-          has_active_round: null 
-        })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
 
       return { success: true };
     },
@@ -118,14 +107,14 @@ export const useRounds = (sessionId: number) => {
       queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
       toast({
         title: "Success",
-        description: "Round ended successfully",
+        description: "Round locked successfully",
       });
     },
     onError: (error) => {
-      console.error('Error ending round:', error);
+      console.error('Error locking round:', error);
       toast({
         title: "Error",
-        description: "Failed to end round",
+        description: "Failed to lock round",
         variant: "destructive",
       });
     },
@@ -135,24 +124,12 @@ export const useRounds = (sessionId: number) => {
     mutationFn: async (statementId: number) => {
       console.log('Moving to next round for statement:', statementId);
       
-      // First, end the current round
-      const { error: endError } = await supabase
-        .from('ROUND')
-        .update({ 
-          status: 'COMPLETED',
-          ended_at: new Date().toISOString()
-        })
-        .eq('statement_id', statementId)
-        .eq('status', 'STARTED');
-
-      if (endError) throw endError;
-
       // Get the current round number
       const { data: currentRound, error: currentRoundError } = await supabase
         .from('ROUND')
         .select('round_number')
         .eq('statement_id', statementId)
-        .eq('status', 'COMPLETED')
+        .eq('status', 'LOCKED')
         .order('round_number', { ascending: false })
         .limit(1)
         .single();
@@ -173,7 +150,7 @@ export const useRounds = (sessionId: number) => {
           round_number: nextRoundNumber,
           status: 'STARTED',
           started_at: new Date().toISOString(),
-          respondant_type: 'SESSION_USER'
+          respondant_type: nextRoundNumber === 1 ? 'SESSION_USER' : 'GROUP'
         })
         .select()
         .single();
@@ -208,90 +185,12 @@ export const useRounds = (sessionId: number) => {
     },
   });
 
-  const previousRoundMutation = useMutation({
-    mutationFn: async (statementId: number) => {
-      console.log('Moving to previous round for statement:', statementId);
-      
-      // First, end the current round
-      const { error: endError } = await supabase
-        .from('ROUND')
-        .update({ 
-          status: 'COMPLETED',
-          ended_at: new Date().toISOString()
-        })
-        .eq('statement_id', statementId)
-        .eq('status', 'STARTED');
-
-      if (endError) throw endError;
-
-      // Get the current round number
-      const { data: currentRound, error: currentRoundError } = await supabase
-        .from('ROUND')
-        .select('round_number')
-        .eq('statement_id', statementId)
-        .eq('status', 'COMPLETED')
-        .order('round_number', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (currentRoundError) throw currentRoundError;
-
-      const previousRoundNumber = currentRound.round_number - 1;
-      if (previousRoundNumber < 1) {
-        throw new Error('Already at first round');
-      }
-
-      // Start the previous round
-      const { data: newRound, error: startError } = await supabase
-        .from('ROUND')
-        .insert({
-          id: Date.now(),
-          statement_id: statementId,
-          round_number: previousRoundNumber,
-          status: 'STARTED',
-          started_at: new Date().toISOString(),
-          respondant_type: 'SESSION_USER'
-        })
-        .select()
-        .single();
-
-      if (startError) throw startError;
-
-      // Update the session with the new active round
-      const { error: sessionError } = await supabase
-        .from('SESSION')
-        .update({ has_active_round: newRound.id })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
-
-      return { success: true, round: newRound };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
-      queryClient.invalidateQueries({ queryKey: ['statements', sessionId] });
-      toast({
-        title: "Success",
-        description: "Moved to previous round",
-      });
-    },
-    onError: (error) => {
-      console.error('Error moving to previous round:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to move to previous round",
-        variant: "destructive",
-      });
-    },
-  });
-
   return {
     startRound: startRoundMutation.mutate,
-    endRound: endRoundMutation.mutate,
+    lockRound: lockRoundMutation.mutate,
     nextRound: nextRoundMutation.mutate,
-    previousRound: previousRoundMutation.mutate,
     isStartingRound: startRoundMutation.isPending,
-    isEndingRound: endRoundMutation.isPending,
-    isChangingRound: nextRoundMutation.isPending || previousRoundMutation.isPending,
+    isLockingRound: lockRoundMutation.isPending,
+    isChangingRound: nextRoundMutation.isPending,
   };
 };

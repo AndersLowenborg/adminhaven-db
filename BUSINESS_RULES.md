@@ -29,18 +29,34 @@
 
 ## Round Management
 
+### Round Flow
+1. **Start Round (Play)**
+   - Admin initiates round with Play button
+   - Round status set to STARTED
+   - Users can submit responses
+
+2. **Lock Round**
+   - Admin locks round with Lock button
+   - Round status set to LOCKED
+   - No more responses accepted
+   - Enables "Prepare Groups" functionality
+
+3. **Prepare Groups & Next Round**
+   - Only available when round is LOCKED
+   - Automatically creates next round
+   - Updates SESSION.has_active_round
+   - Re-enables Play button for next round
+
 ### Round Types and Progression
 
 #### First Round (Individual)
 - Every user answers individually
 - No groups in this round
-- Completes when:
-  - All participants have answered, OR
-  - Admin manually completes it
-- Admin can pause/stop round at any time
+- Completes when admin locks it
+- Admin can prepare groups after locking
 
 #### Second Round (Initial Groups)
-- Starts after First Round completion
+- Starts after First Round group preparation
 - Requires more than 2 users from first round
 - Group Formation Rules:
   - 2-3 users → 1 group
@@ -66,11 +82,11 @@
 - This is the final round (maximum 4 rounds)
 
 ### Round Rules
-- Each round must complete before next can start
+- Each round must be locked before moving to next
 - Admin can toggle result visibility at any time for any round
 - Only group leaders can submit answers for their group
-- Admin can manually complete any round
-- Admin can pause/stop rounds at any time
+- Groups can only be prepared after round is locked
+- Admin controls round progression through Lock and Prepare Groups actions
 
 ## Statement Management
 
@@ -82,7 +98,7 @@
 ## Group Management
 
 ### Group Formation Rules
-- Groups are formed automatically after first round
+- Groups are formed automatically after first round is locked
 - Group size is determined by total participant count
 - Each group must have a leader
 - Only group leaders can submit answers
@@ -95,3 +111,4 @@
 - Merging occurs in third and fourth rounds
 - Merge size determined by total group count
 - New leader assigned randomly after merging
+

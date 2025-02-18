@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -11,7 +10,8 @@ import {
   PencilIcon,
   TrashIcon,
   ChevronDownIcon,
-  UsersRoundIcon
+  UsersRoundIcon,
+  LockIcon
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -75,11 +75,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
   const canPrepareGroups = (statementId: number) => {
-    const completedRounds = activeRounds.filter(round => 
+    const round = activeRounds.find(round => 
       round.statement_id === statementId && 
-      round.status === 'COMPLETED'
+      round.status === 'LOCKED'
     );
-    return completedRounds.length > 0;
+    return !!round;
   };
 
   const handleGroupPreparation = async (statementId: number) => {
@@ -116,9 +116,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 
       setGroupPreparationData({ participants, answers });
 
+      await onStartRound(statementId);
+
       toast({
         title: "Groups Prepared",
-        description: "Groups have been formed based on participant responses.",
+        description: "Groups have been formed and next round created.",
       });
 
     } catch (error) {
@@ -216,12 +218,15 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       <div className="space-y-4">
         {statements.map((statement) => {
           const activeRound = activeRounds.find(
-            round => round.statement_id === statement.id && round.status === 'STARTED'
+            round => round.statement_id === statement.id && 
+            (round.status === 'STARTED' || round.status === 'LOCKED')
           );
           const hasActiveRound = !!activeRound;
+          const isRoundLocked = activeRound?.status === 'LOCKED';
           const currentRoundNumber = selectedRounds[statement.id] || "1";
           const isShowingResults = visibleResults.includes(statement.id);
           const availableRounds = getAvailableRounds(statement.id);
+          const canStartPrepareGroups = canPrepareGroups(statement.id);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -257,16 +262,16 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      if (hasActiveRound) {
+                      if (hasActiveRound && !isRoundLocked) {
                         onEndRound(statement.id);
-                      } else {
+                      } else if (!hasActiveRound) {
                         onStartRound(statement.id);
                       }
                     }}
-                    disabled={sessionStatus !== 'STARTED'}
-                    className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound ? "text-orange-500" : ""}`}
+                    disabled={sessionStatus !== 'STARTED' || isRoundLocked}
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
                   >
-                    {hasActiveRound ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                    {hasActiveRound && !isRoundLocked ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -280,7 +285,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleGroupPreparation(statement.id)}
-                    className="hover:bg-orange-50 hover:text-orange-600 text-orange-500"
+                    disabled={!canStartPrepareGroups}
+                    className={`hover:bg-orange-50 hover:text-orange-600 ${canStartPrepareGroups ? "text-orange-500" : ""}`}
                   >
                     <UsersRoundIcon className="h-4 w-4" />
                   </Button>
