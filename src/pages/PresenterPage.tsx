@@ -141,39 +141,47 @@ const PresenterPage = () => {
 
       console.log('Fetching groups for session:', sessionId);
 
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+      if (!sessionData?.has_active_round) {
+        console.log('No active round found');
+        return [];
+      }
+
+      const { data: roundGroups, error: roundGroupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('group_id')
+        .eq('round_id', sessionData.has_active_round);
+
+      if (roundGroupsError) throw roundGroupsError;
+      
+      const groupIds = roundGroups.map(rg => rg.group_id).filter(Boolean);
+      if (groupIds.length === 0) {
+        console.log('No groups found for round');
+        return [];
+      }
+
       const { data: groupsData, error: groupsError } = await supabase
         .from('GROUP')
         .select(`
           id,
           leader,
-          members:GROUP_MEMBERS(
+          members:GROUP_MEMBERS!inner(
             id,
             member_id,
             member_type,
-            member:SESSION_USERS(
+            member:SESSION_USERS!inner(
               id,
               name
             )
           )
         `)
-        .in('id', 
-          supabase
-            .from('GROUP')
-            .select('id')
-            .in('id', 
-              supabase
-                .from('ROUND_GROUPS')
-                .select('group_id')
-                .eq('round_id', 
-                  supabase
-                    .from('SESSION')
-                    .select('has_active_round')
-                    .eq('id', sessionId)
-                    .single()
-                    .then(({ data }) => data?.has_active_round)
-                )
-            )
-        );
+        .in('id', groupIds);
 
       if (groupsError) throw groupsError;
 
