@@ -1,10 +1,10 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JoinSessionForm } from '@/components/session/JoinSessionForm';
 import { UserResponseForm } from '@/components/session/UserResponseForm';
 import { WaitingPage } from '@/components/session/WaitingPage';
+import { PreviousRoundAnswers } from '@/components/session/PreviousRoundAnswers';
 import { useEffect } from 'react';
 import { Statement } from '@/types/statement';
 import { Session } from '@/types/session';
@@ -196,6 +196,50 @@ const UserPage = () => {
     enabled: !!userData?.id && !!session?.has_active_round,
   });
 
+  const {
+    data: previousRoundAnswers,
+    isLoading: isLoadingPreviousAnswers
+  } = useQuery({
+    queryKey: ['previous-round-answers', sessionId, currentRound?.round_number, groupData?.groupMembers],
+    queryFn: async () => {
+      if (!currentRound?.round_number || !groupData?.groupMembers || currentRound.round_number <= 1) {
+        return null;
+      }
+
+      const { data: prevRound, error: prevRoundError } = await supabase
+        .from('ROUND')
+        .select('id, statement_id')
+        .eq('statement_id', currentRound.statement_id)
+        .eq('round_number', currentRound.round_number - 1)
+        .single();
+
+      if (prevRoundError || !prevRound) return null;
+
+      const memberIds = groupData.groupMembers.map(m => m.id);
+      const { data: answers, error: answersError } = await supabase
+        .from('ANSWER')
+        .select(`
+          agreement_level,
+          confidence_level,
+          comment,
+          respondant_id
+        `)
+        .eq('round_id', prevRound.id)
+        .in('respondant_id', memberIds);
+
+      if (answersError) return null;
+
+      return answers.map(answer => {
+        const member = groupData.groupMembers.find(m => m.id === answer.respondant_id);
+        return {
+          ...answer,
+          respondant_name: member?.name || 'Unknown'
+        };
+      });
+    },
+    enabled: !!currentRound?.round_number && !!groupData?.groupMembers && currentRound.round_number > 1,
+  });
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -241,7 +285,7 @@ const UserPage = () => {
     };
   }, [sessionId, session?.has_active_round]);
 
-  if (isLoadingSession || isLoadingUser || isLoadingRound || isLoadingAnswer || isLoadingGroup) {
+  if (isLoadingSession || isLoadingUser || isLoadingRound || isLoadingAnswer || isLoadingGroup || isLoadingPreviousAnswers) {
     return (
       <div className="container mx-auto p-8">
         <div className="text-center text-gray-600">Loading...</div>
@@ -280,7 +324,8 @@ const UserPage = () => {
       userData,
       currentRound,
       userAnswer,
-      groupData
+      groupData,
+      previousRoundAnswers
     });
 
     if (session.status === 'PUBLISHED' && !userData) {
@@ -304,9 +349,16 @@ const UserPage = () => {
         );
       }
 
-      if (currentRound.status === 'STARTED') {
-        if (!userAnswer) {
-          return (
+      return (
+        <div className="space-y-8">
+          {previousRoundAnswers && previousRoundAnswers.length > 0 && (
+            <PreviousRoundAnswers 
+              answers={previousRoundAnswers}
+              statement={currentRound.statement.statement || ''}
+            />
+          )}
+          
+          {currentRound.status === 'STARTED' && !userAnswer ? (
             <UserResponseForm 
               statement={getFormProps(currentRound.statement)}
               onSubmit={() => {
@@ -318,15 +370,9 @@ const UserPage = () => {
               }}
               groupData={groupData}
             />
-          );
-        } else {
-          return <WaitingPage />;
-        }
-      }
-
-      return (
-        <div className="text-center text-gray-600">
-          Waiting for the next statement...
+          ) : (
+            <WaitingPage />
+          )}
         </div>
       );
     }
