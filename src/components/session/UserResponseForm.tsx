@@ -8,7 +8,8 @@ import { WaitingPage } from './WaitingPage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Users2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 interface UserResponseFormProps {
   statement: {
@@ -17,9 +18,13 @@ interface UserResponseFormProps {
     status: string;
   };
   onSubmit: () => void;
+  groupData?: {
+    isLeader: boolean;
+    groupMembers: { name: string }[];
+  };
 }
 
-export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps) => {
+export const UserResponseForm = ({ statement, onSubmit, groupData }: UserResponseFormProps) => {
   const [agreementLevel, setAgreementLevel] = React.useState(5);
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -146,6 +151,39 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
     return <WaitingPage />;
   }
 
+  // Show group member view if user is in a group but not the leader
+  if (groupData && !groupData.isLeader) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-xl">{statement.content}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Alert className="bg-blue-50 border-blue-200">
+            <Users2 className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-600">Group Discussion Required</AlertTitle>
+            <AlertDescription>
+              Agree with the members of your group. The group leader will submit the answer.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4">
+            <h3 className="font-medium text-lg">Your Group Members:</h3>
+            <Table>
+              <TableBody>
+                {groupData.groupMembers.map((member, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{member.name}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
@@ -161,6 +199,18 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
             </AlertDescription>
           </Alert>
         )}
+        
+        {groupData?.isLeader && (
+          <Alert className="bg-orange-50 border-orange-200 mb-4">
+            <Users2 className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-600">You are the Group Leader</AlertTitle>
+            <AlertDescription>
+              As the group leader, you are responsible for submitting the answer on behalf of your group.
+              Please discuss with your team members before submitting.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -191,6 +241,21 @@ export const UserResponseForm = ({ statement, onSubmit }: UserResponseFormProps)
               disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
             />
           </div>
+
+          {groupData?.isLeader && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">Your Group Members:</h3>
+              <Table>
+                <TableBody>
+                  {groupData.groupMembers.map((member, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{member.name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
 
         <Button 

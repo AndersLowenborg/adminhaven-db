@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,10 +14,8 @@ const UserPage = () => {
   const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
   const { toast } = useToast();
 
-  // Get user's localStorage name
   const storedName = localStorage.getItem(`session_${sessionId}_name`);
 
-  // 1. Fetch session details
   const { 
     data: session,
     isLoading: isLoadingSession
@@ -40,7 +37,6 @@ const UserPage = () => {
     enabled: !!sessionId,
   });
 
-  // 2. Fetch user data if they've joined
   const {
     data: userData,
     isLoading: isLoadingUser
@@ -63,7 +59,6 @@ const UserPage = () => {
     enabled: !!sessionId && !!storedName,
   });
 
-  // 3. Fetch current round and statement if session is started
   const {
     data: currentRound,
     isLoading: isLoadingRound,
@@ -78,7 +73,6 @@ const UserPage = () => {
 
       console.log('Fetching round data for session.has_active_round:', session.has_active_round);
 
-      // First get the round data
       const { data: roundData, error: roundError } = await supabase
         .from('ROUND')
         .select('*')
@@ -97,11 +91,9 @@ const UserPage = () => {
         return null;
       }
 
-      // Log the statement ID we're about to query
       console.log('Fetching statement with ID:', roundData.statement_id);
 
       try {
-        // Then get the statement data
         const { data: statementData, error: statementError } = await supabase
           .from('STATEMENT')
           .select('id, statement, description, session_id')
@@ -120,7 +112,6 @@ const UserPage = () => {
           return null;
         }
 
-        // Return the data in the expected format
         return {
           ...roundData,
           statement: statementData
@@ -138,7 +129,6 @@ const UserPage = () => {
     retry: false
   });
 
-  // 4. Fetch user's answer for current round
   const {
     data: userAnswer,
     isLoading: isLoadingAnswer
@@ -154,20 +144,62 @@ const UserPage = () => {
         .eq('round_id', session.has_active_round)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows returned" error
+      if (error && error.code !== 'PGRST116') throw error;
       console.log('User answer:', data);
       return data;
     },
     enabled: !!userData?.id && !!session?.has_active_round,
   });
 
-  // Set up real-time subscriptions for updates
+  const {
+    data: groupData,
+    isLoading: isLoadingGroup
+  } = useQuery({
+    queryKey: ['group-data', sessionId, userData?.id, session?.has_active_round],
+    queryFn: async () => {
+      if (!userData?.id || !session?.has_active_round) return null;
+
+      const { data: roundGroups, error: roundGroupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('groups_id')
+        .eq('round_id', session.has_active_round)
+        .single();
+
+      if (roundGroupsError || !roundGroups) return null;
+
+      const { data: group, error: groupError } = await supabase
+        .from('GROUPS')
+        .select(`
+          id,
+          leader,
+          group_members:GROUP_MEMBERS(member_id)
+        `)
+        .eq('id', roundGroups.groups_id)
+        .single();
+
+      if (groupError || !group) return null;
+
+      const memberIds = group.group_members.map(m => m.member_id).filter(Boolean);
+      const { data: members, error: membersError } = await supabase
+        .from('SESSION_USERS')
+        .select('id, name')
+        .in('id', memberIds);
+
+      if (membersError) return null;
+
+      return {
+        isLeader: group.leader === userData.id,
+        groupMembers: members || []
+      };
+    },
+    enabled: !!userData?.id && !!session?.has_active_round,
+  });
+
   useEffect(() => {
     if (!sessionId) return;
 
     console.log('Setting up subscriptions for session:', sessionId);
 
-    // Subscribe to session changes
     const sessionChannel = supabase
       .channel('session-changes')
       .on(
@@ -185,7 +217,6 @@ const UserPage = () => {
       )
       .subscribe();
 
-    // Subscribe to round changes
     const roundChannel = supabase
       .channel('round-changes')
       .on(
@@ -203,15 +234,13 @@ const UserPage = () => {
       )
       .subscribe();
 
-    // Cleanup subscriptions
     return () => {
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(roundChannel);
     };
   }, [sessionId, session?.has_active_round]);
 
-  // Loading states
-  if (isLoadingSession || isLoadingUser || isLoadingRound || isLoadingAnswer) {
+  if (isLoadingSession || isLoadingUser || isLoadingRound || isLoadingAnswer || isLoadingGroup) {
     return (
       <div className="container mx-auto p-8">
         <div className="text-center text-gray-600">Loading...</div>
@@ -219,7 +248,6 @@ const UserPage = () => {
     );
   }
 
-  // Error states
   if (!session) {
     return (
       <div className="container mx-auto p-8">
@@ -228,7 +256,6 @@ const UserPage = () => {
     );
   }
 
-  // Session status checks
   if (session.status === 'UNPUBLISHED') {
     return (
       <div className="container mx-auto p-8">
@@ -239,30 +266,27 @@ const UserPage = () => {
     );
   }
 
-  // Map statement for form props
   const getFormProps = (statement: Statement) => ({
     id: statement.id,
     content: statement.statement || '',
-    status: 'STARTED'
+    status: 'STARTED',
+    groupData: groupData || undefined
   });
 
-  // Main content render
   const renderContent = () => {
     console.log('Rendering content with:', {
       session,
       userData,
       currentRound,
-      userAnswer
+      userAnswer,
+      groupData
     });
 
-    // If session is published but user hasn't joined
     if (session.status === 'PUBLISHED' && !userData) {
       return <JoinSessionForm />;
     }
 
-    // If session is started
     if (session.status === 'STARTED') {
-      // Check if user has joined
       if (!userData) {
         return (
           <div className="text-center text-red-500">
@@ -271,7 +295,6 @@ const UserPage = () => {
         );
       }
 
-      // Check for active round and its statement
       if (!currentRound?.statement) {
         return (
           <div className="text-center text-gray-600">
@@ -280,7 +303,6 @@ const UserPage = () => {
         );
       }
 
-      // Check round status and user answer
       if (currentRound.status === 'STARTED') {
         if (!userAnswer) {
           return (
