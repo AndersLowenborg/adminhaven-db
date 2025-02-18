@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -64,6 +65,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const { visibleResults, toggleVisibility } = useStatementVisibility(sessionId);
   const [groupPreparationData, setGroupPreparationData] = useState<{ participants: any[], answers: any[] } | null>(null);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
+  const [currentRoundStatus, setCurrentRoundStatus] = useState<string | null>(null);
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
@@ -83,7 +85,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       if (sessionData.has_active_round) {
         const { data: roundData, error: roundError } = await supabase
           .from('ROUND')
-          .select('round_number')
+          .select('round_number, status')
           .eq('id', sessionData.has_active_round)
           .single();
 
@@ -93,8 +95,10 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         }
 
         setCurrentRound(roundData.round_number);
+        setCurrentRoundStatus(roundData.status);
       } else {
         setCurrentRound(null);
+        setCurrentRoundStatus(null);
       }
     };
 
@@ -247,6 +251,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-gray-600">
                     Current Round: {currentRound || 'Not started'}
+                    {currentRoundStatus && ` (${currentRoundStatus})`}
                   </span>
                   <div className="flex items-center gap-2 ml-auto">
                     <Button
