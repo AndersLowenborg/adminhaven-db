@@ -24,8 +24,47 @@ export const useRounds = (sessionId: number) => {
         if (sessionError) throw sessionError;
       }
 
-      // Get the last round number for this statement
-      const { data: existingRounds, error: roundsError } = await supabase
+      // First, check if there's a NOT_STARTED round we can use
+      const { data: existingRound, error: existingRoundError } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('statement_id', statementId)
+        .eq('status', 'NOT_STARTED')
+        .order('round_number', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingRoundError && existingRoundError.code !== 'PGRST116') throw existingRoundError;
+
+      if (existingRound) {
+        // Update the existing round to STARTED
+        const { data: updatedRound, error: updateError } = await supabase
+          .from('ROUND')
+          .update({
+            status: 'STARTED',
+            started_at: new Date().toISOString()
+          })
+          .eq('id', existingRound.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        // Update the session with the active round ID
+        const { error: updateSessionError } = await supabase
+          .from('SESSION')
+          .update({ 
+            has_active_round: updatedRound.id 
+          })
+          .eq('id', sessionId);
+
+        if (updateSessionError) throw updateSessionError;
+
+        return { success: true, round: updatedRound };
+      }
+
+      // If no NOT_STARTED round exists, create a new one
+      const { data: lastRound, error: roundsError } = await supabase
         .from('ROUND')
         .select('round_number')
         .eq('statement_id', statementId)
@@ -34,20 +73,20 @@ export const useRounds = (sessionId: number) => {
 
       if (roundsError) throw roundsError;
 
-      const nextRoundNumber = existingRounds && existingRounds.length > 0 
-        ? existingRounds[0].round_number + 1 
+      const nextRoundNumber = lastRound && lastRound.length > 0 
+        ? lastRound[0].round_number + 1 
         : 1;
 
-      // Create the new round with required fields
+      // Create the new round
       const { data: newRound, error: roundError } = await supabase
         .from('ROUND')
         .insert({
-          id: Date.now(), // Generate a unique ID
+          id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'STARTED',
           started_at: new Date().toISOString(),
-          respondant_type: 'SESSION_USER' // Set default respondant type
+          respondant_type: 'SESSION_USER'
         })
         .select()
         .single();
@@ -148,7 +187,7 @@ export const useRounds = (sessionId: number) => {
           id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
-          status: 'NOT_STARTED',  // Changed from 'STARTED' to 'NOT_STARTED'
+          status: 'NOT_STARTED',
           started_at: new Date().toISOString(),
           respondant_type: nextRoundNumber === 1 ? 'SESSION_USER' : 'GROUP'
         })
