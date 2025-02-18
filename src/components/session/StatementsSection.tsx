@@ -237,20 +237,18 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
       <div className="space-y-4">
         {statements.map((statement) => {
           const activeRound = activeRounds?.find(
-            round => round.statement_id === statement.id && 
-            (round.status === 'STARTED' || round.status === 'LOCKED' || round.status === 'NOT_STARTED')
+            round => round.statement_id === statement.id
           );
           
           console.log('Active round for statement', statement.id, ':', activeRound);
           
-          const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
-          const isRoundNotStarted = activeRound?.status === 'NOT_STARTED';
+          const isRoundStarted = activeRound?.status === 'STARTED';
           const isShowingResults = visibleResults.includes(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
 
           const isPlayButtonEnabled = sessionStatus === 'STARTED' && 
-            (!hasActiveRound || isRoundNotStarted);
+            (!activeRound || (isRoundLocked && currentRound !== null));
 
           return (
             <Card key={statement.id} className="p-6">
@@ -269,16 +267,16 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (hasActiveRound && !isRoundLocked) {
+                        if (isRoundStarted) {
                           onEndRound(statement.id);
-                        } else if (!hasActiveRound || isRoundNotStarted) {
+                        } else {
                           onStartRound(statement.id);
                         }
                       }}
                       disabled={!isPlayButtonEnabled}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${isRoundStarted ? "text-orange-500" : ""}`}
                     >
-                      {hasActiveRound && !isRoundLocked && !isRoundNotStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                      {isRoundStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="ghost"
