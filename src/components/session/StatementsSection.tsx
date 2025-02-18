@@ -239,16 +239,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
           const isRoundNotStarted = activeRound?.status === 'NOT_STARTED';
-          const isRoundStarted = activeRound?.status === 'STARTED';
           const isShowingResults = visibleResults.includes(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
-
-          // Button should be enabled if session is STARTED and either:
-          // 1. Round is NOT_STARTED
-          // 2. No active round exists
-          // 3. Round is STARTED (to show lock button)
-          const isPlayButtonDisabled = sessionStatus !== 'STARTED' || 
-            (hasActiveRound && !isRoundStarted && !isRoundNotStarted);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -267,16 +259,16 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (isRoundStarted) {
+                        if (hasActiveRound && !isRoundLocked) {
                           onEndRound(statement.id);
                         } else if (!hasActiveRound || isRoundNotStarted) {
                           onStartRound(statement.id);
                         }
                       }}
-                      disabled={isPlayButtonDisabled}
-                      className={`hover:bg-orange-50 hover:text-orange-600 ${isRoundStarted ? "text-orange-500" : ""}`}
+                      disabled={sessionStatus !== 'STARTED' || (isRoundLocked && !isRoundNotStarted)}
+                      className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
                     >
-                      {isRoundStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                      {hasActiveRound && !isRoundLocked && !isRoundNotStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="ghost"
