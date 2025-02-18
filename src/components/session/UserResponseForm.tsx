@@ -9,7 +9,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Users2 } from "lucide-react";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
 interface UserResponseFormProps {
   statement: {
@@ -166,19 +165,6 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
               Agree with the members of your group. The group leader will submit the answer.
             </AlertDescription>
           </Alert>
-
-          <div className="space-y-4">
-            <h3 className="font-medium text-lg">Your Group Members:</h3>
-            <Table>
-              <TableBody>
-                {groupData.groupMembers.map((member, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{member.name}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
         </CardContent>
       </Card>
     );
@@ -241,21 +227,6 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
               disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
             />
           </div>
-
-          {groupData?.isLeader && (
-            <div className="space-y-4">
-              <h3 className="font-medium text-lg">Your Group Members:</h3>
-              <Table>
-                <TableBody>
-                  {groupData.groupMembers.map((member, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{member.name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
         </div>
 
         <Button 
