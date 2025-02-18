@@ -137,7 +137,6 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
 
         if (roundGroupError) throw roundGroupError;
 
-        // Save the group's answer
         const { error: answerError } = await supabase
           .from('ANSWER')
           .insert({
@@ -170,6 +169,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
     }
   };
 
+  // Check if already submitted, show waiting page
   if (isSubmitted) {
     return <WaitingPage />;
   }
