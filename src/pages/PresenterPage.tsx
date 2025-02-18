@@ -178,10 +178,10 @@ const PresenterPage = () => {
           group:GROUP(
             id,
             leader,
-            members:GROUP_MEMBERS(
+            members:GROUP_MEMBERS!inner(
               member_id,
               member_type,
-              user:SESSION_USERS!inner(
+              user:SESSION_USERS(
                 id,
                 name
               )
@@ -203,13 +203,17 @@ const PresenterPage = () => {
       }
 
       // Transform the data to match our expected format
-      const groups = roundGroups.map(rg => ({
-        ...rg.group,
-        members: rg.group.members.map(member => ({
-          ...member,
-          name: member.user.name
-        }))
-      }));
+      const groups = roundGroups
+        .filter(rg => rg.group) // Ensure group exists
+        .map(rg => ({
+          ...rg.group,
+          members: rg.group.members
+            .filter(member => member.user) // Filter out members without user data
+            .map(member => ({
+              ...member,
+              name: member.user?.name || 'Unknown User'
+            }))
+        }));
 
       console.log('Processed groups:', groups);
       return groups;
