@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,46 @@ const PresenterPage = () => {
 
       console.log('Fetching groups for session:', sessionId);
 
+      // First get the active round ID
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('SESSION')
+        .select('has_active_round')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        throw sessionError;
+      }
+
+      const activeRoundId = sessionData?.has_active_round;
+      if (!activeRoundId) {
+        console.log('No active round found');
+        return [];
+      }
+
+      console.log('Active round ID:', activeRoundId);
+
+      // Get the group IDs for the active round
+      const { data: roundGroups, error: roundGroupsError } = await supabase
+        .from('ROUND_GROUPS')
+        .select('group_id')
+        .eq('round_id', activeRoundId);
+
+      if (roundGroupsError) {
+        console.error('Error fetching round groups:', roundGroupsError);
+        throw roundGroupsError;
+      }
+
+      if (!roundGroups || roundGroups.length === 0) {
+        console.log('No groups found for active round');
+        return [];
+      }
+
+      const groupIds = roundGroups.map(rg => rg.group_id);
+      console.log('Group IDs:', groupIds);
+
+      // Finally fetch the groups with their members
       const { data: groupData, error: groupsError } = await supabase
         .from('GROUP')
         .select(`
@@ -150,17 +191,7 @@ const PresenterPage = () => {
             member_type
           )
         `)
-        .in('id', supabase
-          .from('ROUND_GROUPS')
-          .select('group_id')
-          .eq('round_id', supabase
-            .from('SESSION')
-            .select('has_active_round')
-            .eq('id', sessionId)
-            .single()
-            .then(res => res.data?.has_active_round)
-          )
-        );
+        .in('id', groupIds);
 
       if (groupsError) {
         console.error('Error fetching groups:', groupsError);
