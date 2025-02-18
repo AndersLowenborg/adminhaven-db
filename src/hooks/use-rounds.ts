@@ -32,9 +32,9 @@ export const useRounds = (sessionId: number) => {
         .eq('status', 'NOT_STARTED')
         .order('round_number', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (existingRoundError && existingRoundError.code !== 'PGRST116') throw existingRoundError;
+      if (existingRoundError) throw existingRoundError;
 
       if (existingRound) {
         // Update the existing round to STARTED
@@ -69,13 +69,12 @@ export const useRounds = (sessionId: number) => {
         .select('round_number')
         .eq('statement_id', statementId)
         .order('round_number', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
       if (roundsError) throw roundsError;
 
-      const nextRoundNumber = lastRound && lastRound.length > 0 
-        ? lastRound[0].round_number + 1 
-        : 1;
+      const nextRoundNumber = lastRound ? lastRound.round_number + 1 : 1;
 
       // Create the new round
       const { data: newRound, error: roundError } = await supabase
@@ -171,11 +170,11 @@ export const useRounds = (sessionId: number) => {
         .eq('status', 'LOCKED')
         .order('round_number', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (currentRoundError) throw currentRoundError;
 
-      const nextRoundNumber = currentRound.round_number + 1;
+      const nextRoundNumber = currentRound ? currentRound.round_number + 1 : 1;
       if (nextRoundNumber > 4) {
         throw new Error('Maximum round number reached');
       }
