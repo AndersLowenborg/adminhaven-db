@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Statement } from "@/types/statement";
 import { Card } from "@/components/ui/card";
@@ -71,6 +70,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
 
   useEffect(() => {
     const fetchCurrentRound = async () => {
+      console.log('Fetching current round for session:', sessionId);
+      
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
         .select('has_active_round')
@@ -82,10 +83,12 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         return;
       }
 
+      console.log('Session data:', sessionData);
+
       if (sessionData.has_active_round) {
         const { data: roundData, error: roundError } = await supabase
           .from('ROUND')
-          .select('round_number, status')
+          .select('round_number, status, statement_id')
           .eq('id', sessionData.has_active_round)
           .single();
 
@@ -94,6 +97,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           return;
         }
 
+        console.log('Round data:', roundData);
         setCurrentRound(roundData.round_number);
         setCurrentRoundStatus(roundData.status);
       } else {
@@ -236,11 +240,17 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
             round => round.statement_id === statement.id && 
             (round.status === 'STARTED' || round.status === 'LOCKED' || round.status === 'NOT_STARTED')
           );
+          
+          console.log('Active round for statement', statement.id, ':', activeRound);
+          
           const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
           const isRoundNotStarted = activeRound?.status === 'NOT_STARTED';
           const isShowingResults = visibleResults.includes(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
+
+          const isPlayButtonEnabled = sessionStatus === 'STARTED' && 
+            (!hasActiveRound || isRoundNotStarted);
 
           return (
             <Card key={statement.id} className="p-6">
@@ -265,7 +275,7 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                           onStartRound(statement.id);
                         }
                       }}
-                      disabled={sessionStatus !== 'STARTED' || (isRoundLocked && !isRoundNotStarted)}
+                      disabled={!isPlayButtonEnabled}
                       className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
                     >
                       {hasActiveRound && !isRoundLocked && !isRoundNotStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
