@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Cell } from 'recharts';
 import { ChartTooltip } from "@/components/ui/chart";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -30,9 +32,36 @@ interface StatementResultsProps {
 }
 
 export const StatementResults = ({ statement, answers, isVisible }: StatementResultsProps) => {
+  const [activeRoundAnswers, setActiveRoundAnswers] = useState<Answer[]>([]);
+
+  useEffect(() => {
+    const fetchActiveRoundAnswers = async () => {
+      // Get the active round for this statement
+      const { data: activeRound, error: roundError } = await supabase
+        .from('ROUND')
+        .select('id')
+        .eq('statement_id', statement.id)
+        .eq('status', 'STARTED')
+        .single();
+
+      if (roundError) {
+        console.error('Error fetching active round:', roundError);
+        return;
+      }
+
+      // Filter answers for the active round
+      const filteredAnswers = answers.filter(answer => answer.round_id === activeRound.id);
+      setActiveRoundAnswers(filteredAnswers);
+    };
+
+    if (isVisible && statement.id) {
+      fetchActiveRoundAnswers();
+    }
+  }, [isVisible, statement.id, answers]);
+
   if (!isVisible) return null;
 
-  const chartData = answers.map((answer, index) => ({
+  const chartData = activeRoundAnswers.map((answer, index) => ({
     x: answer.agreement_level,
     y: answer.confidence_level,
     agreement: answer.agreement_level,
@@ -93,11 +122,11 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
           </div>
         ) : (
           <div className="h-64 w-full flex items-center justify-center text-[#8E9196]">
-            No answers yet
+            No answers yet for the active round
           </div>
         )}
         <div className="mt-4 text-sm text-[#8E9196]">
-          Total responses: {answers.length}
+          Total responses for active round: {activeRoundAnswers.length}
         </div>
       </Card>
     </>
