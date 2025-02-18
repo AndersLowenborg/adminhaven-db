@@ -141,90 +141,51 @@ const PresenterPage = () => {
 
       console.log('Fetching groups for session:', sessionId);
 
-      // First get the active round ID and details
+      // Get the active round ID from the session
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
-        .select(`
-          *,
-          active_round:ROUND!has_active_round(
-            id,
-            round_number,
-            status,
-            statement:STATEMENT(*)
-          )
-        `)
+        .select('has_active_round')
         .eq('id', sessionId)
         .single();
 
-      if (sessionError) {
-        console.error('Error fetching session:', sessionError);
-        throw sessionError;
-      }
-
-      const activeRoundId = sessionData?.has_active_round;
+      if (sessionError) throw sessionError;
+      
+      const activeRoundId = sessionData.has_active_round;
       if (!activeRoundId) {
         console.log('No active round found');
         return [];
       }
 
-      console.log('Active round details:', sessionData.active_round);
-
-      // Get the groups with all their relationships for the active round
-      const { data: roundGroups, error: roundGroupsError } = await supabase
+      // Simple query to get groups and their members for the active round
+      const { data: roundGroups, error: groupsError } = await supabase
         .from('ROUND_GROUPS')
         .select(`
-          group_id,
-          round_id,
           group:GROUP(
             id,
             leader,
             members:GROUP_MEMBERS(
               member_id,
-              member_type
+              member_type,
+              member:SESSION_USERS(
+                id,
+                name
+              )
             )
           )
         `)
         .eq('round_id', activeRoundId);
 
-      if (roundGroupsError) {
-        console.error('Error fetching round groups:', roundGroupsError);
-        throw roundGroupsError;
-      }
+      if (groupsError) throw groupsError;
 
-      // Get all member IDs from the groups
-      const memberIds = roundGroups
-        .filter(rg => rg.group)
-        .flatMap(rg => rg.group.members.map(m => m.member_id))
-        .filter(id => id !== null);
-
-      // Fetch all users in a separate query
-      const { data: users, error: usersError } = await supabase
-        .from('SESSION_USERS')
-        .select('id, name')
-        .in('id', memberIds);
-
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        throw usersError;
-      }
-
-      // Create a map of user data for easy lookup
-      const userMap = new Map(users?.map(user => [user.id, user]));
-
-      // Transform the data to match our expected format
-      const groups = roundGroups
+      return roundGroups
         .filter(rg => rg.group)
         .map(rg => ({
           ...rg.group,
-          members: rg.group.members
-            .map(member => ({
-              ...member,
-              name: userMap.get(member.member_id)?.name || 'Unknown User'
-            }))
+          members: rg.group.members.map(member => ({
+            ...member,
+            name: member.member?.name || 'Unknown User'
+          }))
         }));
-
-      console.log('Processed groups:', groups);
-      return groups;
     },
     enabled: !!sessionId,
   });
