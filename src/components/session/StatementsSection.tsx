@@ -234,10 +234,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         {statements.map((statement) => {
           const activeRound = activeRounds?.find(
             round => round.statement_id === statement.id && 
-            (round.status === 'STARTED' || round.status === 'LOCKED')
+            (round.status === 'STARTED' || round.status === 'LOCKED' || round.status === 'NOT_STARTED')
           );
           const hasActiveRound = !!activeRound;
           const isRoundLocked = activeRound?.status === 'LOCKED';
+          const isRoundNotStarted = activeRound?.status === 'NOT_STARTED';
           const isShowingResults = visibleResults.includes(statement.id);
           const canStartPrepareGroups = canPrepareGroups(statement.id);
 
@@ -260,14 +261,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
                       onClick={() => {
                         if (hasActiveRound && !isRoundLocked) {
                           onEndRound(statement.id);
-                        } else if (!hasActiveRound) {
+                        } else if (!hasActiveRound || isRoundNotStarted) {
                           onStartRound(statement.id);
                         }
                       }}
-                      disabled={sessionStatus !== 'STARTED' || isRoundLocked}
+                      disabled={sessionStatus !== 'STARTED' || (isRoundLocked && !isRoundNotStarted)}
                       className={`hover:bg-orange-50 hover:text-orange-600 ${hasActiveRound && !isRoundLocked ? "text-orange-500" : ""}`}
                     >
-                      {hasActiveRound && !isRoundLocked ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                      {hasActiveRound && !isRoundLocked && !isRoundNotStarted ? <LockIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="ghost"
