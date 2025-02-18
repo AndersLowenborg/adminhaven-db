@@ -12,6 +12,7 @@ export const GroupIdViewer = () => {
         .select('id');
       
       if (error) throw error;
+      console.log('Raw database response for GROUP ids:', data);
       return data;
     }
   });
