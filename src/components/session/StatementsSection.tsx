@@ -245,9 +245,11 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
           const isRoundLocked = activeRound?.status === 'LOCKED';
           const isRoundStarted = activeRound?.status === 'STARTED';
           const isShowingResults = visibleResults.includes(statement.id);
-          const canStartPrepareGroups = canPrepareGroups(statement.id);
+
+          const canStartPrepareGroups = activeRound?.status === 'LOCKED';
 
           const isPlayButtonEnabled = sessionStatus === 'STARTED' && 
+            !isRoundStarted && 
             (!activeRound || 
              currentRoundStatus === 'NOT_STARTED' || 
              (isRoundLocked && currentRound !== null));
