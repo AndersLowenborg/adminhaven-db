@@ -39,19 +39,76 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
   const handleDelete = async (sessionId: number) => {
     try {
-      console.log('Attempting to delete session:', sessionId);
-      
+      console.log('Attempting to delete session and related data:', sessionId);
+
+      // 1. Delete answers for all rounds in the session
+      const { data: rounds } = await supabase
+        .from('ROUND')
+        .select('id')
+        .eq('statement_id', supabase.from('STATEMENT').select('id').eq('session_id', sessionId));
+
+      if (rounds) {
+        await supabase
+          .from('ANSWER')
+          .delete()
+          .in('round_id', rounds.map(r => r.id));
+      }
+
+      // 2. Delete round_groups and associated groups
+      const { data: roundGroups } = await supabase
+        .from('ROUND_GROUPS')
+        .select('group_id')
+        .in('round_id', rounds?.map(r => r.id) || []);
+
+      if (roundGroups) {
+        // Delete group members first
+        await supabase
+          .from('GROUP_MEMBERS')
+          .delete()
+          .in('parent_group_id', roundGroups.map(rg => rg.group_id));
+
+        // Delete the groups
+        await supabase
+          .from('GROUP')
+          .delete()
+          .in('id', roundGroups.map(rg => rg.group_id));
+
+        // Delete round_groups
+        await supabase
+          .from('ROUND_GROUPS')
+          .delete()
+          .in('group_id', roundGroups.map(rg => rg.group_id));
+      }
+
+      // 3. Delete rounds
+      await supabase
+        .from('ROUND')
+        .delete()
+        .in('statement_id', supabase.from('STATEMENT').select('id').eq('session_id', sessionId));
+
+      // 4. Delete statements
+      await supabase
+        .from('STATEMENT')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 5. Delete session users
+      await supabase
+        .from('SESSION_USERS')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 6. Finally, delete the session
       const { error: deleteSessionError } = await supabase
         .from('SESSION')
         .delete()
         .eq('id', sessionId);
 
       if (deleteSessionError) {
-        console.error('Error deleting session:', deleteSessionError);
         throw deleteSessionError;
       }
 
-      console.log('Successfully deleted session:', sessionId);
+      console.log('Successfully deleted session and related data:', sessionId);
       
       queryClient.invalidateQueries({ 
         queryKey: ['admin-sessions', authSession?.user?.id] 
@@ -59,7 +116,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
 
       toast({
         title: "Success",
-        description: "Session deleted successfully",
+        description: "Session and all related data deleted successfully",
       });
     } catch (error) {
       console.error('Failed to delete session:', error);
@@ -158,7 +215,7 @@ export const SessionsTable = ({ sessions }: SessionsTableProps) => {
             <DialogTitle>Delete Session</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this session? This action cannot be undone.
-              All associated data including statements and responses will be permanently deleted.
+              All associated data including statements, rounds, groups, and responses will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
