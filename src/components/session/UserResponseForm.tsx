@@ -97,35 +97,59 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
       // Get the active round for this statement
       const { data: activeRound, error: roundError } = await supabase
         .from('ROUND')
-        .select('id')
+        .select('id, round_number')
         .eq('statement_id', statement.id)
         .eq('status', 'STARTED')
         .single();
 
       if (roundError) throw roundError;
 
-      // Get the user's session_user record
-      const { data: userData, error: userError } = await supabase
-        .from('SESSION_USERS')
-        .select('id')
-        .eq('session_id', sessionId)
-        .eq('name', storedName)
-        .single();
+      if (activeRound.round_number === 1 || !groupData?.isLeader) {
+        // For round 1 or non-leaders, save as individual response
+        const { data: userData, error: userError } = await supabase
+          .from('SESSION_USERS')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('name', storedName)
+          .single();
 
-      if (userError) throw userError;
+        if (userError) throw userError;
 
-      // Submit the answer
-      const { error: answerError } = await supabase
-        .from('ANSWER')
-        .insert({
-          agreement_level: agreementLevel,
-          confidence_level: confidenceLevel,
-          respondant_type: 'SESSION_USER',
-          respondant_id: userData.id,
-          round_id: activeRound.id
-        });
+        const { error: answerError } = await supabase
+          .from('ANSWER')
+          .insert({
+            agreement_level: agreementLevel,
+            confidence_level: confidenceLevel,
+            respondant_type: 'SESSION_USER',
+            respondant_id: userData.id,
+            round_id: activeRound.id
+          });
 
-      if (answerError) throw answerError;
+        if (answerError) throw answerError;
+      } else {
+        // For round 2+ and group leader, save as group response
+        // First get the group ID for this round
+        const { data: roundGroup, error: roundGroupError } = await supabase
+          .from('ROUND_GROUPS')
+          .select('groups_id')
+          .eq('round_id', activeRound.id)
+          .single();
+
+        if (roundGroupError) throw roundGroupError;
+
+        // Save the group's answer
+        const { error: answerError } = await supabase
+          .from('ANSWER')
+          .insert({
+            agreement_level: agreementLevel,
+            confidence_level: confidenceLevel,
+            respondant_type: 'GROUP',
+            respondant_id: roundGroup.groups_id,
+            round_id: activeRound.id
+          });
+
+        if (answerError) throw answerError;
+      }
       
       toast({
         title: "Success",
