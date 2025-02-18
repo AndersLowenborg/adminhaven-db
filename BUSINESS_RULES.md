@@ -88,14 +88,18 @@
 - Groups can only be prepared after round is locked
 - Admin controls round progression through Lock and Prepare Groups actions
 
-## Statement Management
-
-### Statement Rules
-- Statements can only be added/edited/deleted when session is UNPUBLISHED
-- Statements can have optional background information
-- At least one statement required to publish session
-
 ## Group Management
+
+### Group Visibility Rules
+- Groups should only be visible after first round is locked and groups are prepared
+- Groups remain visible throughout all subsequent rounds
+- Group information (members, leaders) should be visible to:
+  - Session admin/presenter at all times
+  - Group members can only see their own group
+- Group display should show:
+  - Group ID/number
+  - List of group members
+  - Group leader (clearly marked)
 
 ### Group Formation Rules
 - Groups are formed automatically after first round is locked
@@ -111,4 +115,11 @@
 - Merging occurs in third and fourth rounds
 - Merge size determined by total group count
 - New leader assigned randomly after merging
+
+## Statement Management
+
+### Statement Rules
+- Statements can only be added/edited/deleted when session is UNPUBLISHED
+- Statements can have optional background information
+- At least one statement required to publish session
 
