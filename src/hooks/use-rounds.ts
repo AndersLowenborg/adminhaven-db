@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -127,27 +126,12 @@ export const useRounds = (sessionId: number) => {
     mutationFn: async (statementId: number) => {
       console.log('Locking round for statement:', statementId);
       
-      // Get the current active round
-      const { data: activeRound, error: activeRoundError } = await supabase
-        .from('ROUND')
-        .select('*')
-        .eq('statement_id', statementId)
-        .eq('status', 'STARTED')
-        .maybeSingle();
-
-      if (activeRoundError) throw activeRoundError;
-      if (!activeRound) {
-        throw new Error('No active round found to lock');
-      }
-
-      // Lock the round
+      // Simply update the round status to LOCKED
       const { error: lockError } = await supabase
         .from('ROUND')
-        .update({ 
-          status: 'LOCKED',
-          ended_at: new Date().toISOString()
-        })
-        .eq('id', activeRound.id);
+        .update({ status: 'LOCKED' })
+        .eq('statement_id', statementId)
+        .eq('status', 'STARTED');
 
       if (lockError) throw lockError;
 
