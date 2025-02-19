@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -79,7 +80,6 @@ export const useRounds = (sessionId: number) => {
       const { data: newRound, error: roundError } = await supabase
         .from('ROUND')
         .insert({
-          id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'STARTED',
@@ -180,7 +180,6 @@ export const useRounds = (sessionId: number) => {
       const { data: newRound, error: startError } = await supabase
         .from('ROUND')
         .insert({
-          id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'NOT_STARTED',
