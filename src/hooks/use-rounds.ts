@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -76,10 +75,11 @@ export const useRounds = (sessionId: number) => {
 
       const nextRoundNumber = lastRound ? lastRound.round_number + 1 : 1;
 
-      // Create the new round without specifying the ID
+      // Create the new round
       const { data: newRound, error: roundError } = await supabase
         .from('ROUND')
         .insert({
+          id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'STARTED',
@@ -176,10 +176,11 @@ export const useRounds = (sessionId: number) => {
         throw new Error('Maximum round number reached');
       }
 
-      // Start the next round with NOT_STARTED status, without specifying ID
+      // Start the next round with NOT_STARTED status
       const { data: newRound, error: startError } = await supabase
         .from('ROUND')
         .insert({
+          id: Date.now(),
           statement_id: statementId,
           round_number: nextRoundNumber,
           status: 'NOT_STARTED',
