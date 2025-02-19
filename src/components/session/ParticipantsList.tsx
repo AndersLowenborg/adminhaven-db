@@ -125,9 +125,9 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
               return (
                 <Badge 
                   key={participant.id}
-                  variant={hasAnswered ? "default" : "secondary"}
+                  variant="secondary"
                   className={`text-sm py-1 px-3 ${
-                    hasAnswered ? "bg-green-500 hover:bg-green-600" : ""
+                    hasAnswered ? 'text-green-600 hover:text-green-700' : ''
                   }`}
                 >
                   {participant.name}
