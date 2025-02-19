@@ -50,7 +50,7 @@ const LoginPage = () => {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div className="text-center space-y-6">
           <img 
-            src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
+            src="/lovable-uploads/8c9bdc85-dff9-48aa-8c01-d2711cab838d.png" 
             alt="Grousion Logo" 
             className="mx-auto h-20 w-auto"
           />
