@@ -49,7 +49,7 @@ export const StatementCard: React.FC<StatementCardProps> = ({
               onStartRound={() => controlProps.onStartRound(statement.id)}
               handleGroupPreparation={() => controlProps.handleGroupPreparation(statement.id)}
               handleToggleResults={() => controlProps.handleToggleResults(statement.id)}
-              onUpdateStatement={() => controlProps.onUpdateStatement(statement.id, statement.statement || '', statement.description || '')}
+              onUpdateStatement={() => controlProps.onUpdateStatement(statement.id, statement.statement, statement.description)}
               onDeleteStatement={() => controlProps.onDeleteStatement(statement.id)}
             />
           </div>
