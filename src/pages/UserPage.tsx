@@ -202,37 +202,42 @@ const UserPage = () => {
   } = useQuery({
     queryKey: ['previous-round-answers', sessionId, currentRound?.round_number, groupData?.groupMembers],
     queryFn: async () => {
-      if (!currentRound?.round_number || !groupData?.groupMembers) {
+      if (!currentRound?.round_number || !groupData?.groupMembers || currentRound.round_number <= 1) {
         return null;
       }
 
-      if (currentRound.round_number > 1) {
-        const memberIds = groupData.groupMembers.map(m => m.id);
-        const { data: answers, error: answersError } = await supabase
-          .from('ANSWER')
-          .select(`
-            agreement_level,
-            confidence_level,
-            comment,
-            respondant_id
-          `)
-          .eq('round_id', currentRound.id)
-          .in('respondant_id', memberIds);
+      const { data: prevRound, error: prevRoundError } = await supabase
+        .from('ROUND')
+        .select('id, statement_id')
+        .eq('statement_id', currentRound.statement_id)
+        .eq('round_number', currentRound.round_number - 1)
+        .single();
 
-        if (answersError) return null;
+      if (prevRoundError || !prevRound) return null;
 
-        return answers.map(answer => {
-          const member = groupData.groupMembers.find(m => m.id === answer.respondant_id);
-          return {
-            ...answer,
-            respondant_name: member?.name || 'Unknown'
-          };
-        });
-      }
+      const memberIds = groupData.groupMembers.map(m => m.id);
+      const { data: answers, error: answersError } = await supabase
+        .from('ANSWER')
+        .select(`
+          agreement_level,
+          confidence_level,
+          comment,
+          respondant_id
+        `)
+        .eq('round_id', prevRound.id)
+        .in('respondant_id', memberIds);
 
-      return null;
+      if (answersError) return null;
+
+      return answers.map(answer => {
+        const member = groupData.groupMembers.find(m => m.id === answer.respondant_id);
+        return {
+          ...answer,
+          respondant_name: member?.name || 'Unknown'
+        };
+      });
     },
-    enabled: !!currentRound?.round_number && !!groupData?.groupMembers,
+    enabled: !!currentRound?.round_number && !!groupData?.groupMembers && currentRound.round_number > 1,
   });
 
   useEffect(() => {
