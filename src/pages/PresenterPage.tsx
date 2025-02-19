@@ -169,20 +169,38 @@ const PresenterPage = () => {
 
       console.log('Found group IDs:', groupIds);
 
-      const { data: groupsData, error: groupsError } = await supabase
-        .from('GROUPS')
-        .select(`
-          id,
-          leader,
-          GROUP_MEMBERS!inner (
+      // Fetch both groups and their answers in parallel
+      const [groupsResult, answersResult] = await Promise.all([
+        supabase
+          .from('GROUPS')
+          .select(`
             id,
-            member_id,
-            member_type
-          )
-        `)
-        .in('id', groupIds);
+            leader,
+            GROUP_MEMBERS!inner (
+              id,
+              member_id,
+              member_type
+            )
+          `)
+          .in('id', groupIds),
+        
+        supabase
+          .from('ANSWER')
+          .select('*')
+          .eq('round_id', sessionData.has_active_round)
+          .eq('respondant_type', 'GROUP')
+          .in('respondant_id', groupIds)
+      ]);
 
-      if (groupsError) throw groupsError;
+      if (groupsResult.error) throw groupsResult.error;
+      if (answersResult.error) throw answersResult.error;
+
+      const groupsData = groupsResult.data || [];
+      const answers = answersResult.data || [];
+      
+      // Create a map of group IDs to their answer status
+      const groupAnswers = new Map(answers.map(answer => [answer.respondant_id, true]));
+
       if (!groupsData) return [];
 
       console.log('Fetched groups data:', groupsData);
@@ -204,6 +222,7 @@ const PresenterPage = () => {
 
       return groupsData.map(group => ({
         ...group,
+        hasAnswered: groupAnswers.has(group.id),
         members: group.GROUP_MEMBERS.map(member => ({
           ...member,
           name: userMap.get(member.member_id) || 'Unknown User'
@@ -374,7 +393,9 @@ const PresenterPage = () => {
                     {groups.map((group) => (
                       <Card key={group.id} className="p-4 bg-white/50 backdrop-blur-sm border border-gray-100">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="font-medium text-gray-800">Group {group.id}</div>
+                          <div className={`font-medium ${group.hasAnswered ? 'text-green-600' : 'text-gray-800'}`}>
+                            Group {group.id}
+                          </div>
                           <Badge variant="secondary" className="text-xs">
                             {group.members.length} members
                           </Badge>
