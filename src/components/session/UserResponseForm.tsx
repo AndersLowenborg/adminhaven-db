@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Users2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface UserResponseFormProps {
   statement: {
@@ -28,6 +35,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   const [confidenceLevel, setConfidenceLevel] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [roundEnded, setRoundEnded] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -170,6 +178,10 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
     };
   }, [statement.id, queryClient]);
 
+  const handleConfirmSubmit = () => {
+    setShowConfirmDialog(true);
+  };
+
   const handleSubmit = async () => {
     console.log('Submit button clicked');
     console.log('Current state:', {
@@ -189,6 +201,9 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
       return;
     }
 
+    setShowConfirmDialog(false);
+    setIsSubmitting(true);
+
     const sessionIdString = window.location.pathname.split('/').pop();
     const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
 
@@ -197,7 +212,6 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
       return;
     }
 
-    setIsSubmitting(true);
     try {
       console.log('Starting submission process');
       // First check if the session still has an active round
@@ -368,76 +382,107 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-xl">{statement.content}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {roundEnded && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Round Ended</AlertTitle>
-            <AlertDescription>
-              This statement has been closed by the administrator. Please wait for the next round.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {groupData?.isLeader && (
-          <Alert className="bg-orange-50 border-orange-200 mb-4">
-            <Users2 className="h-4 w-4 text-orange-600" />
-            <AlertTitle className="text-orange-600">You are the Group Leader</AlertTitle>
-            <AlertDescription>
-              As the group leader, you are responsible for submitting the answer on behalf of your group.
-              Please discuss with your team members before submitting.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Agreement Level: {agreementLevel}/10
-            </label>
-            <Slider
-              value={[agreementLevel]}
-              onValueChange={(value) => setAgreementLevel(value[0])}
-              min={1}
-              max={10}
-              step={1}
-              className="w-full"
-              disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
-            />
-          </div>
+    <>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-xl">{statement.content}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {roundEnded && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Round Ended</AlertTitle>
+              <AlertDescription>
+                This statement has been closed by the administrator. Please wait for the next round.
+              </AlertDescription>
+            </Alert>
+          )}
           
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Confidence Level: {confidenceLevel}/10
-            </label>
-            <Slider
-              value={[confidenceLevel]}
-              onValueChange={(value) => setConfidenceLevel(value[0])}
-              min={1}
-              max={10}
-              step={1}
-              className="w-full"
-              disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
-            />
-          </div>
-        </div>
+          {groupData?.isLeader && (
+            <Alert className="bg-orange-50 border-orange-200 mb-4">
+              <Users2 className="h-4 w-4 text-orange-600" />
+              <AlertTitle className="text-orange-600">You are the Group Leader</AlertTitle>
+              <AlertDescription>
+                As the group leader, you are responsible for submitting the answer on behalf of your group.
+                Please discuss with your team members before submitting.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <Button 
-          onClick={handleSubmit} 
-          className="w-full"
-          disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
-        >
-          {isSubmitting ? "Submitting..." : 
-           roundEnded ? "Round Ended" :
-           statement.status !== 'STARTED' ? "Waiting for admin to activate statement" : 
-           "Submit Response"}
-        </Button>
-      </CardContent>
-    </Card>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Agreement Level: {agreementLevel}/10
+              </label>
+              <Slider
+                value={[agreementLevel]}
+                onValueChange={(value) => setAgreementLevel(value[0])}
+                min={1}
+                max={10}
+                step={1}
+                className="w-full"
+                disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Confidence Level: {confidenceLevel}/10
+              </label>
+              <Slider
+                value={[confidenceLevel]}
+                onValueChange={(value) => setConfidenceLevel(value[0])}
+                min={1}
+                max={10}
+                step={1}
+                className="w-full"
+                disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
+              />
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleConfirmSubmit}
+            className="w-full"
+            disabled={isSubmitting || statement.status !== 'STARTED' || roundEnded}
+          >
+            {isSubmitting ? "Submitting..." : 
+             roundEnded ? "Round Ended" :
+             statement.status !== 'STARTED' ? "Waiting for admin to activate statement" : 
+             "Submit Response"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Submission</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to submit your response?
+              {groupData?.isLeader 
+                ? " This will submit the response for your entire group."
+                : ""
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
