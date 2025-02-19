@@ -35,6 +35,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
 
   useEffect(() => {
     const checkExistingAnswer = async () => {
+      console.log("Checking existing answer for group data:", groupData);
       const sessionIdString = window.location.pathname.split('/').pop();
       const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
       
@@ -47,53 +48,97 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
           .select('id')
           .eq('statement_id', statement.id)
           .eq('status', 'STARTED')
-          .single();
+          .maybeSingle();
 
-        if (roundError) throw roundError;
+        if (roundError) {
+          console.error('Error fetching active round:', roundError);
+          return;
+        }
+
+        if (!activeRound) {
+          console.log('No active round found');
+          return;
+        }
+
+        console.log('Active round found:', activeRound);
 
         if (groupData?.isLeader) {
+          console.log('Checking group leader answer');
           // Check for existing group answer
-          const { data: roundGroup } = await supabase
+          const { data: roundGroup, error: groupError } = await supabase
             .from('ROUND_GROUPS')
             .select('groups_id')
             .eq('round_id', activeRound.id)
-            .single();
+            .maybeSingle();
 
-          if (roundGroup) {
-            const { data: existingAnswer } = await supabase
-              .from('ANSWER')
-              .select('id')
-              .eq('round_id', activeRound.id)
-              .eq('respondant_type', 'GROUP')
-              .eq('respondant_id', roundGroup.groups_id)
-              .single();
-
-            setHasSubmitted(!!existingAnswer);
+          if (groupError) {
+            console.error('Error fetching round group:', groupError);
+            return;
           }
+
+          if (!roundGroup) {
+            console.log('No round group found');
+            return;
+          }
+
+          console.log('Round group found:', roundGroup);
+
+          const { data: existingAnswer, error: answerError } = await supabase
+            .from('ANSWER')
+            .select('id')
+            .eq('round_id', activeRound.id)
+            .eq('respondant_type', 'GROUP')
+            .eq('respondant_id', roundGroup.groups_id)
+            .maybeSingle();
+
+          if (answerError) {
+            console.error('Error fetching existing answer:', answerError);
+            return;
+          }
+
+          console.log('Existing group answer:', existingAnswer);
+          setHasSubmitted(!!existingAnswer);
         } else {
+          console.log('Checking individual answer');
           // Check for existing individual answer
           const storedName = localStorage.getItem(`session_${sessionId}_name`);
-          const { data: userData } = await supabase
+          const { data: userData, error: userError } = await supabase
             .from('SESSION_USERS')
             .select('id')
             .eq('session_id', sessionId)
             .eq('name', storedName)
-            .single();
+            .maybeSingle();
 
-          if (userData) {
-            const { data: existingAnswer } = await supabase
-              .from('ANSWER')
-              .select('id')
-              .eq('round_id', activeRound.id)
-              .eq('respondant_type', 'SESSION_USER')
-              .eq('respondant_id', userData.id)
-              .single();
-
-            setHasSubmitted(!!existingAnswer);
+          if (userError) {
+            console.error('Error fetching user data:', userError);
+            return;
           }
+
+          if (!userData) {
+            console.log('No user data found');
+            return;
+          }
+
+          console.log('User data found:', userData);
+
+          const { data: existingAnswer, error: answerError } = await supabase
+            .from('ANSWER')
+            .select('id')
+            .eq('round_id', activeRound.id)
+            .eq('respondant_type', 'SESSION_USER')
+            .eq('respondant_id', userData.id)
+            .maybeSingle();
+
+          if (answerError) {
+            console.error('Error fetching existing answer:', answerError);
+            return;
+          }
+
+          console.log('Existing individual answer:', existingAnswer);
+          setHasSubmitted(!!existingAnswer);
         }
       } catch (error) {
-        console.error('Error checking existing answer:', error);
+        console.error('Error in checkExistingAnswer:', error);
       }
     };
 
@@ -126,15 +171,26 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   }, [statement.id, queryClient]);
 
   const handleSubmit = async () => {
-    if (isSubmitting || hasSubmitted) return;
+    console.log('Submit button clicked');
+    console.log('Current state:', {
+      isSubmitting,
+      hasSubmitted,
+      statement,
+      groupData
+    });
+
+    if (isSubmitting || hasSubmitted) {
+      console.log('Preventing submit - already submitting or has submitted');
+      return;
+    }
     
     if (statement.status !== 'STARTED') {
+      console.log('Preventing submit - statement not started');
       return;
     }
 
     const sessionIdString = window.location.pathname.split('/').pop();
     const sessionId = sessionIdString ? parseInt(sessionIdString) : null;
-    const storedName = localStorage.getItem(`session_${sessionId}_name`);
 
     if (!sessionId) {
       console.error('Invalid session ID');
@@ -143,16 +199,21 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
 
     setIsSubmitting(true);
     try {
+      console.log('Starting submission process');
       // First check if the session still has an active round
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
         .select('has_active_round')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Session fetch error:', sessionError);
+        throw sessionError;
+      }
 
-      if (!sessionData.has_active_round) {
+      if (!sessionData?.has_active_round) {
+        console.log('No active round in session');
         setRoundEnded(true);
         toast({
           title: "Round Ended",
@@ -162,29 +223,48 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
         return;
       }
 
+      console.log('Found active round:', sessionData.has_active_round);
+
       // Get the active round for this statement
       const { data: activeRound, error: roundError } = await supabase
         .from('ROUND')
         .select('id, respondant_type')
         .eq('statement_id', statement.id)
         .eq('status', 'STARTED')
-        .single();
+        .maybeSingle();
 
-      if (roundError) throw roundError;
+      if (roundError) {
+        console.error('Round fetch error:', roundError);
+        throw roundError;
+      }
 
-      console.log('Active round:', activeRound);
+      if (!activeRound) {
+        console.error('No active round found');
+        throw new Error('No active round found');
+      }
+
+      console.log('Active round details:', activeRound);
 
       if (groupData?.isLeader) {
+        console.log('Submitting as group leader');
         // For group leaders, we need to get the group ID from ROUND_GROUPS
         const { data: roundGroup, error: roundGroupError } = await supabase
           .from('ROUND_GROUPS')
           .select('groups_id')
           .eq('round_id', activeRound.id)
-          .single();
+          .maybeSingle();
 
-        if (roundGroupError) throw roundGroupError;
+        if (roundGroupError) {
+          console.error('Round group fetch error:', roundGroupError);
+          throw roundGroupError;
+        }
 
-        console.log('Round group:', roundGroup);
+        if (!roundGroup) {
+          console.error('No round group found');
+          throw new Error('No round group found');
+        }
+
+        console.log('Found round group:', roundGroup);
 
         const { error: answerError } = await supabase
           .from('ANSWER')
@@ -196,17 +276,34 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
             round_id: activeRound.id
           });
 
-        if (answerError) throw answerError;
+        if (answerError) {
+          console.error('Answer insert error:', answerError);
+          throw answerError;
+        }
+
+        console.log('Successfully submitted group answer');
       } else {
+        console.log('Submitting as individual');
+        const storedName = localStorage.getItem(`session_${sessionId}_name`);
         // For individual responses
         const { data: userData, error: userError } = await supabase
           .from('SESSION_USERS')
           .select('id')
           .eq('session_id', sessionId)
           .eq('name', storedName)
-          .single();
+          .maybeSingle();
 
-        if (userError) throw userError;
+        if (userError) {
+          console.error('User data fetch error:', userError);
+          throw userError;
+        }
+
+        if (!userData) {
+          console.error('No user data found');
+          throw new Error('No user data found');
+        }
+
+        console.log('Found user data:', userData);
 
         const { error: answerError } = await supabase
           .from('ANSWER')
@@ -218,7 +315,12 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
             round_id: activeRound.id
           });
 
-        if (answerError) throw answerError;
+        if (answerError) {
+          console.error('Answer insert error:', answerError);
+          throw answerError;
+        }
+
+        console.log('Successfully submitted individual answer');
       }
       
       toast({
@@ -232,7 +334,7 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
       console.error('Error submitting response:', error);
       toast({
         title: "Error",
-        description: "Failed to submit your response",
+        description: "Failed to submit your response. Please try again.",
         variant: "destructive"
       });
     } finally {
