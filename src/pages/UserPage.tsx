@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,19 +203,31 @@ const UserPage = () => {
   } = useQuery({
     queryKey: ['previous-round-answers', sessionId, currentRound?.round_number, groupData?.groupMembers],
     queryFn: async () => {
-      if (!currentRound?.round_number || !groupData?.groupMembers || currentRound.round_number <= 1) {
+      if (!currentRound?.round_number || !groupData?.groupMembers) {
         return null;
       }
 
+      // Only fetch previous round answers if we're in round 2 or higher
+      if (currentRound.round_number <= 1) {
+        return null;
+      }
+
+      // Get the previous round
       const { data: prevRound, error: prevRoundError } = await supabase
         .from('ROUND')
-        .select('id, statement_id')
+        .select('id')
         .eq('statement_id', currentRound.statement_id)
         .eq('round_number', currentRound.round_number - 1)
         .single();
 
-      if (prevRoundError || !prevRound) return null;
+      if (prevRoundError || !prevRound) {
+        console.error('Error fetching previous round:', prevRoundError);
+        return null;
+      }
 
+      console.log('Previous round:', prevRound);
+
+      // Get answers from the previous round for all group members
       const memberIds = groupData.groupMembers.map(m => m.id);
       const { data: answers, error: answersError } = await supabase
         .from('ANSWER')
@@ -227,7 +240,12 @@ const UserPage = () => {
         .eq('round_id', prevRound.id)
         .in('respondant_id', memberIds);
 
-      if (answersError) return null;
+      if (answersError) {
+        console.error('Error fetching previous round answers:', answersError);
+        return null;
+      }
+
+      console.log('Previous round answers:', answers);
 
       return answers.map(answer => {
         const member = groupData.groupMembers.find(m => m.id === answer.respondant_id);
