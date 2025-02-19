@@ -33,13 +33,14 @@ interface StatementResultsProps {
 
 export const StatementResults = ({ statement, answers, isVisible }: StatementResultsProps) => {
   const [activeRoundAnswers, setActiveRoundAnswers] = useState<Answer[]>([]);
+  const [roundNumber, setRoundNumber] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchActiveRoundAnswers = async () => {
       // Get the active round for this statement
       const { data: activeRound, error: roundError } = await supabase
         .from('ROUND')
-        .select('id')
+        .select('id, round_number')
         .eq('statement_id', statement.id)
         .in('status', ['STARTED', 'LOCKED'])
         .order('round_number', { ascending: false })
@@ -54,8 +55,11 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
       if (!activeRound) {
         console.log('No active or locked round found for statement:', statement.id);
         setActiveRoundAnswers([]);
+        setRoundNumber(null);
         return;
       }
+
+      setRoundNumber(activeRound.round_number);
 
       // Filter answers for the active round
       const filteredAnswers = answers.filter(answer => answer.round_id === activeRound.id);
@@ -79,7 +83,9 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
 
   return (
     <>
-      <h2 className="text-2xl font-semibold text-[#403E43] mb-4">Results</h2>
+      <h2 className="text-2xl font-semibold text-[#403E43] mb-4">
+        Results for Round {roundNumber !== null ? roundNumber : '-'}
+      </h2>
       <Card key={statement.id} className="p-6 shadow-sm">
         <h3 className="text-xl font-medium mb-4 text-[#403E43]">{statement.statement}</h3>
         {chartData.length > 0 ? (
