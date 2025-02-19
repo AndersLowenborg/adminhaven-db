@@ -4,6 +4,7 @@ import { Statement } from "@/types/statement";
 import { StatementControls } from "./StatementControls";
 import { EditStatementDialog } from "./EditStatementDialog";
 import { useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface StatementCardProps {
   statement: Statement;
@@ -68,25 +69,27 @@ export const StatementCard: React.FC<StatementCardProps> = ({
             {currentRoundStatus && ` (${currentRoundStatus})`}
           </span>
           <div className="ml-auto">
-            <StatementControls
-              {...{
-                showLockButton: shouldShowLockButton,
-                isLockButtonEnabled,
-                isPlayButtonEnabled,
-                canStartPrepareGroups,
-                isShowingResults,
-                hasActiveRound,
-                sessionStatus,
-                canDeleteStatements,
-                isDeletingStatementPending,
-                onEndRound: () => onEndRound(statement.id),
-                onStartRound: () => onStartRound(statement.id),
-                handleGroupPreparation: () => handleGroupPreparation(statement.id),
-                handleToggleResults: () => handleToggleResults(statement.id),
-                onUpdateStatement: () => setIsEditDialogOpen(true),
-                onDeleteStatement: () => onDeleteStatement(statement.id),
-              }}
-            />
+            <TooltipProvider>
+              <StatementControls
+                {...{
+                  showLockButton: shouldShowLockButton,
+                  isLockButtonEnabled,
+                  isPlayButtonEnabled,
+                  canStartPrepareGroups,
+                  isShowingResults,
+                  hasActiveRound,
+                  sessionStatus,
+                  canDeleteStatements,
+                  isDeletingStatementPending,
+                  onEndRound: () => onEndRound(statement.id),
+                  onStartRound: () => onStartRound(statement.id),
+                  handleGroupPreparation: () => handleGroupPreparation(statement.id),
+                  handleToggleResults: () => handleToggleResults(statement.id),
+                  onUpdateStatement: () => setIsEditDialogOpen(true),
+                  onDeleteStatement: () => onDeleteStatement(statement.id),
+                }}
+              />
+            </TooltipProvider>
           </div>
         </div>
       </div>
