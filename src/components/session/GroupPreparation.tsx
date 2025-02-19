@@ -124,6 +124,40 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
       const finalGroups = groups.filter(group => group.members.length > 0);
       setSavedGroups(finalGroups);
 
+      // Create the next round with NOT_STARTED status
+      const { data: currentRound, error: currentRoundError } = await supabase
+        .from('ROUND')
+        .select('round_number, statement_id')
+        .eq('id', activeRoundId)
+        .single();
+
+      if (currentRoundError) throw currentRoundError;
+
+      const nextRoundNumber = currentRound.round_number + 1;
+      
+      // Create next round with NOT_STARTED status
+      const { data: newRound, error: newRoundError } = await supabase
+        .from('ROUND')
+        .insert({
+          statement_id: currentRound.statement_id,
+          round_number: nextRoundNumber,
+          status: 'NOT_STARTED',
+          started_at: new Date().toISOString(),
+          respondant_type: 'GROUP'
+        })
+        .select()
+        .single();
+
+      if (newRoundError) throw newRoundError;
+
+      // Update the session with the new round ID
+      const { error: sessionUpdateError } = await supabase
+        .from('SESSION')
+        .update({ has_active_round: newRound.id })
+        .eq('id', sessionId);
+
+      if (sessionUpdateError) throw sessionUpdateError;
+
       toast({
         title: "Success",
         description: "Groups have been created and saved",
