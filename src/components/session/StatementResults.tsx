@@ -41,11 +41,19 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
         .from('ROUND')
         .select('id')
         .eq('statement_id', statement.id)
-        .eq('status', 'STARTED')
-        .single();
+        .in('status', ['STARTED', 'LOCKED'])
+        .order('round_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (roundError) {
         console.error('Error fetching active round:', roundError);
+        return;
+      }
+
+      if (!activeRound) {
+        console.log('No active or locked round found for statement:', statement.id);
+        setActiveRoundAnswers([]);
         return;
       }
 
