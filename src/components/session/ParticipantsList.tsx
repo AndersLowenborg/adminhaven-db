@@ -37,23 +37,90 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
     enabled: !!sessionId,
   });
 
-  // Then fetch answers for the active round
+  // Get active round details to check if it's a group round
+  const { data: activeRound } = useQuery({
+    queryKey: ['active-round-type', sessionId, session?.has_active_round],
+    queryFn: async () => {
+      if (!session?.has_active_round) return null;
+      
+      const { data, error } = await supabase
+        .from('ROUND')
+        .select('id, respondant_type')
+        .eq('id', session.has_active_round)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.has_active_round,
+  });
+
+  // Then fetch answers based on the round type
   const { data: participantAnswers } = useQuery({
-    queryKey: ['participant-answers', sessionId, session?.has_active_round],
+    queryKey: ['participant-answers', sessionId, session?.has_active_round, activeRound?.respondant_type],
     queryFn: async () => {
       if (!session?.has_active_round) {
         console.log('No active round for participant answers');
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('ANSWER')
-        .select('*')
-        .eq('round_id', session.has_active_round);
+      if (activeRound?.respondant_type === 'GROUP') {
+        // For group rounds, first get the groups
+        const { data: roundGroups, error: groupsError } = await supabase
+          .from('ROUND_GROUPS')
+          .select('groups_id')
+          .eq('round_id', session.has_active_round);
 
-      if (error) throw error;
-      console.log('Fetched participant answers:', data);
-      return data || [];
+        if (groupsError) throw groupsError;
+
+        if (!roundGroups?.length) return [];
+
+        // Then get the group members and their answers
+        const groupIds = roundGroups.map(g => g.groups_id);
+        
+        // Get all group answers
+        const { data: groupAnswers, error: answersError } = await supabase
+          .from('ANSWER')
+          .select('*')
+          .eq('round_id', session.has_active_round)
+          .eq('respondant_type', 'GROUP')
+          .in('respondant_id', groupIds);
+
+        if (answersError) throw answersError;
+
+        // Get all group members
+        const { data: groupMembers, error: membersError } = await supabase
+          .from('GROUP_MEMBERS')
+          .select('member_id, parent_groups_id')
+          .in('parent_groups_id', groupIds);
+
+        if (membersError) throw membersError;
+
+        // Create a map of group IDs to whether they've answered
+        const groupAnswersMap = new Map(
+          groupAnswers?.map(answer => [answer.respondant_id, true]) || []
+        );
+
+        // Create a map of member IDs to their group's answer status
+        return groupMembers?.reduce((acc, member) => {
+          acc[member.member_id] = groupAnswersMap.has(member.parent_groups_id);
+          return acc;
+        }, {} as Record<number, boolean>) || {};
+
+      } else {
+        // For individual rounds, get individual answers
+        const { data, error } = await supabase
+          .from('ANSWER')
+          .select('*')
+          .eq('round_id', session.has_active_round);
+
+        if (error) throw error;
+        
+        return data?.reduce((acc, answer) => {
+          acc[answer.respondant_id] = true;
+          return acc;
+        }, {} as Record<number, boolean>) || {};
+      }
     },
     enabled: !!sessionId && !!session?.has_active_round,
   });
@@ -118,9 +185,7 @@ export const ParticipantsList = ({ participants, sessionId, queryKey }: Particip
         ) : (
           <div className="flex flex-wrap gap-2">
             {participants.map((participant) => {
-              const hasAnswered = participantAnswers?.some(
-                answer => answer.respondant_id === participant.id
-              );
+              const hasAnswered = participantAnswers?.[participant.id] ?? false;
 
               return (
                 <Badge 
