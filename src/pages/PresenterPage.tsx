@@ -10,7 +10,7 @@ import { ParticipantsList } from '@/components/session/ParticipantsList';
 import { StatementResults } from '@/components/session/StatementResults';
 import { useParticipants } from '@/hooks/use-participants';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import { useStatementVisibility } from '@/hooks/use-statement-visibility';
 
 const PresenterPage = () => {
@@ -365,18 +365,35 @@ const PresenterPage = () => {
               />
               
               {groups && groups.length > 0 && (
-                <div className="mt-6">
-                  <h2 className="text-xl font-semibold mb-4">Current Groups</h2>
+                <div className="mt-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="h-5 w-5 text-gray-600" />
+                    <h2 className="text-xl font-semibold text-gray-800">Current Groups</h2>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {groups.map((group) => (
-                      <Card key={group.id} className="p-4">
-                        <div className="font-medium mb-2">Group {group.id}</div>
+                      <Card key={group.id} className="p-4 bg-white/50 backdrop-blur-sm border border-gray-100">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-medium text-gray-800">Group {group.id}</div>
+                          <Badge variant="secondary" className="text-xs">
+                            {group.members.length} members
+                          </Badge>
+                        </div>
                         <div className="space-y-2">
                           {group.members.map((member) => (
-                            <div key={member.member_id} className="flex items-center gap-2">
-                              {member.name}
+                            <div 
+                              key={member.member_id} 
+                              className={`flex items-center justify-between p-2 rounded-lg ${
+                                group.leader === member.member_id 
+                                  ? 'bg-blue-50 border border-blue-100' 
+                                  : 'bg-gray-50 border border-gray-100'
+                              }`}
+                            >
+                              <span className="text-sm text-gray-700">{member.name}</span>
                               {group.leader === member.member_id && (
-                                <Badge variant="secondary">Leader</Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  Leader
+                                </Badge>
                               )}
                             </div>
                           ))}
@@ -394,8 +411,6 @@ const PresenterPage = () => {
           <div className="space-y-6 mb-8">
             {statements.map(statement => {
               const statementAnswers = getAnswersForStatement(statement);
-              console.log(`Statement ${statement.id} has ${statementAnswers.length} answers`);
-              
               return (
                 <StatementResults
                   key={statement.id}
