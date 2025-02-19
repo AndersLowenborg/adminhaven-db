@@ -19,6 +19,7 @@ interface StatementCardProps {
   sessionStatus: string;
   canDeleteStatements: boolean;
   isDeletingStatementPending: boolean;
+  groupCount: number | null;
   onEndRound: (id: number) => void;
   onStartRound: (id: number) => void;
   handleGroupPreparation: (id: number) => void;
@@ -40,6 +41,7 @@ export const StatementCard: React.FC<StatementCardProps> = ({
   sessionStatus,
   canDeleteStatements,
   isDeletingStatementPending,
+  groupCount,
   onEndRound,
   onStartRound,
   handleGroupPreparation,
@@ -52,9 +54,6 @@ export const StatementCard: React.FC<StatementCardProps> = ({
   const handleEditSubmit = (content: string, description?: string) => {
     onUpdateStatement(statement.id, content, description);
   };
-
-  // Determine if we should show the lock button based on the round status
-  const shouldShowLockButton = currentRoundStatus === 'STARTED';
 
   return (
     <Card className="p-6">
@@ -72,7 +71,7 @@ export const StatementCard: React.FC<StatementCardProps> = ({
             <TooltipProvider>
               <StatementControls
                 {...{
-                  showLockButton: shouldShowLockButton,
+                  showLockButton,
                   isLockButtonEnabled,
                   isPlayButtonEnabled,
                   canStartPrepareGroups,
@@ -81,6 +80,9 @@ export const StatementCard: React.FC<StatementCardProps> = ({
                   sessionStatus,
                   canDeleteStatements,
                   isDeletingStatementPending,
+                  currentRound,
+                  currentRoundStatus,
+                  groupCount,
                   onEndRound: () => onEndRound(statement.id),
                   onStartRound: () => onStartRound(statement.id),
                   handleGroupPreparation: () => handleGroupPreparation(statement.id),
