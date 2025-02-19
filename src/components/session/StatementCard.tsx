@@ -30,13 +30,30 @@ export const StatementCard: React.FC<StatementCardProps> = ({
   statement,
   currentRound,
   currentRoundStatus,
-  ...controlProps
+  showLockButton,
+  isLockButtonEnabled,
+  isPlayButtonEnabled,
+  canStartPrepareGroups,
+  isShowingResults,
+  hasActiveRound,
+  sessionStatus,
+  canDeleteStatements,
+  isDeletingStatementPending,
+  onEndRound,
+  onStartRound,
+  handleGroupPreparation,
+  handleToggleResults,
+  onUpdateStatement,
+  onDeleteStatement,
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleEditSubmit = (content: string, description?: string) => {
-    controlProps.onUpdateStatement(statement.id, content, description);
+    onUpdateStatement(statement.id, content, description);
   };
+
+  // Determine if we should show the lock button based on the round status
+  const shouldShowLockButton = currentRoundStatus === 'STARTED';
 
   return (
     <Card className="p-6">
@@ -52,13 +69,23 @@ export const StatementCard: React.FC<StatementCardProps> = ({
           </span>
           <div className="ml-auto">
             <StatementControls
-              {...controlProps}
-              onEndRound={() => controlProps.onEndRound(statement.id)}
-              onStartRound={() => controlProps.onStartRound(statement.id)}
-              handleGroupPreparation={() => controlProps.handleGroupPreparation(statement.id)}
-              handleToggleResults={() => controlProps.handleToggleResults(statement.id)}
-              onUpdateStatement={() => setIsEditDialogOpen(true)}
-              onDeleteStatement={() => controlProps.onDeleteStatement(statement.id)}
+              {...{
+                showLockButton: shouldShowLockButton,
+                isLockButtonEnabled,
+                isPlayButtonEnabled,
+                canStartPrepareGroups,
+                isShowingResults,
+                hasActiveRound,
+                sessionStatus,
+                canDeleteStatements,
+                isDeletingStatementPending,
+                onEndRound: () => onEndRound(statement.id),
+                onStartRound: () => onStartRound(statement.id),
+                handleGroupPreparation: () => handleGroupPreparation(statement.id),
+                handleToggleResults: () => handleToggleResults(statement.id),
+                onUpdateStatement: () => setIsEditDialogOpen(true),
+                onDeleteStatement: () => onDeleteStatement(statement.id),
+              }}
             />
           </div>
         </div>
