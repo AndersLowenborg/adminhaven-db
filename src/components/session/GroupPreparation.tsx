@@ -44,7 +44,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         throw new Error('No active round found in session');
       }
 
-      // Get current round info to create the next round
+      // Get current round info to check for next round
       const { data: currentRound, error: currentRoundError } = await supabase
         .from('ROUND')
         .select('round_number, statement_id')
@@ -55,30 +55,47 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
       const nextRoundNumber = currentRound.round_number + 1;
       
-      // Create next round with NOT_STARTED status
-      const { data: newRound, error: newRoundError } = await supabase
+      // Check if a round already exists for this round number
+      const { data: existingRound, error: existingRoundError } = await supabase
         .from('ROUND')
-        .insert({
-          statement_id: currentRound.statement_id,
-          round_number: nextRoundNumber,
-          status: 'NOT_STARTED',
-          started_at: new Date().toISOString(),
-          respondant_type: 'GROUP'
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('statement_id', currentRound.statement_id)
+        .eq('round_number', nextRoundNumber)
+        .maybeSingle();
 
-      if (newRoundError) throw newRoundError;
+      if (existingRoundError) throw existingRoundError;
 
-      // Update the session with the new round ID IMMEDIATELY
-      const { error: sessionUpdateError } = await supabase
-        .from('SESSION')
-        .update({ has_active_round: newRound.id })
-        .eq('id', sessionId);
+      let newRound;
+      
+      if (!existingRound) {
+        // Create next round with NOT_STARTED status only if it doesn't exist
+        const { data: createdRound, error: newRoundError } = await supabase
+          .from('ROUND')
+          .insert({
+            statement_id: currentRound.statement_id,
+            round_number: nextRoundNumber,
+            status: 'NOT_STARTED',
+            started_at: new Date().toISOString(),
+            respondant_type: 'GROUP'
+          })
+          .select()
+          .single();
 
-      if (sessionUpdateError) throw sessionUpdateError;
+        if (newRoundError) throw newRoundError;
+        newRound = createdRound;
 
-      console.log('Creating groups for session:', sessionId, 'and new round:', newRound.id);
+        // Update the session with the new round ID IMMEDIATELY
+        const { error: sessionUpdateError } = await supabase
+          .from('SESSION')
+          .update({ has_active_round: newRound.id })
+          .eq('id', sessionId);
+
+        if (sessionUpdateError) throw sessionUpdateError;
+      } else {
+        newRound = existingRound;
+      }
+
+      console.log('Creating groups for session:', sessionId, 'and round:', newRound.id);
 
       // Calculate number of groups needed (2-3 participants per group)
       const totalParticipants = participants.length;
@@ -132,7 +149,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           const memberResults = await Promise.all(memberPromises);
           console.log('Added members to group:', memberResults);
 
-          // Create round group association with the NEW round
+          // Create round group association
           const { data: roundGroupData, error: roundGroupError } = await supabase
             .from('ROUND_GROUPS')
             .insert([{
