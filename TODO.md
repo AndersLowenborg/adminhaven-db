@@ -2,9 +2,10 @@
 # Project Todo List
 
 ## Statement Enhancements
-- [ ] Add support for background/context field for each statement
+- [x] Add support for background/context field for each statement
 - [ ] Add timer functionality for statement responses
 - [ ] Add visual countdown on user screens
+- [ ] Let users brainstorm Statements
 
 ## Session Management
 - [ ] Add "close door" functionality to prevent new participants
