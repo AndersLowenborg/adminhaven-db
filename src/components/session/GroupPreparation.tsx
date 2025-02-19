@@ -92,7 +92,14 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
         if (sessionUpdateError) throw sessionUpdateError;
       } else {
-        newRound = existingRound;
+        // If we're using an existing round, ensure it has the correct respondant_type
+        const { error: updateError } = await supabase
+          .from('ROUND')
+          .update({ respondant_type: 'GROUP' })
+          .eq('id', existingRound.id);
+
+        if (updateError) throw updateError;
+        newRound = { ...existingRound, respondant_type: 'GROUP' };
       }
 
       console.log('Creating groups for session:', sessionId, 'and round:', newRound.id);
