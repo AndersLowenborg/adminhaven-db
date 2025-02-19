@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { Statement } from "@/types/statement";
 import { StatementControls } from "./StatementControls";
+import { EditStatementDialog } from "./EditStatementDialog";
+import { useState } from "react";
 
 interface StatementCardProps {
   statement: Statement;
@@ -30,6 +32,12 @@ export const StatementCard: React.FC<StatementCardProps> = ({
   currentRoundStatus,
   ...controlProps
 }) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEditSubmit = (content: string, description?: string) => {
+    controlProps.onUpdateStatement(statement.id, content, description);
+  };
+
   return (
     <Card className="p-6">
       <div className="space-y-4">
@@ -49,12 +57,19 @@ export const StatementCard: React.FC<StatementCardProps> = ({
               onStartRound={() => controlProps.onStartRound(statement.id)}
               handleGroupPreparation={() => controlProps.handleGroupPreparation(statement.id)}
               handleToggleResults={() => controlProps.handleToggleResults(statement.id)}
-              onUpdateStatement={() => controlProps.onUpdateStatement(statement.id, statement.statement, statement.description)}
+              onUpdateStatement={() => setIsEditDialogOpen(true)}
               onDeleteStatement={() => controlProps.onDeleteStatement(statement.id)}
             />
           </div>
         </div>
       </div>
+      <EditStatementDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        statement={statement.statement || ""}
+        description={statement.description}
+        onSubmit={handleEditSubmit}
+      />
     </Card>
   );
 };
