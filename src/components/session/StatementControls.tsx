@@ -25,9 +25,6 @@ interface StatementControlsProps {
   sessionStatus: string;
   canDeleteStatements: boolean;
   isDeletingStatementPending: boolean;
-  currentRound: number | null;
-  currentRoundStatus: string | null;
-  groupCount: number | null;
   onEndRound: () => void;
   onStartRound: () => void;
   handleGroupPreparation: () => void;
@@ -46,9 +43,6 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
   sessionStatus,
   canDeleteStatements,
   isDeletingStatementPending,
-  currentRound,
-  currentRoundStatus,
-  groupCount,
   onEndRound,
   onStartRound,
   handleGroupPreparation,
@@ -56,26 +50,12 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
   onUpdateStatement,
   onDeleteStatement,
 }) => {
-  const isFinalRound = currentRound === 4;
-  const isRoundLocked = currentRoundStatus === 'LOCKED';
-  const hasOnlyOneGroup = groupCount === 1;
-  
-  const shouldDisableNextRound = 
-    (isRoundLocked && hasOnlyOneGroup) || 
-    (isRoundLocked && isFinalRound);
-
   const getPlayButtonTooltip = () => {
     if (sessionStatus !== 'STARTED') {
       return "Session must be started to begin a round";
     }
     if (!isPlayButtonEnabled) {
       return "Cannot start a new round while current round is active";
-    }
-    if (shouldDisableNextRound) {
-      if (isFinalRound) {
-        return "Maximum number of rounds reached";
-      }
-      return "Cannot start new round with only one group";
     }
     return "Start a new round for this statement";
   };
@@ -90,12 +70,6 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
   const getGroupPreparationTooltip = () => {
     if (!canStartPrepareGroups) {
       return "Round must be locked before preparing groups";
-    }
-    if (shouldDisableNextRound) {
-      if (isFinalRound) {
-        return "Maximum number of rounds reached";
-      }
-      return "Cannot prepare groups when only one group remains";
     }
     return "Form groups for the next round based on current answers";
   };
@@ -149,7 +123,7 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={onStartRound}
-                disabled={!isPlayButtonEnabled || shouldDisableNextRound}
+                disabled={!isPlayButtonEnabled}
                 className="hover:bg-secondary hover:text-primary"
               >
                 <PlayIcon className="h-4 w-4" />
@@ -169,7 +143,7 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
               variant="ghost"
               size="icon"
               onClick={handleGroupPreparation}
-              disabled={!canStartPrepareGroups || shouldDisableNextRound}
+              disabled={!canStartPrepareGroups}
               className={`hover:bg-secondary hover:text-primary ${canStartPrepareGroups ? "" : "text-primary"}`}
             >
               <UsersRoundIcon className="h-4 w-4" />

@@ -57,7 +57,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
   const [groupPreparationData, setGroupPreparationData] = useState<{ participants: any[], answers: any[] } | null>(null);
   const [currentRound, setCurrentRound] = useState<number | null>(null);
   const [currentRoundStatus, setCurrentRoundStatus] = useState<string | null>(null);
-  const [groupCounts, setGroupCounts] = useState<{ [key: number]: number }>({});
   
   const canDeleteStatements = sessionStatus === 'UNPUBLISHED';
 
@@ -93,22 +92,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         console.log('Round data:', roundData);
         setCurrentRound(roundData.round_number);
         setCurrentRoundStatus(roundData.status);
-
-        // Fetch group count for the current round
-        const { data: groupData, error: groupError } = await supabase
-          .from('GROUP')
-          .select('id')
-          .eq('round_id', sessionData.has_active_round);
-
-        if (groupError) {
-          console.error('Error fetching groups:', groupError);
-          return;
-        }
-
-        setGroupCounts(prev => ({
-          ...prev,
-          [roundData.statement_id]: groupData?.length || 0
-        }));
       } else {
         setCurrentRound(null);
         setCurrentRoundStatus(null);
@@ -290,7 +273,6 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
               sessionStatus={sessionStatus}
               canDeleteStatements={canDeleteStatements}
               isDeletingStatementPending={isDeletingStatementPending}
-              groupCount={groupCounts[statement.id] || null}
               onEndRound={onEndRound}
               onStartRound={onStartRound}
               handleGroupPreparation={handleGroupPreparation}
