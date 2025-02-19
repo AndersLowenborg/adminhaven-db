@@ -42,16 +42,10 @@ export const StatementResults = ({ statement, answers, isVisible }: StatementRes
         .select('id')
         .eq('statement_id', statement.id)
         .eq('status', 'STARTED')
-        .maybeSingle();  // Changed from .single() to .maybeSingle()
+        .single();
 
       if (roundError) {
         console.error('Error fetching active round:', roundError);
-        return;
-      }
-
-      if (!activeRound) {
-        console.log('No active round found for statement:', statement.id);
-        setActiveRoundAnswers([]);
         return;
       }
 

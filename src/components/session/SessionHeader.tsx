@@ -110,7 +110,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
       
       <div className="flex items-center gap-4 mb-6">
         <img 
-          src="/lovable-uploads/8c9bdc85-dff9-48aa-8c01-d2711cab838d.png" 
+          src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
           alt="Grousion Logo" 
           className="w-48 h-auto"
         />

@@ -39,35 +39,12 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
       if (sessionError) throw sessionError;
       
-      const currentRoundId = sessionData.has_active_round;
-      if (!currentRoundId) {
+      const activeRoundId = sessionData.has_active_round;
+      if (!activeRoundId) {
         throw new Error('No active round found in session');
       }
 
-      // Get the current round to determine the next round number
-      const { data: currentRound, error: currentRoundError } = await supabase
-        .from('ROUND')
-        .select('*')
-        .eq('id', currentRoundId)
-        .single();
-
-      if (currentRoundError) throw currentRoundError;
-
-      // Create the next round with NOT_STARTED status
-      const { data: nextRound, error: nextRoundError } = await supabase
-        .from('ROUND')
-        .insert({
-          statement_id: currentRound.statement_id,
-          round_number: currentRound.round_number + 1,
-          status: 'NOT_STARTED',
-          respondant_type: 'GROUP'
-        })
-        .select()
-        .single();
-
-      if (nextRoundError) throw nextRoundError;
-
-      console.log('Created next round:', nextRound);
+      console.log('Creating groups for session:', sessionId, 'and active round:', activeRoundId);
 
       // Calculate number of groups needed (2-3 participants per group)
       const totalParticipants = participants.length;
@@ -121,11 +98,11 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           const memberResults = await Promise.all(memberPromises);
           console.log('Added members to group:', memberResults);
 
-          // Create round group association with the NEW round
+          // Create round group association with the ACTIVE round
           const { data: roundGroupData, error: roundGroupError } = await supabase
             .from('ROUND_GROUPS')
             .insert([{
-              round_id: nextRound.id, // Using the new round's ID instead of the active round
+              round_id: activeRoundId,
               groups_id: groupData.id
             }])
             .select();
@@ -142,14 +119,6 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
           group.leader = leader;
         }
       }
-
-      // Update session to point to the new round
-      const { error: updateSessionError } = await supabase
-        .from('SESSION')
-        .update({ has_active_round: nextRound.id })
-        .eq('id', sessionId);
-
-      if (updateSessionError) throw updateSessionError;
 
       // Filter out empty groups and update state
       const finalGroups = groups.filter(group => group.members.length > 0);
