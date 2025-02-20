@@ -57,6 +57,9 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
     if (!isPlayButtonEnabled) {
       return "Cannot start a new round while current round is active";
     }
+    if (canStartPrepareGroups) {
+      return "Please prepare groups before starting next round";
+    }
     return "Start a new round for this statement";
   };
 
@@ -123,7 +126,7 @@ export const StatementControls: React.FC<StatementControlsProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={onStartRound}
-                disabled={!isPlayButtonEnabled}
+                disabled={!isPlayButtonEnabled || canStartPrepareGroups}
                 className="hover:bg-secondary hover:text-primary"
               >
                 <PlayIcon className="h-4 w-4" />
