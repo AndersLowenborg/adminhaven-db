@@ -96,7 +96,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   const hasEnoughParticipants = participants.length >= 2;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mb-12">
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
@@ -111,7 +111,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
         <img 
           src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
           alt="Grousion Logo" 
-          className="w-32 h-auto"
+          className="w-48 h-auto"
         />
       </div>
 
