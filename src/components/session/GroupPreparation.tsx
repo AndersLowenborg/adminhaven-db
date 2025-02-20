@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Answer } from '@/types/answer';
 import { Participant } from '@/types/participant';
@@ -20,17 +20,148 @@ interface Group {
 
 export const GroupPreparation = ({ participants, answers }: GroupPreparationProps) => {
   const { toast } = useToast();
-  const [savedGroups, setSavedGroups] = React.useState<Group[]>([]);
+  const [savedGroups, setSavedGroups] = useState<Group[]>([]);
+
+  const createInitialGroups = async (sessionId: number, roundId: number, participants: Participant[], answers: Answer[]) => {
+    const groups: Group[] = [];
+    // Calculate number of groups needed (2-3 participants per group)
+    const numGroups = Math.ceil(participants.length / 3);
+    
+    // Create initial empty groups
+    for (let i = 0; i < numGroups; i++) {
+      groups.push({ id: i + 1, members: [] });
+    }
+
+    // Distribute participants evenly across groups
+    participants.forEach((participant, index) => {
+      const groupIndex = index % groups.length;
+      groups[groupIndex].members.push(participant);
+    });
+
+    // Save groups to database
+    for (const group of groups) {
+      if (group.members.length > 0) {
+        const leaderIndex = Math.floor(Math.random() * group.members.length);
+        const leader = group.members[leaderIndex];
+        
+        const { data: groupData, error: groupError } = await supabase
+          .from('GROUPS')
+          .insert([{ leader: leader.id }])
+          .select()
+          .single();
+
+        if (groupError) throw groupError;
+
+        // Add members to group
+        const memberPromises = group.members.map(member => 
+          supabase
+            .from('GROUP_MEMBERS')
+            .insert([{
+              member_id: member.id,
+              member_type: 'SESSION_USER',
+              parent_groups_id: groupData.id
+            }])
+        );
+
+        await Promise.all(memberPromises);
+
+        // Create round group association
+        await supabase
+          .from('ROUND_GROUPS')
+          .insert([{
+            round_id: roundId,
+            groups_id: groupData.id
+          }]);
+      }
+    }
+
+    return groups;
+  };
+
+  const mergeGroups = async (sessionId: number, currentRoundId: number, previousRoundId: number) => {
+    console.log('Merging groups from previous round:', previousRoundId);
+    
+    // Get previous round's groups
+    const { data: previousGroups, error: previousGroupsError } = await supabase
+      .from('ROUND_GROUPS')
+      .select(`
+        groups_id,
+        groups:GROUPS (
+          id,
+          leader,
+          members:GROUP_MEMBERS (
+            member_id,
+            member_type
+          )
+        )
+      `)
+      .eq('round_id', previousRoundId);
+
+    if (previousGroupsError) throw previousGroupsError;
+    
+    if (!previousGroups?.length) {
+      throw new Error('No groups found from previous round');
+    }
+
+    // Calculate how many new groups we need (combine every 2-3 previous groups)
+    const numNewGroups = Math.ceil(previousGroups.length / 3);
+    const newGroups: any[] = [];
+
+    // Create new merged groups
+    for (let i = 0; i < previousGroups.length; i += 3) {
+      const groupsToMerge = previousGroups.slice(i, Math.min(i + 3, previousGroups.length));
+      
+      // Create new group
+      const { data: newGroup, error: newGroupError } = await supabase
+        .from('GROUPS')
+        .insert([{
+          // Randomly select a leader from one of the merged groups
+          leader: groupsToMerge[Math.floor(Math.random() * groupsToMerge.length)].groups.leader
+        }])
+        .select()
+        .single();
+
+      if (newGroupError) throw newGroupError;
+
+      // Get all members from previous groups
+      const allMembers = groupsToMerge.flatMap(g => g.groups.members);
+      
+      // Add all members to new group
+      const memberPromises = allMembers.map(member => 
+        supabase
+          .from('GROUP_MEMBERS')
+          .insert([{
+            member_id: member.member_id,
+            member_type: member.member_type,
+            parent_groups_id: newGroup.id
+          }])
+      );
+
+      await Promise.all(memberPromises);
+
+      // Create round group association
+      await supabase
+        .from('ROUND_GROUPS')
+        .insert([{
+          round_id: currentRoundId,
+          groups_id: newGroup.id
+        }]);
+
+      newGroups.push(newGroup);
+    }
+
+    return newGroups;
+  };
 
   const createGroups = async (participants: Participant[], answers: Answer[]) => {
     try {
-      // Get session ID directly from the participants (they all belong to the same session)
+      // Get session ID from the first participant
       const sessionId = participants[0]?.session_id;
       if (!sessionId) {
         throw new Error('Could not determine session ID from participants');
       }
 
-      // Get the active round ID from the session
+      // Get the active round ID and info
       const { data: sessionData, error: sessionError } = await supabase
         .from('SESSION')
         .select('has_active_round')
@@ -44,7 +175,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
         throw new Error('No active round found in session');
       }
 
-      // Get current round info to check for next round
+      // Get current round info
       const { data: currentRound, error: currentRoundError } = await supabase
         .from('ROUND')
         .select('round_number, statement_id')
@@ -53,141 +184,31 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
 
       if (currentRoundError) throw currentRoundError;
 
-      const nextRoundNumber = currentRound.round_number + 1;
+      let groups;
       
-      // Check if a round already exists for this round number
-      const { data: existingRound, error: existingRoundError } = await supabase
-        .from('ROUND')
-        .select('*')
-        .eq('statement_id', currentRound.statement_id)
-        .eq('round_number', nextRoundNumber)
-        .maybeSingle();
-
-      if (existingRoundError) throw existingRoundError;
-
-      let newRound;
-      
-      if (!existingRound) {
-        // Create next round with NOT_STARTED status only if it doesn't exist
-        const { data: createdRound, error: newRoundError } = await supabase
+      if (currentRound.round_number === 2) {
+        // For round 2, create initial groups from individual participants
+        groups = await createInitialGroups(sessionId, activeRoundId, participants, answers);
+      } else {
+        // For rounds 3 and 4, merge groups from previous round
+        // Get the previous round
+        const { data: previousRound, error: previousRoundError } = await supabase
           .from('ROUND')
-          .insert({
-            statement_id: currentRound.statement_id,
-            round_number: nextRoundNumber,
-            status: 'NOT_STARTED',
-            started_at: new Date().toISOString(),
-            respondant_type: 'GROUP'
-          })
-          .select()
+          .select('id')
+          .eq('statement_id', currentRound.statement_id)
+          .eq('round_number', currentRound.round_number - 1)
           .single();
 
-        if (newRoundError) throw newRoundError;
-        newRound = createdRound;
+        if (previousRoundError) throw previousRoundError;
 
-        // Update the session with the new round ID IMMEDIATELY
-        const { error: sessionUpdateError } = await supabase
-          .from('SESSION')
-          .update({ has_active_round: newRound.id })
-          .eq('id', sessionId);
-
-        if (sessionUpdateError) throw sessionUpdateError;
-      } else {
-        // If we're using an existing round, ensure it has the correct status and respondant_type
-        const { error: updateError } = await supabase
-          .from('ROUND')
-          .update({ 
-            respondant_type: 'GROUP',
-            status: 'NOT_STARTED'
-          })
-          .eq('id', existingRound.id);
-
-        if (updateError) throw updateError;
-        newRound = { ...existingRound, respondant_type: 'GROUP', status: 'NOT_STARTED' };
+        groups = await mergeGroups(sessionId, activeRoundId, previousRound.id);
       }
 
-      console.log('Creating groups for session:', sessionId, 'and round:', newRound.id);
-
-      // Calculate number of groups needed (2-3 participants per group)
-      const totalParticipants = participants.length;
-      const numGroups = Math.ceil(totalParticipants / 3);
+      setSavedGroups(groups);
       
-      const groups: Group[] = [];
-      
-      // Create initial empty groups
-      for (let i = 0; i < numGroups; i++) {
-        groups.push({ id: i + 1, members: [] });
-      }
-
-      // Distribute participants evenly across groups
-      participants.forEach((participant, index) => {
-        const groupIndex = index % groups.length;
-        groups[groupIndex].members.push(participant);
-      });
-
-      // For each group, create database entries
-      for (const group of groups) {
-        if (group.members.length > 0) {
-          // Randomly select a leader from the group members
-          const leaderIndex = Math.floor(Math.random() * group.members.length);
-          const leader = group.members[leaderIndex];
-          
-          // Create group in database
-          const { data: groupData, error: groupError } = await supabase
-            .from('GROUPS')
-            .insert([{ leader: leader.id }])
-            .select()
-            .single();
-
-          if (groupError) {
-            console.error('Error creating group:', groupError);
-            throw groupError;
-          }
-
-          console.log('Created group:', groupData);
-
-          // Add members to group
-          const memberPromises = group.members.map(member => 
-            supabase
-              .from('GROUP_MEMBERS')
-              .insert([{
-                member_id: member.id,
-                member_type: 'SESSION_USER',
-                parent_groups_id: groupData.id
-              }])
-          );
-
-          const memberResults = await Promise.all(memberPromises);
-          console.log('Added members to group:', memberResults);
-
-          // Create round group association
-          const { data: roundGroupData, error: roundGroupError } = await supabase
-            .from('ROUND_GROUPS')
-            .insert([{
-              round_id: newRound.id,
-              groups_id: groupData.id
-            }])
-            .select();
-
-          if (roundGroupError) {
-            console.error('Error creating round group association:', roundGroupError);
-            throw roundGroupError;
-          }
-
-          console.log('Created round group association:', roundGroupData);
-
-          // Update the group object with the database id and leader
-          group.id = groupData.id;
-          group.leader = leader;
-        }
-      }
-
-      // Filter out empty groups and update state
-      const finalGroups = groups.filter(group => group.members.length > 0);
-      setSavedGroups(finalGroups);
-
       toast({
         title: "Success",
-        description: "Groups have been created and saved",
+        description: `Groups have been created for round ${currentRound.round_number}`,
       });
 
     } catch (error) {
@@ -201,7 +222,7 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
   };
 
   // Create groups when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     if (participants.length > 0 && answers.length > 0) {
       createGroups(participants, answers);
     }
@@ -238,3 +259,4 @@ export const GroupPreparation = ({ participants, answers }: GroupPreparationProp
     </Card>
   );
 };
+
