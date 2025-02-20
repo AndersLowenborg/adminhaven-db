@@ -110,6 +110,7 @@ const SessionPage = () => {
             queryClient.invalidateQueries({ queryKey: ['active-rounds', sessionId] });
           }}
           participants={participants || []}
+          statementsCount={statements?.length || 0}
         />
 
         <div className="space-y-8">

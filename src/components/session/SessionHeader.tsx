@@ -17,6 +17,7 @@ interface SessionHeaderProps {
   onUpdateName: UseMutateFunction<Session, Error, string, unknown>;
   onStatusChange: () => void;
   participants: Participant[];
+  statementsCount: number;
 }
 
 export const SessionHeader: React.FC<SessionHeaderProps> = ({
@@ -26,6 +27,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   onUpdateName,
   onStatusChange,
   participants,
+  statementsCount,
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -161,7 +163,8 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           <Button
             onClick={handlePublishToggle}
             variant="default"
-            disabled={status === 'STARTED' || status === 'ENDED'}
+            disabled={status === 'STARTED' || status === 'ENDED' || statementsCount === 0}
+            title={statementsCount === 0 ? "Add at least one statement before publishing" : ""}
           >
             {status === 'PUBLISHED' ? 'Unpublish Session' : 'Publish Session'}
           </Button>
