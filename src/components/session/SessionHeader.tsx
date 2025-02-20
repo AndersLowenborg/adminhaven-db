@@ -1,7 +1,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PencilIcon } from "lucide-react";
 import { Session } from "@/types/session";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,11 +148,11 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
               </h2>
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
                 onClick={() => setIsEditingName(true)}
-                className="h-6 px-2"
+                className="hover:bg-secondary hover:text-primary"
               >
-                Edit
+                <PencilIcon className="h-4 w-4" />
               </Button>
             </div>
           )}
