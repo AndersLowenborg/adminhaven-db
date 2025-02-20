@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,6 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
@@ -261,21 +261,44 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
 
       if (groupData?.isLeader) {
         console.log('Submitting as group leader');
-        // For group leaders, we need to get the group ID from ROUND_GROUPS
-        const { data: roundGroup, error: roundGroupError } = await supabase
-          .from('ROUND_GROUPS')
-          .select('groups_id')
-          .eq('round_id', activeRound.id)
+        
+        // Get the user's session_user ID first
+        const storedName = localStorage.getItem(`session_${sessionId}_name`);
+        const { data: userData, error: userError } = await supabase
+          .from('SESSION_USERS')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('name', storedName)
           .maybeSingle();
 
-        if (roundGroupError) {
-          console.error('Round group fetch error:', roundGroupError);
-          throw roundGroupError;
+        if (userError || !userData) {
+          console.error('Error fetching user data:', userError);
+          throw new Error('Could not find user data');
         }
 
-        if (!roundGroup) {
-          console.error('No round group found');
-          throw new Error('No round group found');
+        // Find the group where the user is a leader
+        const { data: userGroup, error: groupError } = await supabase
+          .from('GROUPS')
+          .select('id')
+          .eq('leader', userData.id)
+          .maybeSingle();
+
+        if (groupError || !userGroup) {
+          console.error('Error fetching user group:', groupError);
+          throw new Error('Could not find user group');
+        }
+
+        // Now get the ROUND_GROUPS entry for this group in the current round
+        const { data: roundGroup, error: roundGroupError } = await supabase
+          .from('ROUND_GROUPS')
+          .select('id, groups_id')
+          .eq('round_id', activeRound.id)
+          .eq('groups_id', userGroup.id)
+          .maybeSingle();
+
+        if (roundGroupError || !roundGroup) {
+          console.error('Round group fetch error:', roundGroupError);
+          throw new Error('Could not find round group');
         }
 
         console.log('Found round group:', roundGroup);
