@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -177,47 +176,58 @@ const UserPage = () => {
 
       console.log('Fetching group data for round:', currentRound.id);
 
+      // First find all groups for this round
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
-        .select('*')
-        .eq('round_id', currentRound.id)
-        .maybeSingle();
+        .select('groups_id')
+        .eq('round_id', currentRound.id);
 
       if (roundGroupsError) {
         console.error('Error fetching round groups:', roundGroupsError);
         return null;
       }
 
-      if (!roundGroups) {
+      if (!roundGroups || roundGroups.length === 0) {
         console.log('No round groups found');
         return null;
       }
 
       console.log('Found round groups:', roundGroups);
 
-      const { data: group, error: groupError } = await supabase
+      // Get all groups and find which one contains the current user
+      const groupIds = roundGroups.map(rg => rg.groups_id);
+      const { data: groups, error: groupsError } = await supabase
         .from('GROUPS')
         .select(`
           id,
           leader,
           group_members:GROUP_MEMBERS(member_id)
         `)
-        .eq('id', roundGroups.groups_id)
-        .single();
+        .in('id', groupIds);
 
-      if (groupError) {
-        console.error('Error fetching group:', groupError);
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
         return null;
       }
 
-      if (!group) {
-        console.log('No group found');
+      if (!groups || groups.length === 0) {
+        console.log('No groups found');
         return null;
       }
 
-      console.log('Found group:', group);
+      // Find the group that contains the current user
+      const userGroup = groups.find(group => 
+        group.group_members.some(member => member.member_id === userData.id)
+      );
 
-      const memberIds = group.group_members.map(m => m.member_id).filter(Boolean);
+      if (!userGroup) {
+        console.log('User not found in any group');
+        return null;
+      }
+
+      console.log('Found user group:', userGroup);
+
+      const memberIds = userGroup.group_members.map(m => m.member_id).filter(Boolean);
       const { data: members, error: membersError } = await supabase
         .from('SESSION_USERS')
         .select('id, name')
@@ -229,7 +239,7 @@ const UserPage = () => {
       }
 
       return {
-        isLeader: group.leader === userData.id,
+        isLeader: userGroup.leader === userData.id,
         groupMembers: members || []
       };
     },
