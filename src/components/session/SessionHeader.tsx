@@ -158,7 +158,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
         <div className="flex items-center gap-2">
           <Button
             onClick={handlePublishToggle}
-            variant="outline"
+            variant="ghost"
             size="icon"
             disabled={status === 'STARTED' || status === 'ENDED' || statementsCount === 0}
             title={statementsCount === 0 ? "Add at least one statement before publishing" : 
@@ -169,7 +169,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           </Button>
           <Button
             onClick={handleSessionStateToggle}
-            variant="outline"
+            variant="ghost"
             size="icon"
             disabled={
               (status !== 'PUBLISHED' && status !== 'STARTED') || 
@@ -185,7 +185,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             <Lock className="h-4 w-4" />
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={() => {
               window.open(`/presenter/${sessionId}`, '_blank');
