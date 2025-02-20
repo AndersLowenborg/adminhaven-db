@@ -143,9 +143,9 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             </form>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
+              <h2 className="text-xl font-semibold text-primary">
                 {name || 'Unnamed Session'}
-              </span>
+              </h2>
               <Button 
                 variant="ghost" 
                 size="sm"
