@@ -116,7 +116,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
+        <div className="space-y-1">
           {isEditingName ? (
             <form onSubmit={handleNameSubmit} className="flex gap-2 items-center">
               <Input
@@ -140,18 +140,23 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
               </Button>
             </form>
           ) : (
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold text-primary">
-                {name || 'Unnamed Session'}
-              </h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsEditingName(true)}
-                className="hover:bg-secondary hover:text-primary"
-              >
-                <PencilIcon className="h-4 w-4" />
-              </Button>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-semibold text-primary">
+                  {name || 'Unnamed Session'}
+                </h2>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsEditingName(true)}
+                  className="hover:bg-secondary hover:text-primary"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Status: {status.charAt(0) + status.slice(1).toLowerCase()}
+              </p>
             </div>
           )}
         </div>
