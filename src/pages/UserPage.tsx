@@ -161,13 +161,39 @@ const UserPage = () => {
     queryFn: async () => {
       if (!userData?.id || !session?.has_active_round) return null;
 
+      // First, get the current round to check its number
+      const { data: currentRound, error: currentRoundError } = await supabase
+        .from('ROUND')
+        .select('*')
+        .eq('id', session.has_active_round)
+        .maybeSingle();
+
+      if (currentRoundError) throw currentRoundError;
+      
+      // Only fetch group data for round 2 and above
+      if (!currentRound || currentRound.round_number === 1) {
+        return null;
+      }
+
+      console.log('Fetching group data for round:', currentRound.id);
+
       const { data: roundGroups, error: roundGroupsError } = await supabase
         .from('ROUND_GROUPS')
-        .select('groups_id')
-        .eq('round_id', session.has_active_round)
-        .single();
+        .select('*')
+        .eq('round_id', currentRound.id)
+        .maybeSingle();
 
-      if (roundGroupsError || !roundGroups) return null;
+      if (roundGroupsError) {
+        console.error('Error fetching round groups:', roundGroupsError);
+        return null;
+      }
+
+      if (!roundGroups) {
+        console.log('No round groups found');
+        return null;
+      }
+
+      console.log('Found round groups:', roundGroups);
 
       const { data: group, error: groupError } = await supabase
         .from('GROUPS')
@@ -179,7 +205,17 @@ const UserPage = () => {
         .eq('id', roundGroups.groups_id)
         .single();
 
-      if (groupError || !group) return null;
+      if (groupError) {
+        console.error('Error fetching group:', groupError);
+        return null;
+      }
+
+      if (!group) {
+        console.log('No group found');
+        return null;
+      }
+
+      console.log('Found group:', group);
 
       const memberIds = group.group_members.map(m => m.member_id).filter(Boolean);
       const { data: members, error: membersError } = await supabase
@@ -187,7 +223,10 @@ const UserPage = () => {
         .select('id, name')
         .in('id', memberIds);
 
-      if (membersError) return null;
+      if (membersError) {
+        console.error('Error fetching members:', membersError);
+        return null;
+      }
 
       return {
         isLeader: group.leader === userData.id,
