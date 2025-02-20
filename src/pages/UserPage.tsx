@@ -409,6 +409,12 @@ const UserPage = () => {
           Welcome, <span className="font-semibold">{userData.name}</span>!
         </p>
       )}
+
+      {currentRound?.round_number && session.status === 'STARTED' && (
+        <p className="text-center text-muted-foreground mb-8">
+          Round {currentRound.round_number}
+        </p>
+      )}
       
       <div className="mt-8">
         {renderContent()}
