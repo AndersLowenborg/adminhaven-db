@@ -72,31 +72,39 @@ export const UserResponseForm = ({ statement, onSubmit, groupData }: UserRespons
 
         if (groupData?.isLeader) {
           console.log('Checking group leader answer');
-          // Check for existing group answer
-          const { data: roundGroup, error: groupError } = await supabase
-            .from('ROUND_GROUPS')
-            .select('groups_id')
-            .eq('round_id', activeRound.id)
+          // Get the user's session_user ID first
+          const storedName = localStorage.getItem(`session_${sessionId}_name`);
+          const { data: userData, error: userError } = await supabase
+            .from('SESSION_USERS')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('name', storedName)
             .maybeSingle();
 
-          if (groupError) {
-            console.error('Error fetching round group:', groupError);
+          if (userError || !userData) {
+            console.error('Error fetching user data:', userError);
             return;
           }
 
-          if (!roundGroup) {
-            console.log('No round group found');
+          // Find the group where the user is a leader
+          const { data: userGroup, error: groupError } = await supabase
+            .from('GROUPS')
+            .select('id')
+            .eq('leader', userData.id)
+            .maybeSingle();
+
+          if (groupError || !userGroup) {
+            console.error('Error fetching user group:', groupError);
             return;
           }
 
-          console.log('Round group found:', roundGroup);
-
+          // Check for existing group answer
           const { data: existingAnswer, error: answerError } = await supabase
             .from('ANSWER')
             .select('id')
             .eq('round_id', activeRound.id)
             .eq('respondant_type', 'GROUP')
-            .eq('respondant_id', roundGroup.groups_id)
+            .eq('respondant_id', userGroup.id)
             .maybeSingle();
 
           if (answerError) {
