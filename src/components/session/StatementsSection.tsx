@@ -105,23 +105,14 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
     console.log('Checking canPrepareGroups for statement:', statementId);
     console.log('Active rounds:', activeRounds);
     
-    const hasLaterRounds = activeRounds?.some(round => 
-      round.statement_id === statementId && 
-      round.round_number > 1
-    );
-
-    if (hasLaterRounds) {
-      return false;
-    }
-    
-    const round = activeRounds?.find(round => 
-      round.statement_id === statementId && 
-      round.status === 'LOCKED' &&
-      round.round_number === 1
+    // Find the latest round for this statement
+    const latestRound = activeRounds?.find(round => 
+      round.statement_id === statementId &&
+      round.status === 'LOCKED'
     );
     
-    console.log('Found round:', round);
-    return !!round;
+    // Enable if we have a locked round and it's round 1
+    return latestRound?.round_number === 1 && latestRound?.status === 'LOCKED';
   };
 
   const handleGroupPreparation = async (statementId: number) => {
@@ -132,6 +123,8 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
         .from('ROUND')
         .select('*')
         .eq('statement_id', statementId)
+        .eq('status', 'LOCKED')
+        .eq('round_number', 1)
         .single();
 
       if (roundError) throw roundError;
@@ -273,12 +266,12 @@ export const StatementsSection: React.FC<StatementsSectionProps> = ({
               sessionStatus={sessionStatus}
               canDeleteStatements={canDeleteStatements}
               isDeletingStatementPending={isDeletingStatementPending}
-              onEndRound={onEndRound}
-              onStartRound={onStartRound}
-              handleGroupPreparation={handleGroupPreparation}
-              handleToggleResults={handleToggleResults}
-              onUpdateStatement={onUpdateStatement}
-              onDeleteStatement={onDeleteStatement}
+              onEndRound={() => onEndRound(statement.id)}
+              onStartRound={() => onStartRound(statement.id)}
+              handleGroupPreparation={() => handleGroupPreparation(statement.id)}
+              handleToggleResults={() => handleToggleResults(statement.id)}
+              onUpdateStatement={() => onUpdateStatement(statement.id, statement.statement, statement.description)}
+              onDeleteStatement={() => onDeleteStatement(statement.id)}
             />
           );
         })}
