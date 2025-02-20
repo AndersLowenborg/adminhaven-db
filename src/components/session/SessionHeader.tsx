@@ -1,7 +1,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PencilIcon, Play, Lock, ExternalLink, StopCircle } from "lucide-react";
+import { ArrowLeft, PencilIcon, Play, Lock, ExternalLink, Square } from "lucide-react";
 import { Session } from "@/types/session";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,7 +166,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             className="hover:bg-secondary"
           >
             {status === 'PUBLISHED' ? (
-              <StopCircle className="h-4 w-4" />
+              <Square className="h-4 w-4" />
             ) : (
               <Play className="h-4 w-4" />
             )}
