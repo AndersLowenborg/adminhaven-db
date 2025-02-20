@@ -1,7 +1,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PencilIcon } from "lucide-react";
+import { ArrowLeft, PencilIcon, Play, Lock, ExternalLink } from "lucide-react";
 import { Session } from "@/types/session";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,30 +96,26 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   const hasEnoughParticipants = participants.length >= 2;
 
   return (
-    <div>
-      <div className="mb-4">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <Button
           variant="ghost"
           asChild
-          className="mb-4"
+          className="hover:bg-secondary"
         >
           <Link to="/admin" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to Admin
           </Link>
         </Button>
-      </div>
-      
-      <div className="flex items-center gap-4 mb-6">
         <img 
           src="/lovable-uploads/8d75e7fa-b26c-4754-875c-9846105ff72b.png" 
           alt="Grousion Logo" 
-          className="w-48 h-auto"
+          className="w-32 h-auto"
         />
-        <h1 className="text-2xl font-bold text-[#403E43]">Session Management</h1>
       </div>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between">
         <div className="space-y-2">
           {isEditingName ? (
             <form onSubmit={handleNameSubmit} className="flex gap-2 items-center">
@@ -145,7 +141,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             </form>
           ) : (
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-primary">
+              <h2 className="text-2xl font-semibold text-primary">
                 {name || 'Unnamed Session'}
               </h2>
               <Button 
@@ -159,18 +155,22 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handlePublishToggle}
-            variant="default"
+            variant="outline"
+            size="icon"
             disabled={status === 'STARTED' || status === 'ENDED' || statementsCount === 0}
-            title={statementsCount === 0 ? "Add at least one statement before publishing" : ""}
+            title={statementsCount === 0 ? "Add at least one statement before publishing" : 
+                   status === 'PUBLISHED' ? "Unpublish Session" : "Publish Session"}
+            className="hover:bg-secondary"
           >
-            {status === 'PUBLISHED' ? 'Unpublish Session' : 'Publish Session'}
+            <Play className="h-4 w-4" />
           </Button>
           <Button
             onClick={handleSessionStateToggle}
-            variant="default"
+            variant="outline"
+            size="icon"
             disabled={
               (status !== 'PUBLISHED' && status !== 'STARTED') || 
               (status === 'PUBLISHED' && !hasEnoughParticipants)
@@ -178,20 +178,23 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
             title={
               status === 'PUBLISHED' && !hasEnoughParticipants 
                 ? "Need at least 2 participants to start" 
-                : ""
+                : status === 'STARTED' ? "End Session" : "Lock Session"
             }
+            className="hover:bg-secondary"
           >
-            {status === 'STARTED' ? 'End Session' : 'Lock Session'}
+            <Lock className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
+            size="icon"
             onClick={() => {
               window.open(`/presenter/${sessionId}`, '_blank');
             }}
             disabled={status === 'UNPUBLISHED'}
-            title={status === 'UNPUBLISHED' ? "Session must be published first" : ""}
+            title={status === 'UNPUBLISHED' ? "Session must be published first" : "Open Presenter View"}
+            className="hover:bg-secondary"
           >
-            Open Presenter View
+            <ExternalLink className="h-4 w-4" />
           </Button>
         </div>
       </div>
